@@ -135,9 +135,10 @@ export default function spective (canvas) {
 		if (Array.isArray(input)) {
 			const geometryIndex = geometries.length;
 			const assets = [];
+			const length = Math.max(...input) + 1;
 
 			geometries.push({
-				vertices: expand(input, vertices),
+				vertices: expand(length, input, vertices),
 				assets
 			});
 
@@ -151,18 +152,15 @@ export default function spective (canvas) {
 
 				let assetIndex = assets.length;
 				const instances = [];
+				let loaded = false;
+				let image;
 
 				assets.push(null);
 
-				const image = new window.Image();
-				let loaded = false;
-
-				image.src = color;
-
-				image.addEventListener('load', () => {
+				function loader () {
 					if (assetIndex !== undefined) {
 						assets[assetIndex] = {
-							coordinates: expand(input, coordinates),
+							coordinates: expand(length, input, coordinates),
 							color: image,
 							instances
 						};
@@ -173,7 +171,22 @@ export default function spective (canvas) {
 							state.needsRender = true;
 						}
 					}
-				});
+				}
+
+				if (typeof color === 'string') {
+					image = new window.Image();
+					image.src = color;
+					image.addEventListener('load', loader);
+				} else if (Array.isArray(coordinates)) {
+					image = new Uint8Array(4).fill(255);
+					image.set(coordinates.slice(0, 4));
+					coordinates = Array(length * 2).fill(0.5);
+					loader();
+				}
+
+				if (!image) {
+					return;
+				}
 
 				return options => {
 					if (options === undefined) {
@@ -247,7 +260,7 @@ export default function spective (canvas) {
 
 	if (createCanvas) {
 		window.addEventListener('resize', () => {
-			resize({ gl, perspectiveLocation, canvas, state });
+			creator({});
 		});
 	}
 

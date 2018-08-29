@@ -52,7 +52,10 @@ geometry();
 ```
 
 ## Assets
-Assets provide painted versions of a geometry. The first value defines the coordinates and the second defines the image.
+Assets provide painted versions of a geometry. The first value defines either the color or the coordinates of an image and the second defines the image.
+
+### Color
+Array of RGB integers from 0 to 255.
 
 ### Coordinates
 Every two numbers in the array define the horizontal and vertical placement of each vertex in the image. Values must be between 0 and 1. 0 places it at the left or bottom edge of the image. 1 places it at the right or top edge.
@@ -60,7 +63,12 @@ Every two numbers in the array define the horizontal and vertical placement of e
 ### Image
 Path to an image to be loaded.
 
-### Create Asset
+### Create Asset with Color
+```js
+var asset = geometry([63, 127, 255);
+```
+
+### Create Asset with Image
 ```js
 var asset = geometry([
 	0, 0, 1, 0, 0, 1, 1, 1

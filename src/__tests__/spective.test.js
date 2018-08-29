@@ -225,7 +225,7 @@ describe('spective', () => {
 			it('should create geometry', () => {
 				expect(typeof geometry).toBe('function');
 
-				expect(expand).toHaveBeenCalledWith([
+				expect(expand).toHaveBeenCalledWith(4, [
 					0, 1, 2,
 					3, 2, 1
 				], [
@@ -251,7 +251,7 @@ describe('spective', () => {
 				it('should create asset', () => {
 					expect(typeof asset).toBe('function');
 
-					expect(expand).toHaveBeenCalledWith([
+					expect(expand).toHaveBeenCalledWith(4, [
 						0, 1, 2,
 						3, 2, 1
 					], [
@@ -323,7 +323,7 @@ describe('spective', () => {
 				
 				it('should signal render once loaded if instances have been created', () => {
 					loadImage();
-					expect(expand).toHaveBeenCalledWith([0, 1, 2, 3, 2, 1], [0, 0, 1, 0, 0, 1, 1, 1]);
+					expect(expand).toHaveBeenCalledWith(4, [0, 1, 2, 3, 2, 1], [0, 0, 1, 0, 0, 1, 1, 1]);
 				});
 			});
 		});
