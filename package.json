@@ -1,13 +1,17 @@
 {
 	"name": "spective",
-	"version": "0.0.0",
-	"description": "Lightweight tool for creating static 3d scenes in your browser.",
+	"version": "0.0.1",
+	"description": "Lightweight tool for creating 3d scenes in your browser.",
 	"main": "dist/spective.min.js",
 	"scripts": {
 		"build": "grunt",
 		"lint": "eslint src/**",
 		"test": "jest --watch",
 		"start": "npm run build && node preview/index.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/codetriplett/spective.git"
 	},
 	"files": [
 		"dist"

@@ -184,6 +184,17 @@ describe('spective', () => {
 			scene = spective();
 		});
 
+		it('should resize scene when empty object provided', () => {
+			scene({});
+
+			expect(resize).toHaveBeenCalledWith({
+				gl,
+				perspectiveLocation: 'uPerspectiveUniformLocation',
+				canvas: expect.anything(),
+				state: expect.anything()
+			});
+		});
+
 		it('should update scene', () => {
 			scene({
 				position: [1, 2, 3],

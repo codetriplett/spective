@@ -126,7 +126,7 @@ export default function spective (canvas) {
 			state.renderLocked = !state.renderLocked;
 
 			if (!state.renderLocked) {
-				resize({ gl, perspectiveLocation, canvas, state });
+				creator({});
 			}
 
 			return;
@@ -222,6 +222,8 @@ export default function spective (canvas) {
 					return update;
 				};
 			};
+		} else if (Object.keys(input).length === 0) {	
+			resize({ gl, perspectiveLocation, canvas, state });
 		} else {
 			scene = { ...scene, ...invert(input) };
 			const { scale, position, rotation, tilt, spin, offset } = scene;
@@ -241,7 +243,7 @@ export default function spective (canvas) {
 	};
 
 	creator(scene);
-	resize({ gl, perspectiveLocation, canvas, state });
+	creator({});
 
 	if (createCanvas) {
 		window.addEventListener('resize', () => {
