@@ -24,14 +24,14 @@ export function render ({
 				geometry.vertexBuffer = attribute(gl, vertexLocation, vertices, 3, vertexBuffer);
 
 				assets.forEach(asset => {
-					if (asset) {
-						const { coordinates, color, instances, coordinateBuffer, colorTexture } = asset;
+					const { coordinates, color, instances, coordinateBuffer, colorTexture } = asset;
 
+					if (color) {
 						asset.coordinateBuffer = attribute(gl, coordinateLocation, coordinates, 2, coordinateBuffer);
 						asset.colorTexture = sampler(gl, colorLocation, 0, color, colorTexture);
 
-						instances.forEach(instanceMatrix => {
-							gl.uniformMatrix4fv(instanceLocation, false, instanceMatrix);
+						instances.forEach(({ matrix }) => {
+							gl.uniformMatrix4fv(instanceLocation, false, matrix);
 							gl.drawArrays(gl.TRIANGLES, 0, length);
 						});
 					}

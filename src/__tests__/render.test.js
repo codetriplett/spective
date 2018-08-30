@@ -135,13 +135,13 @@ describe('render', () => {
 			describe('instance', () => {
 				beforeEach(() => {
 					clearMocks();
-					geometries[0].assets[0].instances.splice(0, 1, 'mockInstance');
+					geometries[0].assets[0].instances.splice(0, 1, { matrix: 'mockInstanceMatrix' });
 				});
 		
 				it('should set instance matrix and draw arrays', () => {
 					render(scene);
 
-					expect(uniformMatrix4fv).toHaveBeenCalledWith('mockInstanceLocation', false, 'mockInstance');
+					expect(uniformMatrix4fv).toHaveBeenCalledWith('mockInstanceLocation', false, 'mockInstanceMatrix');
 					expect(drawArrays).toHaveBeenCalledWith('mockTriangles', 0, 4);
 				});
 			});

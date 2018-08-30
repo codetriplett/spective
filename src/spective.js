@@ -1,32 +1,9 @@
 import { matrix } from './matrix';
 import { expand } from './expand';
+import { update } from './update';
+import { invert } from './invert';
 import { resize } from './resize';
 import { render } from './render';
-
-function invert (options) {
-	const result = {};
-
-	Object.keys(options).forEach(key => {
-		const value = options[key];
-
-		switch (key) {
-			case 'scale':
-				result[key] = 1 / value;
-				break;
-			case 'rotation':
-			case 'tilt':
-			case 'spin':
-				result[key] = -value;
-				break;
-			case 'position':
-			case 'offset':
-				result[key] = value.map(item => -item);
-				break;
-		}
-	});
-
-	return result;
-}
 
 const vertexCode = `
 	uniform mat4 uInstance;
@@ -133,43 +110,37 @@ export default function spective (canvas) {
 		}
 
 		if (Array.isArray(input)) {
-			const geometryIndex = geometries.length;
-			const assets = [];
 			const length = Math.max(...input) + 1;
+			const assets = [];
 
-			geometries.push({
+			const geometry = {
 				vertices: expand(length, input, vertices),
 				assets
-			});
+			};
+
+			geometries.push(geometry);
 
 			return (coordinates, color) => {
 				if (coordinates === undefined && color === undefined) {
-					geometries.splice(geometryIndex, 1);
+					geometries.splice(geometries.indexOf(geometry), 1);
 					state.needsRender = true;
 
 					return;
 				}
 
-				let assetIndex = assets.length;
 				const instances = [];
+				const asset = { instances };
 				let loaded = false;
 				let image;
 
-				assets.push(null);
+				assets.push(asset);
 
 				function loader () {
-					if (assetIndex !== undefined) {
-						assets[assetIndex] = {
-							coordinates: expand(length, input, coordinates),
-							color: image,
-							instances
-						};
+					asset.color = image;
+					loaded = true;
 
-						loaded = true;
-
-						if (instances.length > 0) {
-							state.needsRender = true;
-						}
+					if (instances.length > 0) {
+						state.needsRender = true;
 					}
 				}
 
@@ -187,22 +158,24 @@ export default function spective (canvas) {
 				if (!image) {
 					return;
 				}
+				
+				asset.coordinates = expand(length, input, coordinates);
 
 				return options => {
 					if (options === undefined) {
-						assets.splice(assetIndex, 1);
-						assetIndex = undefined;
+						assets.splice(assets.indexOf(asset), 1);
 						state.needsRender = true;
 
 						return;
 					}
 
-					const instanceIndex = instances.length;
-					let instance = options;
+					const instance = {};
+					
+					instances.push(instance);
 
-					function update (updates) {
+					function updater (updates) {
 						if (updates) {
-							instance = { ...instance, ...updates };
+							update(instance, updates);
 
 							const {
 								scale,
@@ -213,7 +186,7 @@ export default function spective (canvas) {
 								offset
 							} = instance;
 							
-							instances[instanceIndex] = matrix(
+							instance.matrix = matrix(
 								scale,
 								offset,
 								[1, rotation],
@@ -222,7 +195,7 @@ export default function spective (canvas) {
 								position
 							);
 						} else {
-							instances.splice(instanceIndex, 1);
+							instances.splice(instances.indexOf(instance), 1);
 						}
 						
 						if (loaded) {
@@ -230,9 +203,10 @@ export default function spective (canvas) {
 						}
 					}
 
-					update({ ...defaults, ...options });
+					update(instance, defaults);
+					updater(options);
 
-					return update;
+					return updater;
 				};
 			};
 		} else if (Object.keys(input).length === 0) {	

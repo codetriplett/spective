@@ -1,5 +1,5 @@
 # Spective
-This library provides a simple way to create 3d scenes in your browser. spective.min.js can be found in the dist folder and is less than 6kB.
+This library provides a simple way to create 3d scenes in your browser. spective.min.js can be found in the dist folder and is less than 7kB.
 
 ## Scenes
 Call the main function to have it create a scene that takes up the full size of the window and automatically resizes. You can set up multiple scenes on one page by passing existing canvas elements each time you call the main function.

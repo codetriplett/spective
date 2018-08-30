@@ -60,6 +60,8 @@ module.exports = function (grunt) {
 					'temp/globals.js',
 					'temp/matrix.js',
 					'temp/expand.js',
+					'temp/update.js',
+					'temp/invert.js',
 					'temp/attribute.js',
 					'temp/sampler.js',
 					'temp/resize.js',

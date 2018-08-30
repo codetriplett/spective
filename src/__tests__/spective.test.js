@@ -297,35 +297,6 @@ describe('spective', () => {
 					});
 				});
 			});
-			
-			describe('assets with delayed load', () => {
-				let instance;
-
-				beforeEach(() => {
-					clearMocks();
-
-					const asset = geometry([
-						0, 0, 1, 0,
-						0, 1, 1, 1
-					], 'texture.jpg');
-					
-					instance = asset({
-						position: [1, 2, 3],
-						rotation: Math.PI / 3
-					});
-				});
-				
-				it('should create instance', () => {
-					expect(typeof instance).toBe('function');
-					expect(matrix).toHaveBeenCalledWith(1, [0, 0, 0], [1, Math.PI / 3], [0, 0], [2, 0], [1, 2, 3]);
-					expect(expand).not.toHaveBeenCalled();
-				});
-				
-				it('should signal render once loaded if instances have been created', () => {
-					loadImage();
-					expect(expand).toHaveBeenCalledWith(4, [0, 1, 2, 3, 2, 1], [0, 0, 1, 0, 0, 1, 1, 1]);
-				});
-			});
 		});
 	});
 });
