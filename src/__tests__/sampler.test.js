@@ -4,7 +4,7 @@ const createTexture = jest.fn();
 const activeTexture = jest.fn();
 const bindTexture = jest.fn();
 const texImage2D = jest.fn();
-const texParameteri = jest.fn();
+const generateMipmap = jest.fn();
 const uniform1i = jest.fn();
 let gl;
 
@@ -14,7 +14,7 @@ describe('sampler', () => {
 		activeTexture.mockClear();
 		bindTexture.mockClear();
 		texImage2D.mockClear();
-		texParameteri.mockClear();
+		generateMipmap.mockClear();
 		uniform1i.mockClear();
 
 		createTexture.mockReturnValue('mockTexture');
@@ -25,17 +25,11 @@ describe('sampler', () => {
 			TEXTURE_2D: 'mockTexture2d',
 			RGBA: 'mockRgba',
 			UNSIGNED_BYTE: 'mockUnsignedByte',
-			TEXTURE_MAG_FILTER: 'mockTextureMagFilter',
-			LINEAR: 'mockLinear',
-			TEXTURE_MIN_FILTER: 'mockTextureMinFilter',
-			TEXTURE_WRAP_S: 'mockTextureWrapS',
-			CLAMP_TO_EDGE: 'mockClampToEdge',
-			TEXTURE_WRAP_T: 'mockTextureWrapT',
 			createTexture,
 			activeTexture,
 			bindTexture,
 			texImage2D,
-			texParameteri,
+			generateMipmap,
 			uniform1i
 		};
 	});
@@ -47,13 +41,7 @@ describe('sampler', () => {
 		expect(bindTexture).toHaveBeenCalledWith('mockTexture2d', 'mockTexture');
 	
 		expect(texImage2D).toHaveBeenCalledWith('mockTexture2d', 0, 'mockRgba', 'mockRgba', 'mockUnsignedByte', 'mockImage');
-		expect(texParameteri.mock.calls).toEqual([
-			['mockTexture2d', 'mockTextureMagFilter', 'mockLinear'],
-			['mockTexture2d', 'mockTextureMinFilter', 'mockLinear'],
-			['mockTexture2d', 'mockTextureWrapS', 'mockClampToEdge'],
-			['mockTexture2d', 'mockTextureWrapT', 'mockClampToEdge']
-		]);
-	
+		expect(generateMipmap).toHaveBeenCalledWith('mockTexture2d');
 		expect(uniform1i).toHaveBeenCalledWith('mockLocation', 'mockUnit');
 	});
 	
@@ -64,13 +52,7 @@ describe('sampler', () => {
 		expect(bindTexture).toHaveBeenCalledWith('mockTexture2d', 'existingTexture');
 	
 		expect(texImage2D).toHaveBeenCalledWith('mockTexture2d', 0, 'mockRgba', 'mockRgba', 'mockUnsignedByte', 'mockImage');
-		expect(texParameteri.mock.calls).toEqual([
-			['mockTexture2d', 'mockTextureMagFilter', 'mockLinear'],
-			['mockTexture2d', 'mockTextureMinFilter', 'mockLinear'],
-			['mockTexture2d', 'mockTextureWrapS', 'mockClampToEdge'],
-			['mockTexture2d', 'mockTextureWrapT', 'mockClampToEdge']
-		]);
-	
+		expect(generateMipmap).toHaveBeenCalledWith('mockTexture2d');
 		expect(uniform1i).toHaveBeenCalledWith('mockLocation', 'mockUnit');
 	});
 });
