@@ -11,9 +11,9 @@ var geometry = scene([
 	-1, 0, -1, 1, 0, -1, -1, 0, 1, 1, 0, 1
 ]);
 
-var asset = geometry([
+var asset = geometry('grid.png', [
 	0, 0, 4.0625, 0, 0, 4.0625, 4.0625, 4.0625
-], 'grid.png');
+]);
 
 asset({
 	position: [0, 0.5, 0],

@@ -120,8 +120,8 @@ export default function spective (canvas) {
 
 			geometries.push(geometry);
 
-			return (coordinates, color) => {
-				if (coordinates === undefined && color === undefined) {
+			return (color, coordinates) => {
+				if (color === undefined && coordinates === undefined) {
 					geometries.splice(geometries.indexOf(geometry), 1);
 					state.needsRender = true;
 
@@ -148,9 +148,9 @@ export default function spective (canvas) {
 					image = new window.Image();
 					image.src = color;
 					image.addEventListener('load', loader);
-				} else if (Array.isArray(coordinates)) {
+				} else if (Array.isArray(color)) {
 					image = new Uint8Array(4).fill(255);
-					image.set(coordinates.slice(0, 4));
+					image.set(color.slice(0, 4));
 					coordinates = Array(length * 2).fill(0.5);
 					loader();
 				}

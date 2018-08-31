@@ -240,10 +240,10 @@ describe('spective', () => {
 				beforeEach(() => {
 					clearMocks();
 
-					asset = geometry([
+					asset = geometry('texture.jpg', [
 						0, 0, 1, 0,
 						0, 1, 1, 1
-					], 'texture.jpg');
+					]);
 
 					loadImage();
 				});
