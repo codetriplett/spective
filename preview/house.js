@@ -12,7 +12,7 @@ var geometry = scene([
 ]);
 
 var asset = geometry([
-	0, 0, 1, 0, 0, 1, 1, 1
+	0, 0, 4.0625, 0, 0, 4.0625, 4.0625, 4.0625
 ], 'grid.png');
 
 asset({
