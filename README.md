@@ -52,7 +52,7 @@ geometry();
 ```
 
 ## Assets
-Assets provide painted versions of a geometry. The first value defines either the color or the coordinates of an image and the second defines the image.
+Assets provide painted versions of a geometry. The first value defines either the color or an image and the second defines the coordinates for the image.
 
 ### Color
 Array of RGB integers from 0 to 255.
@@ -70,9 +70,9 @@ var asset = geometry([63, 127, 255);
 
 ### Create Asset with Image
 ```js
-var asset = geometry([
+var asset = geometry('image.jpg', [
 	0, 0, 1, 0, 0, 1, 1, 1
-], 'image.jpg');
+]);
 ```
 
 ### Delete Asset
