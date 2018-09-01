@@ -14,17 +14,17 @@ export function calculateMatrix (...propertiesArray) {
 	}
 
 	propertiesArray.forEach(properties => {
-		const matrices = [];
-		
-		Object.keys(properties || {}).forEach(key => {
+		const { scale, rotation, tilt, spin, position } = properties;
+		let matrices = [scale, rotation, tilt, spin, position];
+
+		matrices = matrices.map((value, i) => {
 			const matrix = [].concat(identityMatrix);
-			let value = properties[key];
 			let isNumber = typeof value === 'number';
 			let isNumberArray = Array.isArray(value) && value.length === 3
 					&& value.every(item => typeof item === 'number');
-
-			switch (key) {
-				case 'scale':
+			
+			switch (i) {
+				case 0:
 					if (isNumber) {
 						value = Array(3).fill(value);
 						isNumberArray = true;
@@ -42,13 +42,14 @@ export function calculateMatrix (...propertiesArray) {
 						matrix[0] = value[0];
 						matrix[5] = value[1];
 						matrix[10] = value[2];
-						matrices.push(matrix);
+						
+						return matrix;
 					}
 
 					break;
-				case 'rotation':
-				case 'tilt':
-				case 'spin': {
+				case 1:
+				case 2:
+				case 3: {
 					if (isNumber) {
 						if (inverted) {
 							value = -value;
@@ -59,10 +60,10 @@ export function calculateMatrix (...propertiesArray) {
 						let indexStart = 0;
 						let indexStep = 1;
 
-						if (key === 'rotation') {
+						if (i === 1) {
 							sin = -sin;
 							indexStep = 2;
-						} else if (key === 'tilt') {
+						} else if (i === 2) {
 							indexStart = 5;
 						}
 
@@ -71,12 +72,13 @@ export function calculateMatrix (...propertiesArray) {
 						indexStart += indexStep * 4;
 						matrix[indexStart] = sin;
 						matrix[indexStart + indexStep] = cos;
-						matrices.push(matrix);
+						
+						return matrix;
 					}
 
 					break;
 				}
-				case 'position':
+				case 4:
 					if (isNumberArray) {
 						if (inverted) {
 							value = value.map(item => -item);
@@ -85,7 +87,8 @@ export function calculateMatrix (...propertiesArray) {
 						matrix[3] = value[0];
 						matrix[7] = value[1];
 						matrix[11] = value[2];
-						matrices.push(matrix);
+						
+						return matrix;
 					}
 
 					break;
@@ -96,28 +99,30 @@ export function calculateMatrix (...propertiesArray) {
 			matrices.splice(0, 0, compositeMatrix);
 		}
 
-		if (matrices.length === 1) {
-			compositeMatrix = matrices[0];
-		} else if (matrices.length > 1) {
-			compositeMatrix = matrices.reduce((previousMatrix, matrix) => {
-				compositeMatrix = [];
+		compositeMatrix = matrices.reduce((previousMatrix, matrix) => {
+			if (!matrix) {
+				return previousMatrix;
+			} else if (!previousMatrix) {
+				return matrix;
+			}
 
-				for (let row = 0; row < 4; row++) {
-					for (let column = 0; column < 4; column++) {
-						const index = row * 4;
-						let value = 0;
+			compositeMatrix = [];
 
-						for (let cell = 0; cell < 4; cell++) {
-							value += matrix[index + cell] * previousMatrix[cell * 4 + column];
-						}
+			for (let row = 0; row < 4; row++) {
+				for (let column = 0; column < 4; column++) {
+					const index = row * 4;
+					let value = 0;
 
-						compositeMatrix[index + column] = value;
+					for (let cell = 0; cell < 4; cell++) {
+						value += matrix[index + cell] * previousMatrix[cell * 4 + column];
 					}
-				}
 
-				return compositeMatrix;
-			});
-		}
+					compositeMatrix[index + column] = value;
+				}
+			}
+
+			return compositeMatrix;
+		});
 	});
 
 	return compositeMatrix ? compositeMatrix : [].concat(identityMatrix);

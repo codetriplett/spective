@@ -2,28 +2,33 @@
 This library provides a simple way to create 3d scenes in your browser. spective.min.js can be found in the dist folder and is around 6kB.
 
 ## Scenes
-Call the main function to have it create a scene that takes up the full size of the window and automatically resizes. You can set up multiple scenes on one page by passing existing canvas elements each time you call the main function.
+Call the main function to have it create a scene that takes up the full size of the window and automatically resizes. You can set up multiple scenes on one page by passing existing canvas elements as the first parameter each time you call the main function. Any properties that are passed when creating the scene will be used to place the camera in that scene.
 
 ### Create Scene
 ```js
-var scene = spective();
-```
-
-### Update Camera
-```js
-scene({
+var scene = spective({
 	rotation: Math.PI / 4,
 	tilt: Math.PI / 4
 });
 ```
 
-### Update Camera with Multiple Properties
-The transformation of each set of properties will be processed fully before moving on to the next. The following example will rotate the camera around a fixed point 6 units away from the center of the scene.
+### Update Camera
+Properties that were used to create the scene or in previous updates will not be remembered in future updates.
 ```js
 scene({
+	rotation: Math.PI / 2,
+	tilt: Math.PI / 4
+});
+```
+
+### Update Camera with Multiple Properties
+The transformation of each set of properties will be processed fully before moving on to the next. The following example will move the camera 1 unit up, rotate and tilt it and then move it 6 units back.
+```js
+scene({
+	position: [0, 1, 0]
+}, {
 	rotation: Math.PI / 4,
 	tilt: Math.PI / 4
-}, {
 	position: [0, 0, -6]
 });
 ```
@@ -102,8 +107,10 @@ var instance = asset({
 ```
 
 ### Update Instance
+Properties that were used to create the instance or in previous updates will not be remembered in future updates.
 ```js
 instance({
+	position: [0, 0.5, 0],
 	rotation: 0.5
 });
 ```
