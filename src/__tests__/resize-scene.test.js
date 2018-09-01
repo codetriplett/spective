@@ -1,4 +1,4 @@
-import { resize } from '../resize';
+import { resizeScene } from '../resize-scene';
 
 const viewport = jest.fn();
 const uniformMatrix4fv = jest.fn();
@@ -6,7 +6,7 @@ let canvas;
 let gl;
 let state;
 
-describe('resize', () => {
+describe('resize-scene', () => {
 	beforeEach(() => {
 		viewport.mockClear();
 		uniformMatrix4fv.mockClear();
@@ -17,12 +17,12 @@ describe('resize', () => {
 	});
 
 	it('should set canvas and viewport dimensions', () => {
-		resize({ gl, perspectiveLocation: 'mockLocation', canvas, state });
+		resizeScene({ gl, perspectiveLocation: 'mockLocation', canvas, state });
 		expect(viewport).toHaveBeenCalledWith(0, 0, 1024, 768);
 	});
 
 	it('should create perspective matrix', () => {
-		resize({ gl, perspectiveLocation: 'mockLocation', canvas, state });
+		resizeScene({ gl, perspectiveLocation: 'mockLocation', canvas, state });
 
 		expect(uniformMatrix4fv).toHaveBeenCalledWith('mockLocation', false, [
 			2.414213562373095, 0, 0, 0,
@@ -33,7 +33,7 @@ describe('resize', () => {
 	});
 
 	it('should initiate a new render', () => {
-		resize({ gl, perspectiveLocation: 'mockLocation', canvas, state });
+		resizeScene({ gl, perspectiveLocation: 'mockLocation', canvas, state });
 		expect(state.needsRender).toBeTruthy();
 	});
 });

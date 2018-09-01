@@ -1,7 +1,7 @@
-import { attribute } from './attribute';
-import { sampler } from './sampler';
+import { setAttribute } from './set-attribute';
+import { setSampler } from './set-sampler';
 
-export function render ({
+export function initializeRender ({
 	gl,
 	instanceLocation,
 	colorLocation,
@@ -10,7 +10,7 @@ export function render ({
 	geometries,
 	state
 }) {
-	function frame () {
+	function render () {
 		if (state.needsRender && !state.renderLocked) {
 			state.needsRender = false;
 
@@ -21,14 +21,14 @@ export function render ({
 				const { vertices, assets, vertexBuffer } = geometry;
 				const length = vertices.length / 3;
 
-				geometry.vertexBuffer = attribute(gl, vertexLocation, vertices, 3, vertexBuffer);
+				geometry.vertexBuffer = setAttribute(gl, vertexLocation, vertices, 3, vertexBuffer);
 
 				assets.forEach(asset => {
 					const { coordinates, color, instances, coordinateBuffer, colorTexture } = asset;
 
 					if (color) {
-						asset.coordinateBuffer = attribute(gl, coordinateLocation, coordinates, 2, coordinateBuffer);
-						asset.colorTexture = sampler(gl, colorLocation, 0, color, colorTexture);
+						asset.coordinateBuffer = setAttribute(gl, coordinateLocation, coordinates, 2, coordinateBuffer);
+						asset.colorTexture = setSampler(gl, colorLocation, 0, color, colorTexture);
 
 						instances.forEach(({ matrix }) => {
 							gl.uniformMatrix4fv(instanceLocation, false, matrix);
@@ -39,8 +39,8 @@ export function render ({
 			});
 		}
 
-		window.requestAnimationFrame(frame);
+		window.requestAnimationFrame(render);
 	}
 
-	frame();
+	render();
 }

@@ -1,6 +1,6 @@
-import { expand } from '../expand';
+import { expandPoints } from '../expand-points';
 
-describe('expand', () => {
+describe('expand-points', () => {
 	let faces;
 
 	beforeEach(() => {
@@ -11,7 +11,7 @@ describe('expand', () => {
 	});
 
 	it('should expand three dimensional points', () => {
-		const actual = expand(4, faces, [
+		const actual = expandPoints(4, faces, [
 			0.1, 0.2, 0.3, 1.1, 1.2, 1.3,
 			2.1, 2.2, 2.3, 3.1, 3.2, 3.3
 		], 3);
@@ -23,7 +23,7 @@ describe('expand', () => {
 	});
 	
 	it('should expand two dimensional points', () => {
-		const actual = expand(4, faces, [
+		const actual = expandPoints(4, faces, [
 			0.1, 0.2, 1.1, 1.2,
 			2.1, 2.2, 3.1, 3.2
 		], 3);

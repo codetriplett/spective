@@ -1,4 +1,4 @@
-import { sampler } from '../sampler';
+import { setSampler } from '../set-sampler';
 
 const createTexture = jest.fn();
 const activeTexture = jest.fn();
@@ -8,7 +8,7 @@ const generateMipmap = jest.fn();
 const uniform1i = jest.fn();
 let gl;
 
-describe('sampler', () => {
+describe('set-sampler', () => {
 	beforeEach(() => {
 		createTexture.mockClear();
 		activeTexture.mockClear();
@@ -35,7 +35,7 @@ describe('sampler', () => {
 	});
 
 	it('should set sampler using new texture', () => {
-		sampler(gl, 'mockLocation', 'mockUnit', 'mockImage', undefined);
+		setSampler(gl, 'mockLocation', 'mockUnit', 'mockImage', undefined);
 
 		expect(createTexture).toHaveBeenCalled();
 		expect(bindTexture).toHaveBeenCalledWith('mockTexture2d', 'mockTexture');
@@ -46,7 +46,7 @@ describe('sampler', () => {
 	});
 	
 	it('should set sampler using existing texture', () => {
-		sampler(gl, 'mockLocation', 'mockUnit', 'mockImage', 'existingTexture');
+		setSampler(gl, 'mockLocation', 'mockUnit', 'mockImage', 'existingTexture');
 
 		expect(createTexture).not.toHaveBeenCalled();
 		expect(bindTexture).toHaveBeenCalledWith('mockTexture2d', 'existingTexture');

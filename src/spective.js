@@ -1,9 +1,8 @@
-import { matrix } from './matrix';
-import { expand } from './expand';
-import { update } from './update';
-import { invert } from './invert';
-import { resize } from './resize';
-import { render } from './render';
+import { updateProperties } from './update-properties';
+import { calculateMatrix } from './calculate-matrix';
+import { resizeScene } from './resize-scene';
+import { initializeRender } from './initialize-render';
+import { createGeometry } from './create-geometry';
 
 const vertexCode = `
 	uniform mat4 uInstance;
@@ -32,15 +31,6 @@ const fragmentCode = `
 		gl_FragColor = texture2D(uColor, vCoordinate);
 	}
 `;
-
-const defaults = {
-	scale: 1,
-	position: [0, 0, 0],
-	rotation: 0,
-	tilt: 0,
-	spin: 0,
-	offset: [0, 0, 0]
-};
 
 export default function spective (canvas) {
 	const createCanvas = !canvas || typeof canvas.getContext !== 'function';
@@ -96,10 +86,10 @@ export default function spective (canvas) {
 	const geometries = [];
 	const state = { needsRender: true };
 
-	let scene = { ...defaults };
+	let scene = {};
 
-	const creator = (input, vertices) => {
-		if (input === undefined && vertices === undefined) {
+	const creator = (...parameters) => {
+		if (parameters.length === 0) {
 			state.renderLocked = !state.renderLocked;
 
 			if (!state.renderLocked) {
@@ -109,126 +99,22 @@ export default function spective (canvas) {
 			return;
 		}
 
-		if (Array.isArray(input)) {
-			const length = Math.max(...input) + 1;
-			const assets = [];
+		const firstParamter = parameters[0];
 
-			const geometry = {
-				vertices: expand(length, input, vertices),
-				assets
-			};
-
-			geometries.push(geometry);
-
-			return (color, coordinates) => {
-				if (color === undefined && coordinates === undefined) {
-					geometries.splice(geometries.indexOf(geometry), 1);
-					state.needsRender = true;
-
-					return;
-				}
-
-				const instances = [];
-				const asset = { instances };
-				let loaded = false;
-				let image;
-
-				assets.push(asset);
-
-				function loader () {
-					asset.color = image;
-					loaded = true;
-
-					if (instances.length > 0) {
-						state.needsRender = true;
-					}
-				}
-
-				if (typeof color === 'string') {
-					image = new window.Image();
-					image.src = color;
-					image.addEventListener('load', loader);
-				} else if (Array.isArray(color)) {
-					image = new Uint8Array(4).fill(255);
-					image.set(color.slice(0, 4));
-					coordinates = Array(length * 2).fill(0.5);
-					loader();
-				}
-
-				if (!image) {
-					return;
-				}
-				
-				asset.coordinates = expand(length, input, coordinates);
-
-				return options => {
-					if (options === undefined) {
-						assets.splice(assets.indexOf(asset), 1);
-						state.needsRender = true;
-
-						return;
-					}
-
-					const instance = {};
-					
-					instances.push(instance);
-
-					function updater (updates) {
-						if (updates) {
-							update(instance, updates);
-
-							const {
-								scale,
-								position,
-								rotation,
-								tilt,
-								spin,
-								offset
-							} = instance;
-							
-							instance.matrix = matrix(
-								scale,
-								offset,
-								[1, rotation],
-								[0, tilt],
-								[2, spin],
-								position
-							);
-						} else {
-							instances.splice(instances.indexOf(instance), 1);
-						}
-						
-						if (loaded) {
-							state.needsRender = true;
-						}
-					}
-
-					update(instance, defaults);
-					updater(options);
-
-					return updater;
-				};
-			};
-		} else if (Object.keys(input).length === 0) {	
-			resize({ gl, perspectiveLocation, canvas, state });
+		if (Array.isArray(firstParamter)) {
+			return createGeometry(state, geometries, ...parameters);
+		} else if (Object.keys(firstParamter).length === 0) {	
+			resizeScene({ gl, perspectiveLocation, canvas, state });
 		} else {
-			scene = { ...scene, ...invert(input) };
-			const { scale, position, rotation, tilt, spin, offset } = scene;
-
-			const sceneMatrix = matrix(
-				scale,
-				position,
-				[1, rotation],
-				[0, tilt],
-				[2, spin],
-				offset
-			);
+			const extras = updateProperties(scene, true, ...parameters);
+			const sceneMatrix = calculateMatrix(scene, ...extras);
 
 			gl.uniformMatrix4fv(sceneLocation, false, sceneMatrix);
 			state.needsRender = true;
 		}
 	};
 
+	updateProperties(scene, true);
 	creator(scene);
 	creator({});
 
@@ -238,7 +124,7 @@ export default function spective (canvas) {
 		});
 	}
 
-	render({
+	initializeRender({
 		gl,
 		instanceLocation,
 		colorLocation,
@@ -249,4 +135,4 @@ export default function spective (canvas) {
 	});
 	
 	return creator;
-};
+}

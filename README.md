@@ -13,8 +13,18 @@ var scene = spective();
 ```js
 scene({
 	rotation: Math.PI / 4,
-	tilt: Math.PI / 4,
-	offset: [0, 0, -6]
+	tilt: Math.PI / 4
+});
+```
+
+### Update Camera with Multiple Properties
+This allows you to rotate around a fixed point. Only the first set of properties will be remembered in later updates.
+```js
+scene({
+	rotation: Math.PI / 4,
+	tilt: Math.PI / 4
+}, {
+	position: [0, 0, -6]
 });
 ```
 
@@ -98,6 +108,16 @@ instance({
 });
 ```
 
+### Update Instance with Multiple Properties
+This allows you to transform multiple instances together as one group. Only the first set of properties will be remembered in later updates.
+```js
+instance({
+	position: [1, 0, 0]
+}, {
+	rotation: 0.5
+});
+```
+
 ### Delete Instance
 ```js
 instance();
@@ -109,9 +129,6 @@ Cameras and instances all use the same properties. Transformations occur in the 
 ### Scale
 The relative size.
 
-### Position
-The placement along the x, y and z axis.
-
 ### Rotation
 The angle in radians along the y axis.
 
@@ -121,5 +138,5 @@ The angle in radians along the x axis.
 ### Spin
 The angle in radians along the z axis.
 
-### Offset
-The adjustment along the new x, y and z axis.
+### Position
+The placement along the x, y and z axis.

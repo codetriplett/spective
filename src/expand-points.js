@@ -1,4 +1,4 @@
-export function expand (length, faces, values) {
+export function expandPoints (length, faces, values) {
 	const size = Math.floor(values.length / length);
 	const array = new Float32Array(faces.length * size);
 

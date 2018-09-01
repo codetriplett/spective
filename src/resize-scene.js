@@ -1,4 +1,4 @@
-export function resize ({ gl, perspectiveLocation, canvas, state }) {
+export function resizeScene ({ gl, perspectiveLocation, canvas, state }) {
 	const { clientWidth: width, clientHeight: height } = canvas;
 
 	canvas.width = width;

@@ -1,6 +1,6 @@
-import { attribute } from '../attribute';
-import { sampler } from '../sampler';
-import { render } from '../render';
+import { setAttribute } from '../set-attribute';
+import { setSampler } from '../set-sampler';
+import { initializeRender } from '../initialize-render';
 
 const clear = jest.fn();
 const uniformMatrix4fv = jest.fn();
@@ -10,8 +10,8 @@ let gl;
 let state;
 let scene;
 
-jest.mock('../attribute', () => ({ attribute: jest.fn() }));
-jest.mock('../sampler', () => ({ sampler: jest.fn() }));
+jest.mock('../set-attribute', () => ({ setAttribute: jest.fn() }));
+jest.mock('../set-sampler', () => ({ setSampler: jest.fn() }));
 
 window.requestAnimationFrame = jest.fn();
 
@@ -20,8 +20,8 @@ function clearMocks () {
 	uniformMatrix4fv.mockClear();
 	drawArrays.mockClear();
 
-	attribute.mockClear();
-	sampler.mockClear();
+	setAttribute.mockClear();
+	setSampler.mockClear();
 
 	window.requestAnimationFrame.mockClear();
 
@@ -54,7 +54,7 @@ describe('render', () => {
 	});
 
 	it('should render when needed', () => {
-		render(scene);
+		initializeRender(scene);
 
 		expect(clear.mock.calls).toEqual([
 			['mockColorBufferBit'],
@@ -66,20 +66,20 @@ describe('render', () => {
 
 	it('should not render when not needed', () => {
 		state.needsRender = false;
-		render(scene);
+		initializeRender(scene);
 		
 		expect(clear).not.toHaveBeenCalled();
 	});
 
 	it('should not render when locked', () => {
 		state.renderLocked = true;
-		render(scene);
+		initializeRender(scene);
 		
 		expect(clear).not.toHaveBeenCalled();
 	});
 	
 	it('should queue next render', () => {
-		render(scene);
+		initializeRender(scene);
 		expect(window.requestAnimationFrame).toHaveBeenCalledWith(expect.any(Function));
 	});
 
@@ -94,15 +94,15 @@ describe('render', () => {
 		});
 
 		it('should set vertices', () => {
-			render(scene);
-			expect(attribute).toHaveBeenCalledWith(gl, 'mockVertexLocation', 'mockVertices', 3, undefined);
+			initializeRender(scene);
+			expect(setAttribute).toHaveBeenCalledWith(gl, 'mockVertexLocation', 'mockVertices', 3, undefined);
 		});
 		
 		it('should use existing vertex buffer', () => {
 			geometries[0].vertexBuffer = 'mockVertexBuffer';
-			render(scene);
+			initializeRender(scene);
 
-			expect(attribute).toHaveBeenCalledWith(gl, 'mockVertexLocation', 'mockVertices', 3, 'mockVertexBuffer');
+			expect(setAttribute).toHaveBeenCalledWith(gl, 'mockVertexLocation', 'mockVertices', 3, 'mockVertexBuffer');
 		});
 
 		describe('asset', () => {
@@ -117,19 +117,19 @@ describe('render', () => {
 			});
 	
 			it('should set coordinates and color', () => {
-				render(scene);
+				initializeRender(scene);
 
-				expect(attribute).toHaveBeenCalledWith(gl, 'mockCoordinateLocation', 'mockCoordinates', 2, undefined);
-				expect(sampler).toHaveBeenCalledWith(gl, 'mockColorLocation', 0, 'mockColor', undefined);
+				expect(setAttribute).toHaveBeenCalledWith(gl, 'mockCoordinateLocation', 'mockCoordinates', 2, undefined);
+				expect(setSampler).toHaveBeenCalledWith(gl, 'mockColorLocation', 0, 'mockColor', undefined);
 			});
 		
 			it('should use existing coordinate buffer and color texture', () => {
 				geometries[0].assets[0].coordinateBuffer = 'mockCoordinateBuffer';
 				geometries[0].assets[0].colorTexture = 'mockColorTexture';
-				render(scene);
+				initializeRender(scene);
 	
-				expect(attribute).toHaveBeenCalledWith(gl, 'mockCoordinateLocation', 'mockCoordinates', 2, 'mockCoordinateBuffer');
-				expect(sampler).toHaveBeenCalledWith(gl, 'mockColorLocation', 0, 'mockColor', 'mockColorTexture');
+				expect(setAttribute).toHaveBeenCalledWith(gl, 'mockCoordinateLocation', 'mockCoordinates', 2, 'mockCoordinateBuffer');
+				expect(setSampler).toHaveBeenCalledWith(gl, 'mockColorLocation', 0, 'mockColor', 'mockColorTexture');
 			});
 			
 			describe('instance', () => {
@@ -139,7 +139,7 @@ describe('render', () => {
 				});
 		
 				it('should set instance matrix and draw arrays', () => {
-					render(scene);
+					initializeRender(scene);
 
 					expect(uniformMatrix4fv).toHaveBeenCalledWith('mockInstanceLocation', false, 'mockInstanceMatrix');
 					expect(drawArrays).toHaveBeenCalledWith('mockTriangles', 0, 4);

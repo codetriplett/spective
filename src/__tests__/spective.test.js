@@ -1,13 +1,11 @@
-import { matrix } from '../matrix';
-import { expand } from '../expand';
-import { resize } from '../resize';
-import { render } from '../render';
+import { calculateMatrix } from '../calculate-matrix';
+import { resizeScene } from '../resize-scene';
+import { initializeRender } from '../initialize-render';
 import spective from '../spective';
 
-jest.mock('../matrix', () => ({ matrix: jest.fn() }));
-jest.mock('../expand', () => ({ expand: jest.fn() }));
-jest.mock('../resize', () => ({ resize: jest.fn() }));
-jest.mock('../render', () => ({ render: jest.fn() }));
+jest.mock('../calculate-matrix', () => ({ calculateMatrix: jest.fn() }));
+jest.mock('../resize-scene', () => ({ resizeScene: jest.fn() }));
+jest.mock('../initialize-render', () => ({ initializeRender: jest.fn() }));
 
 const createProgram = jest.fn();
 const createShader = jest.fn();
@@ -33,24 +31,10 @@ const appendChild = jest.fn();
 document.body.appendChild = appendChild;
 
 let gl;
-let loadImage;
-
-window.Image = class Image {
-	constructor () {
-		loadImage = undefined;
-	}
-
-	addEventListener (type, callback) {
-		loadImage = callback;
-	}
-};
 
 function clearMocks () {
-	matrix.mockClear();
-	matrix.mockReturnValue('mockMatrix');
-
-	expand.mockClear();
-	expand.mockReturnValue('mockExpand');
+	calculateMatrix.mockClear();
+	calculateMatrix.mockReturnValue('mockMatrix');
 
 	createProgram.mockClear();
 	createShader.mockClear();
@@ -141,7 +125,14 @@ describe('spective', () => {
 	it('should apply default scene options', () => {
 		spective();
 
-		expect(matrix).toHaveBeenCalledWith(1, [-0, -0, -0], [1, -0], [0, -0], [2, -0], [-0, -0, -0]);
+		expect(calculateMatrix).toHaveBeenCalledWith({
+			scale: [1, 1, 1],
+			rotation: 0,
+			tilt: 0,
+			spin: 0,
+			position: [0, 0, 0]
+		});
+
 		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
 	});
 
@@ -150,14 +141,14 @@ describe('spective', () => {
 
 		expect(addEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
 
-		expect(resize).toHaveBeenCalledWith({
+		expect(resizeScene).toHaveBeenCalledWith({
 			gl,
 			perspectiveLocation: 'uPerspectiveUniformLocation',
 			canvas: expect.anything(),
 			state: expect.anything()
 		});
 
-		expect(render).toHaveBeenCalledWith({
+		expect(initializeRender).toHaveBeenCalledWith({
 			gl,
 			instanceLocation: 'uInstanceUniformLocation',
 			colorLocation: 'uColorUniformLocation',
@@ -187,7 +178,7 @@ describe('spective', () => {
 		it('should resize scene when empty object provided', () => {
 			scene({});
 
-			expect(resize).toHaveBeenCalledWith({
+			expect(resizeScene).toHaveBeenCalledWith({
 				gl,
 				perspectiveLocation: 'uPerspectiveUniformLocation',
 				canvas: expect.anything(),
@@ -203,100 +194,20 @@ describe('spective', () => {
 				offset: [0.1, 0.2, 0.3]
 			});
 
-			expect(matrix).toHaveBeenCalledWith(1, [-1, -2, -3], [1, -Math.PI / 3], [0, -Math.PI / 6], [2, -0], [-0.1, -0.2, -0.3]);
+			expect(calculateMatrix).toHaveBeenCalledWith({
+				scale: [1, 1, 1],
+				rotation: -1.0471975511965976,
+				tilt: -0.5235987755982988,
+				spin: 0,
+				position: [-1, -2, -3]
+			});
+
 			expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
 		});
-
-		describe('geometries', () => {
-			let geometry;
-
-			beforeEach(() => {
-				clearMocks();
-
-				geometry = scene([
-					0, 1, 2,
-					3, 2, 1
-				], [
-					-1, -1, 0, 1, -1, 0,
-					-1, 1, 0, 1, 1, 0
-				]);
-			});
-
-			it('should create geometry', () => {
-				expect(typeof geometry).toBe('function');
-
-				expect(expand).toHaveBeenCalledWith(4, [
-					0, 1, 2,
-					3, 2, 1
-				], [
-					-1, -1, 0, 1, -1, 0,
-					-1, 1, 0, 1, 1, 0
-				]);
-			});
-			
-			describe('assets', () => {
-				let asset;
-
-				beforeEach(() => {
-					clearMocks();
-
-					asset = geometry('texture.jpg', [
-						0, 0, 1, 0,
-						0, 1, 1, 1
-					]);
-
-					loadImage();
-				});
-
-				it('should create asset', () => {
-					expect(typeof asset).toBe('function');
-
-					expect(expand).toHaveBeenCalledWith(4, [
-						0, 1, 2,
-						3, 2, 1
-					], [
-						0, 0, 1, 0,
-						0, 1, 1, 1
-					]);
-				});
-
-				describe('instances', () => {
-					let instance;
 		
-					beforeEach(() => {
-						clearMocks();
-
-						instance = asset({
-							position: [1, 2, 3],
-							rotation: Math.PI / 3
-						});
-					});
-				
-					it('should create instance', () => {
-						expect(typeof instance).toBe('function');
-						expect(matrix).toHaveBeenCalledWith(1, [0, 0, 0], [1, Math.PI / 3], [0, 0], [2, 0], [1, 2, 3]);
-					});
-					
-					it('should use defaults for missing properties', () => {
-						instance = asset({});
-						expect(matrix).toHaveBeenCalledWith(1, [0, 0, 0], [1, 0], [0, 0], [2, 0], [0, 0, 0]);
-					});
-					
-					it('should update instance position', () => {
-						matrix.mockReturnValueOnce('updatedMatrixPosition');
-						instance({ position: [2, 4, 6] });
-
-						expect(matrix).toHaveBeenCalledWith(1, [0, 0, 0], [1, Math.PI / 3], [0, 0], [2, 0], [2, 4, 6]);
-					});
-					
-					it('should update instance rotation', () => {
-						matrix.mockReturnValueOnce('updatedMatrixRotation');
-						instance({ rotation: Math.PI / 6 });
-
-						expect(matrix).toHaveBeenCalledWith(1, [0, 0, 0], [1, Math.PI / 6], [0, 0], [2, 0], [1, 2, 3]);
-					});
-				});
-			});
+		it('should create geometries', () => {
+			const actual = scene([0, 1, 2], [0.1, 0.2, 0.3, 1.1, 1.2, 1.3, 2.1, 2.2, 2.3]);
+			expect(typeof actual).toBe('function');
 		});
 	});
 });

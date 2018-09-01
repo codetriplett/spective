@@ -1,4 +1,4 @@
-export function sampler (gl, location, unit, image, texture) {
+export function setSampler (gl, location, unit, image, texture) {
 	const { TEXTURE_2D, RGBA } = gl;
 	const dimensions = image instanceof Uint8Array ? [1, 1, 0] : [];
 

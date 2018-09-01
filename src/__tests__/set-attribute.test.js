@@ -1,4 +1,4 @@
-import { attribute } from '../attribute';
+import { setAttribute } from '../set-attribute';
 
 const createBuffer = jest.fn();
 const bindBuffer = jest.fn();
@@ -7,7 +7,7 @@ const bufferData = jest.fn();
 const vertexAttribPointer = jest.fn();
 let gl;
 
-describe('attribute', () => {
+describe('set-attribute', () => {
 	beforeEach(() => {
 		createBuffer.mockClear();
 		bindBuffer.mockClear();
@@ -30,7 +30,7 @@ describe('attribute', () => {
 	});
 
 	it('should set attribute using new buffer', () => {
-		attribute(gl, 'mockLocation', 'mockArray', 2, undefined);
+		setAttribute(gl, 'mockLocation', 'mockArray', 2, undefined);
 
 		expect(createBuffer).toHaveBeenCalled();
 		expect(bindBuffer).toHaveBeenCalledWith('mockArrayBuffer', 'mockBuffer');
@@ -40,7 +40,7 @@ describe('attribute', () => {
 	});
 
 	it('should set attribute using existing buffer', () => {
-		attribute(gl, 'mockLocation', 'mockArray', 3, 'existingBuffer');
+		setAttribute(gl, 'mockLocation', 'mockArray', 3, 'existingBuffer');
 
 		expect(createBuffer).not.toHaveBeenCalled();
 		expect(bindBuffer).toHaveBeenCalledWith('mockArrayBuffer', 'existingBuffer');

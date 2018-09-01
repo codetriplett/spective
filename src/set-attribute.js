@@ -1,4 +1,4 @@
-export function attribute (gl, location, array, size, buffer) {
+export function setAttribute (gl, location, array, size, buffer) {
 	const { ARRAY_BUFFER } = gl;
 
 	buffer = buffer || gl.createBuffer();

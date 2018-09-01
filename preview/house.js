@@ -1,8 +1,9 @@
 var scene = window.spective();
 
 scene({
-	tilt: Math.PI / 4,
-	offset: [0, 0, -6]
+	tilt: Math.PI / 4
+}, {
+	position: [0, 0, -6]
 });
 
 var geometry = scene([
