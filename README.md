@@ -18,7 +18,7 @@ scene({
 ```
 
 ### Update Camera with Multiple Properties
-This allows you to rotate around a fixed point. Only the first set of properties will be remembered in later updates.
+The transformation of each set of properties will be processed fully before moving on to the next. The following example will rotate the camera around a fixed point 6 units away from the center of the scene. Only the first set of properties will be remembered in later updates.
 ```js
 scene({
 	rotation: Math.PI / 4,
@@ -109,7 +109,7 @@ instance({
 ```
 
 ### Update Instance with Multiple Properties
-This allows you to transform multiple instances together as one group. Only the first set of properties will be remembered in later updates.
+The transformation of each set of properties will be processed fully before moving on to the next. The following example will set a radius of 1 unit to the right before rotating the object around the center of the scene. Only the first set of properties will be remembered in later updates.
 ```js
 instance({
 	position: [1, 0, 0]
