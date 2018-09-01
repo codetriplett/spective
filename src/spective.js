@@ -1,4 +1,3 @@
-import { updateProperties } from './update-properties';
 import { calculateMatrix } from './calculate-matrix';
 import { resizeScene } from './resize-scene';
 import { initializeRender } from './initialize-render';
@@ -32,7 +31,8 @@ const fragmentCode = `
 	}
 `;
 
-export default function spective (canvas) {
+export default function spective (...initializationParmeters) {
+	let canvas = initializationParmeters[0];
 	const createCanvas = !canvas || typeof canvas.getContext !== 'function';
 
 	if (createCanvas) {
@@ -55,6 +55,8 @@ export default function spective (canvas) {
 		
 		body.appendChild(style);
 		body.appendChild(canvas);
+	} else {
+		initializationParmeters.splice(0, 1);
 	}
 
 	const gl = canvas.getContext('webgl');
@@ -68,7 +70,6 @@ export default function spective (canvas) {
 	gl.compileShader(fragmentShader);
 	gl.attachShader(program, vertexShader);
 	gl.attachShader(program, fragmentShader);
-
 	gl.linkProgram(program);
 	gl.useProgram(program);
 	gl.enable(gl.DEPTH_TEST);
@@ -79,17 +80,13 @@ export default function spective (canvas) {
 	const sceneLocation = gl.getUniformLocation(program, 'uScene');
 	const perspectiveLocation = gl.getUniformLocation(program, 'uPerspective');
 	const colorLocation = gl.getUniformLocation(program, 'uColor');
-	
 	const vertexLocation = gl.getAttribLocation(program, 'aVertex');
 	const coordinateLocation = gl.getAttribLocation(program, 'aCoordinate');
-	
 	const geometries = [];
-	const state = { needsRender: true };
+	const state = {};
 
-	let scene = {};
-
-	const creator = (...parameters) => {
-		if (parameters.length === 0) {
+	const creator = (...creationParameters) => {
+		if (creationParameters.length === 0) {
 			state.renderLocked = !state.renderLocked;
 
 			if (!state.renderLocked) {
@@ -99,29 +96,31 @@ export default function spective (canvas) {
 			return;
 		}
 
-		const firstParamter = parameters[0];
+		const firstParamter = creationParameters[0];
 
 		if (Array.isArray(firstParamter)) {
-			return createGeometry(state, geometries, ...parameters);
-		} else if (Object.keys(firstParamter).length === 0) {	
+			return createGeometry(state, geometries, ...creationParameters);
+		} else if (creationParameters.length === 1 && Object.keys(firstParamter).length === 0) {	
 			resizeScene({ gl, perspectiveLocation, canvas, state });
 		} else {
-			const extras = updateProperties(scene, true, ...parameters);
-			const sceneMatrix = calculateMatrix(scene, ...extras);
-
-			gl.uniformMatrix4fv(sceneLocation, false, sceneMatrix);
+			const scene = calculateMatrix(true, ...creationParameters);
+			gl.uniformMatrix4fv(sceneLocation, false, scene);
 			state.needsRender = true;
 		}
 	};
 
-	updateProperties(scene, true);
-	creator(scene);
 	creator({});
 
 	if (createCanvas) {
 		window.addEventListener('resize', () => {
 			creator({});
 		});
+	}
+
+	if (initializationParmeters.length > 0) {
+		creator(...initializationParmeters);
+	} else {
+		creator({}, {});
 	}
 
 	initializeRender({

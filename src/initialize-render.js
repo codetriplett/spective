@@ -30,8 +30,8 @@ export function initializeRender ({
 						asset.coordinateBuffer = setAttribute(gl, coordinateLocation, coordinates, 2, coordinateBuffer);
 						asset.colorTexture = setSampler(gl, colorLocation, 0, color, colorTexture);
 
-						instances.forEach(({ matrix }) => {
-							gl.uniformMatrix4fv(instanceLocation, false, matrix);
+						instances.forEach(instance => {
+							gl.uniformMatrix4fv(instanceLocation, false, instance);
 							gl.drawArrays(gl.TRIANGLES, 0, length);
 						});
 					}

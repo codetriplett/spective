@@ -1,9 +1,8 @@
-import { updateProperties } from './update-properties';
 import { calculateMatrix } from './calculate-matrix';
 
-export function createInstance (state, asset, ...optionArray) {
+export function createInstance (state, asset, ...propertyArray) {
 	const { instances } = asset;
-	const instance = {};
+	const instance = [];
 
 	function updateInstance (...updateArray) {
 		if (updateArray.length === 0) {
@@ -11,16 +10,14 @@ export function createInstance (state, asset, ...optionArray) {
 			return;
 		}
 
-		const extras = updateProperties(instance, ...updateArray);
-		instance.matrix = calculateMatrix(instance, ...extras);
+		instance.splice(0, 16, ...calculateMatrix(...updateArray));
 		
 		if (asset.color) {
 			state.needsRender = true;
 		}
 	}
 
-	updateProperties(instance);
-	updateInstance(...optionArray);
+	updateInstance(...propertyArray);
 	instances.push(instance);
 
 	return updateInstance;

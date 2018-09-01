@@ -30,6 +30,7 @@ document.createElement = createElement;
 const appendChild = jest.fn();
 document.body.appendChild = appendChild;
 
+let canvas;
 let gl;
 
 function clearMocks () {
@@ -80,8 +81,9 @@ function clearMocks () {
 
 	getContext.mockReturnValue(gl);
 
-	createElement.mockClear();
 	createElement.mockReturnValue({ getContext });
+	canvas = document.createElement('canvas');
+	createElement.mockClear();
 
 	window.addEventListener = addEventListener;
 
@@ -92,13 +94,9 @@ describe('spective', () => {
 	beforeEach(clearMocks);
 
 	it('should set up context', () => {
-		const canvas = document.createElement('canvas');
-		createElement.mockClear();
-
 		spective(canvas);
 
-		expect(createElement).not.toHaveBeenCalled;
-		
+		expect(createElement).not.toHaveBeenCalled();
 		expect(getContext).toHaveBeenCalledWith('webgl');
 		expect(createProgram).toHaveBeenCalled();
 		expect(createShader).toHaveBeenCalledWith('mockVertexShader');
@@ -122,17 +120,32 @@ describe('spective', () => {
 		expect(getAttribLocation).toHaveBeenCalledWith('mockProgram', 'aCoordinate');
 	});
 
-	it('should apply default scene options', () => {
+	it('should apply scene properties if they are provided along with canvas', () => {
+		spective(canvas, { position: [1, 2, 3] });
+
+		expect(calculateMatrix).toHaveBeenCalledWith(true, { position: [1, 2, 3] });
+		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
+	});
+
+	it('should create a canvas when none is provided', () => {
 		spective();
 
-		expect(calculateMatrix).toHaveBeenCalledWith({
-			scale: [1, 1, 1],
-			rotation: 0,
-			tilt: 0,
-			spin: 0,
-			position: [0, 0, 0]
-		});
+		expect(createElement).toHaveBeenCalledWith('canvas');
+		expect(createElement).toHaveBeenCalledWith('style');
+		expect(appendChild).toHaveBeenCalledTimes(2);
+	});
 
+	it('should apply scene properties if they are provided without a canvas', () => {
+		spective({ position: [1, 2, 3] });
+
+		expect(calculateMatrix).toHaveBeenCalledWith(true, { position: [1, 2, 3] });
+		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
+	});
+
+	it('should apply default scene properties if none are provided', () => {
+		spective();
+
+		expect(calculateMatrix).toHaveBeenCalledWith(true, {}, {});
 		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
 	});
 
@@ -159,14 +172,6 @@ describe('spective', () => {
 		});
 	});
 
-	it('should create a canvas when none is provided', () => {
-		spective();
-
-		expect(createElement).toHaveBeenCalledWith('canvas');
-		expect(createElement).toHaveBeenCalledWith('style');
-		expect(appendChild).toHaveBeenCalledTimes(2);
-	});
-
 	describe('scenes', () => {
 		let scene;
 
@@ -188,18 +193,15 @@ describe('spective', () => {
 
 		it('should update scene', () => {
 			scene({
-				position: [1, 2, 3],
 				rotation: Math.PI / 3,
 				tilt: Math.PI / 6,
-				offset: [0.1, 0.2, 0.3]
+				position: [1, 2, 3]
 			});
 
-			expect(calculateMatrix).toHaveBeenCalledWith({
-				scale: [1, 1, 1],
-				rotation: -1.0471975511965976,
-				tilt: -0.5235987755982988,
-				spin: 0,
-				position: [-1, -2, -3]
+			expect(calculateMatrix).toHaveBeenCalledWith(true, {
+				rotation: 1.0471975511965976,
+				tilt: 0.5235987755982988,
+				position: [1, 2, 3]
 			});
 
 			expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');

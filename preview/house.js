@@ -1,6 +1,4 @@
-var scene = window.spective();
-
-scene({
+var scene = window.spective({
 	tilt: Math.PI / 4
 }, {
 	position: [0, 0, -6]
