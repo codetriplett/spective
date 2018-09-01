@@ -1,6 +1,6 @@
 {
 	"name": "spective",
-	"version": "0.0.9",
+	"version": "0.0.10",
 	"description": "Lightweight tool for creating 3d scenes in your browser.",
 	"main": "dist/spective.min.js",
 	"scripts": {
