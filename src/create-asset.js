@@ -1,7 +1,7 @@
 import { expandPoints } from './expand-points';
 import { createInstance } from './create-instance';
 
-export function createAsset (state, geometry, color, coordinates) {
+export function createAsset (state, geometry, color, coordinates, callback) {
 	const { assets, faces, length } = geometry;
 	const instances = [];
 	const asset = { instances };
@@ -12,15 +12,26 @@ export function createAsset (state, geometry, color, coordinates) {
 	function loader () {
 		asset.color = image;
 
+		if (typeof color === 'string' && typeof callback === 'function') {
+			callback(color);
+		}
+
 		if (instances.length > 0) {
 			state.needsRender = true;
 		}
 	}
 
 	if (typeof color === 'string') {
-		image = new window.Image();
-		image.src = color;
-		image.addEventListener('load', loader);
+		image = state.images[color];
+
+		if (!image) {
+			image = new window.Image();
+			image.src = color;
+			image.addEventListener('load', loader);
+			state.images[color] = image;
+		} else {
+			loader();
+		}
 	} else if (Array.isArray(color)) {
 		image = new Uint8Array(4).fill(255);
 		image.set(color.slice(0, 4));

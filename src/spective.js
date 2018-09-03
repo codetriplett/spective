@@ -89,8 +89,8 @@ export default function spective (...initializationParmeters) {
 	const colorLocation = gl.getUniformLocation(program, 'uColor');
 	const vertexLocation = gl.getAttribLocation(program, 'aVertex');
 	const coordinateLocation = gl.getAttribLocation(program, 'aCoordinate');
+	const state = { images: {} };
 	const geometries = [];
-	const state = {};
 
 	const creator = (...creationParameters) => {
 		if (creationParameters.length === 0) {

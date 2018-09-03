@@ -19,7 +19,9 @@ var geometry = scene([
 
 var asset = geometry('grid.png', [
 	0, 0, 4.0625, 0, 0, 4.0625, 4.0625, 4.0625
-]);
+], function (name) {
+	console.log(name + ' loaded');
+});
 
 asset({
 	position: [0, 0.5, 0],

@@ -14,7 +14,7 @@ export function createGeometry (state, geometries, faces, vertices) {
 
 	geometries.push(geometry);
 
-	return (color, coordinates) => {
+	return (color, coordinates, callback) => {
 		if (color === undefined && coordinates === undefined) {
 			geometries.splice(geometries.indexOf(geometry), 1);
 			state.needsRender = true;
@@ -22,6 +22,6 @@ export function createGeometry (state, geometries, faces, vertices) {
 			return;
 		}
 
-		return createAsset(state, geometry, color, coordinates);
+		return createAsset(state, geometry, color, coordinates, callback);
 	};
 }

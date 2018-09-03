@@ -25,7 +25,7 @@ describe('create-asset', () => {
 		expandPoints.mockClear();
 		expandPoints.mockReturnValue('mockExpandPoints');
 
-		state = {};
+		state = { images: {} };
 		geometry = { assets: [], faces: [0, 1, 2], length: 3 };
 		color = 'mockImage';
 		coordinates = 'mockCoordinates';
@@ -60,6 +60,30 @@ describe('create-asset', () => {
 
 		expect(asset.color).toEqual({ src: 'mockImage' });
 		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], 'mockCoordinates');
+		
+		expect(state.images).toEqual({
+			mockImage: { src: 'mockImage' }
+		});
+	});
+
+	it('should use existing image', () => {
+		state.images = {
+			mockImage: { src: 'mockImage' }
+		};
+
+		createAsset(state, geometry, color, coordinates);
+		const asset = geometry.assets[0];
+
+		expect(asset.color).toEqual({ src: 'mockImage' });
+		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], 'mockCoordinates');
+	});
+	
+	it('should trigger callback once loaded', () => {
+		const callback = jest.fn();
+		createAsset(state, geometry, color, coordinates, callback);
+		loadImage();
+
+		expect(callback).toHaveBeenCalledWith('mockImage');
 	});
 
 	it('should delete asset', () => {
