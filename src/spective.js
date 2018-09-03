@@ -33,6 +33,7 @@ const fragmentCode = `
 
 export default function spective (...initializationParmeters) {
 	let canvas = initializationParmeters[0];
+	let beforeRender = initializationParmeters[initializationParmeters.length - 1];
 	const createCanvas = !canvas || typeof canvas.getContext !== 'function';
 
 	if (createCanvas) {
@@ -56,7 +57,13 @@ export default function spective (...initializationParmeters) {
 		body.appendChild(style);
 		body.appendChild(canvas);
 	} else {
-		initializationParmeters.splice(0, 1);
+		initializationParmeters.shift();
+	}
+
+	if (typeof beforeRender === 'function') {
+		initializationParmeters.pop();
+	} else {
+		beforeRender = () => false;
 	}
 
 	const gl = canvas.getContext('webgl');
@@ -91,6 +98,8 @@ export default function spective (...initializationParmeters) {
 
 			if (!state.renderLocked) {
 				creator({});
+			} else {
+				state.previousRender = undefined;
 			}
 
 			return;
@@ -104,8 +113,9 @@ export default function spective (...initializationParmeters) {
 			resizeScene({ gl, perspectiveLocation, canvas, state });
 		} else {
 			const scene = calculateMatrix(true, ...creationParameters);
+
 			gl.uniformMatrix4fv(sceneLocation, false, scene);
-			state.needsRender = true;
+			state.needsRender = state.initialized;
 		}
 	};
 
@@ -129,9 +139,14 @@ export default function spective (...initializationParmeters) {
 		colorLocation,
 		vertexLocation,
 		coordinateLocation,
+		beforeRender,
 		geometries,
 		state
 	});
+
+	state.initialized = true;
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	gl.clear(gl.DEPTH_BUFFER_BIT);
 	
 	return creator;
 }

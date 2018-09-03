@@ -5,6 +5,7 @@ import { initializeRender } from '../initialize-render';
 const clear = jest.fn();
 const uniformMatrix4fv = jest.fn();
 const drawArrays = jest.fn();
+const beforeRender = jest.fn();
 const geometries = [];
 let gl;
 let state;
@@ -14,6 +15,7 @@ jest.mock('../set-attribute', () => ({ setAttribute: jest.fn() }));
 jest.mock('../set-sampler', () => ({ setSampler: jest.fn() }));
 
 window.requestAnimationFrame = jest.fn();
+Date.now = jest.fn();
 
 function clearMocks () {
 	clear.mockClear();
@@ -24,6 +26,7 @@ function clearMocks () {
 	setSampler.mockClear();
 
 	window.requestAnimationFrame.mockClear();
+	Date.now.mockClear();
 
 	gl = {
 		COLOR_BUFFER_BIT: 'mockColorBufferBit',
@@ -42,6 +45,7 @@ function clearMocks () {
 		colorLocation: 'mockColorLocation',
 		vertexLocation: 'mockVertexLocation',
 		coordinateLocation: 'mockCoordinateLocation',
+		beforeRender,
 		geometries,
 		state
 	};
@@ -50,7 +54,7 @@ function clearMocks () {
 describe('render', () => {
 	beforeEach(() => {
 		clearMocks();
-		geometries.splice(0, 1);
+		geometries.shift();
 	});
 
 	it('should render when needed', () => {
@@ -81,6 +85,26 @@ describe('render', () => {
 	it('should queue next render', () => {
 		initializeRender(scene);
 		expect(window.requestAnimationFrame).toHaveBeenCalledWith(expect.any(Function));
+	});
+
+	it('should call before render function the first time with zero elapsed time', () => {
+		initializeRender(scene);
+		expect(beforeRender).toHaveBeenCalledWith(0);
+	});
+
+	it('should call before render function after the first time with non zero elapsed time', () => {
+		state.previousRender = 1;
+		Date.now.mockReturnValueOnce(3);
+		initializeRender(scene);
+
+		expect(beforeRender).toHaveBeenCalledWith(2);
+	});
+
+	it('should trigger another render if before render function returned true', () => {
+		beforeRender.mockReturnValueOnce(true);
+		initializeRender(scene);
+
+		expect(state.needsRender).toBe(true);
 	});
 
 	describe('geometry', () => {

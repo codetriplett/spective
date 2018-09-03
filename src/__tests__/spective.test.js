@@ -20,6 +20,7 @@ const enable = jest.fn();
 const depthFunc = jest.fn();
 const clearColor = jest.fn();
 const uniformMatrix4fv = jest.fn();
+const clear = jest.fn();
 
 const getContext = jest.fn();
 const addEventListener = jest.fn();
@@ -50,6 +51,7 @@ function clearMocks () {
 	depthFunc.mockClear();
 	clearColor.mockClear();
 	uniformMatrix4fv.mockClear();
+	clear.mockClear();
 	
 	createProgram.mockReturnValue('mockProgram');
 	createShader.mockImplementation(type => `${type}Created`);
@@ -76,7 +78,8 @@ function clearMocks () {
 		enable,
 		depthFunc,
 		clearColor,
-		uniformMatrix4fv
+		uniformMatrix4fv,
+		clear
 	};
 
 	getContext.mockReturnValue(gl);
@@ -167,6 +170,7 @@ describe('spective', () => {
 			colorLocation: 'uColorUniformLocation',
 			vertexLocation: 'aVertexAttributeLocation',
 			coordinateLocation: 'aCoordinateAttributeLocation',
+			beforeRender: expect.anything(),
 			geometries: expect.anything(),
 			state: expect.anything()
 		});

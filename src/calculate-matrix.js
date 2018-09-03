@@ -10,7 +10,7 @@ export function calculateMatrix (...propertiesArray) {
 	let inverted;
 
 	if (typeof propertiesArray[0] === 'boolean') {
-		inverted = propertiesArray.splice(0, 1);
+		inverted = propertiesArray.shift();
 	}
 
 	propertiesArray.forEach(properties => {
@@ -23,75 +23,61 @@ export function calculateMatrix (...propertiesArray) {
 			let isNumberArray = Array.isArray(value) && value.length === 3
 					&& value.every(item => typeof item === 'number');
 			
-			switch (i) {
-				case 0:
-					if (isNumber) {
-						value = Array(3).fill(value);
-						isNumberArray = true;
-					}
-
-					if (isNumberArray) {
-						if (inverted) {
-							if (value.some(item => item === 0)) {
-								break;
-							}
-
-							value = value.map(item => 1 / item);
-						}
-
-						matrix[0] = value[0];
-						matrix[5] = value[1];
-						matrix[10] = value[2];
-						
-						return matrix;
-					}
-
-					break;
-				case 1:
-				case 2:
-				case 3: {
-					if (isNumber) {
-						if (inverted) {
-							value = -value;
-						}
-
-						const cos = Math.cos(value);
-						let sin = Math.sin(value);
-						let indexStart = 0;
-						let indexStep = 1;
-
-						if (i === 1) {
-							sin = -sin;
-							indexStep = 2;
-						} else if (i === 2) {
-							indexStart = 5;
-						}
-
-						matrix[indexStart] = cos;
-						matrix[indexStart + indexStep] = -sin;
-						indexStart += indexStep * 4;
-						matrix[indexStart] = sin;
-						matrix[indexStart + indexStep] = cos;
-						
-						return matrix;
-					}
-
-					break;
+			if (i === 0) {
+				if (isNumber) {
+					value = Array(3).fill(value);
+					isNumberArray = true;
 				}
-				case 4:
-					if (isNumberArray) {
-						if (inverted) {
-							value = value.map(item => -item);
+
+				if (isNumberArray) {
+					if (inverted) {
+						if (value.some(item => item === 0)) {
+							return;
 						}
 
-						matrix[3] = value[0];
-						matrix[7] = value[1];
-						matrix[11] = value[2];
-						
-						return matrix;
+						value = value.map(item => 1 / item);
 					}
 
-					break;
+					matrix[0] = value[0];
+					matrix[5] = value[1];
+					matrix[10] = value[2];
+					
+					return matrix;
+				}
+			} else if (i < 4 && isNumber) {
+				if (inverted) {
+					value = -value;
+				}
+
+				const cos = Math.cos(value);
+				let sin = Math.sin(value);
+				let indexStart = 0;
+				let indexStep = 1;
+
+				if (i === 1) {
+					sin = -sin;
+					indexStep = 2;
+				} else if (i === 2) {
+					indexStart = 5;
+				}
+
+				matrix[indexStart] = cos;
+				matrix[indexStart + indexStep] = -sin;
+				indexStart += indexStep * 4;
+				matrix[indexStart] = sin;
+				matrix[indexStart + indexStep] = cos;
+				
+				return matrix;
+			} else if (i >= 4 && isNumberArray) {
+				if (inverted) {
+					value = value.map(item => -item);
+				}
+
+				matrix[3] = value[0];
+				matrix[7] = value[1];
+				matrix[11] = value[2];
+				
+				return matrix;
 			}
 		});
 

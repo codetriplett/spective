@@ -7,12 +7,18 @@ export function initializeRender ({
 	colorLocation,
 	vertexLocation,
 	coordinateLocation,
+	beforeRender,
 	geometries,
 	state
 }) {
 	function render () {
 		if (state.needsRender && !state.renderLocked) {
-			state.needsRender = false;
+			const now = Date.now();
+			const elapsedTime = (now - state.previousRender) || 0;
+			const incompleteRender = beforeRender(elapsedTime);
+
+			state.needsRender = incompleteRender;
+			state.previousRender = incompleteRender ? now : undefined;
 
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.clear(gl.DEPTH_BUFFER_BIT);
