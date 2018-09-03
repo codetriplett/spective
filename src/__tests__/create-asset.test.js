@@ -4,6 +4,7 @@ import { createAsset } from '../create-asset';
 jest.mock('../expand-points', () => ({ expandPoints: jest.fn() }));
 
 let loadImage;
+let failImage;
 
 window.Image = class Image {
 	constructor () {
@@ -11,7 +12,11 @@ window.Image = class Image {
 	}
 
 	addEventListener (type, callback) {
-		loadImage = callback;
+		if (type === 'load') {
+			loadImage = callback;
+		} else if (type === 'error') {
+			failImage = callback;
+		}
 	}
 };
 
@@ -83,7 +88,15 @@ describe('create-asset', () => {
 		createAsset(state, geometry, color, coordinates, callback);
 		loadImage();
 
-		expect(callback).toHaveBeenCalledWith('mockImage');
+		expect(callback).toHaveBeenCalledWith('mockImage', true);
+	});
+	
+	it('should trigger callback if it fails to load', () => {
+		const callback = jest.fn();
+		createAsset(state, geometry, color, coordinates, callback);
+		failImage();
+
+		expect(callback).toHaveBeenCalledWith('mockImage', false);
 	});
 
 	it('should delete asset', () => {

@@ -5,15 +5,23 @@ export function createAsset (state, geometry, color, coordinates, callback) {
 	const { assets, faces, length } = geometry;
 	const instances = [];
 	const asset = { instances };
+	const reportImage = typeof color === 'string' && typeof callback === 'function';
 	let image;
 
 	assets.push(asset);
 
-	function loader () {
+	function loader (image) {
+		const siblingLoaders = state.images[color];
 		asset.color = image;
 
-		if (typeof color === 'string' && typeof callback === 'function') {
-			callback(color);
+		if (Array.isArray(siblingLoaders)) {
+			asset.color = image || new Uint8Array(4).fill(255);
+			state.images[color] = image;
+			siblingLoaders.forEach(siblingLoader => siblingLoader(image));
+		}
+
+		if (reportImage) {
+			callback(color, !!image);
 		}
 
 		if (instances.length > 0) {
@@ -27,16 +35,19 @@ export function createAsset (state, geometry, color, coordinates, callback) {
 		if (!image) {
 			image = new window.Image();
 			image.src = color;
-			image.addEventListener('load', loader);
-			state.images[color] = image;
+			image.addEventListener('load', () => loader(image));
+			image.addEventListener('error', () => loader());
+			state.images[color] = [];
+		} else if (Array.isArray(image)) {
+			state.images[color].push(loader);
 		} else {
-			loader();
+			loader(image);
 		}
 	} else if (Array.isArray(color)) {
 		image = new Uint8Array(4).fill(255);
 		image.set(color.slice(0, 4));
 		coordinates = Array(length * 2).fill(0.5);
-		loader();
+		loader(image);
 	}
 
 	if (!image) {

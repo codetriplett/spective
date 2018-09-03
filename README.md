@@ -20,7 +20,8 @@ Properties that were used to create the scene or in previous updates will not be
 ```js
 scene({
 	rotation: Math.PI / 2,
-	tilt: Math.PI / 4
+	tilt: Math.PI / 4,
+	position: [0, 0, -6]
 });
 ```
 
@@ -31,7 +32,7 @@ scene({
 	position: [0, 1, 0]
 }, {
 	rotation: Math.PI / 4,
-	tilt: Math.PI / 4
+	tilt: Math.PI / 4,
 	position: [0, 0, -6]
 });
 ```
@@ -83,14 +84,17 @@ Path to an image to be loaded.
 
 ### Create Asset with Color
 ```js
-var asset = geometry([63, 127, 255);
+var asset = geometry([63, 127, 255]);
 ```
 
 ### Create Asset with Image
+A function can be passed as a last parameter. That function will be called once the image has finished loading or if it fails. The first parameter will be the name of the image and the second will tell whether it was successful. This is useful for checking if all images have been loaded before displaying the scene.
 ```js
 var asset = geometry('image.jpg', [
 	0, 0, 1, 0, 0, 1, 1, 1
-]);
+], function (name, loaded) {
+	// check image
+});
 ```
 
 ### Delete Asset
