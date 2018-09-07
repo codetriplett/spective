@@ -1,5 +1,5 @@
 # Spective
-This library provides a simple way to create 3d scenes in your browser. Each function call will either update an entity or create a child. spective.min.js can be found in the dist folder and is around 6.5kB.
+This library provides a simple way to create 3d scenes in your browser. Each function call will either update an entity or create a child. spective.min.js can be found in the dist folder and is less than 7kB.
 
 ## Scenes
 Call the main function to have it create a scene that takes up the full size of the window and automatically resizes. You can set up multiple scenes on one page by passing existing canvas elements as the first parameter each time you call the main function. Any properties that are passed when creating the scene will be used to place the camera in that scene.
@@ -74,10 +74,10 @@ geometry();
 Assets provide painted versions of a geometry. The first value defines either the color or an image and the second defines the coordinates for the image.
 
 ### Color
-Array of RGB integers from 0 to 255.
+Array of RGB integers from 0 to 255. Multple colors can be defined and used in the same asset.
 
 ### Coordinates
-Every two numbers in the array define the horizontal and vertical placement of each vertex in the image. Values must be between 0 and 1. 0 places it at the left or bottom edge of the image. 1 places it at the right or top edge.
+When using an image, every two numbers in the array will define the horizontal and vertical placement in the image for each vertex. 0 places it at the left or bottom edge of the image. 1 places it at the right or top edge. The image will repeat if numbers less than 0 or greater than 1 are used. When using a set of colors, each number will be the index of the color to use for each vertex.
 
 ### Image
 Path to an image to be loaded.
@@ -85,6 +85,18 @@ Path to an image to be loaded.
 ### Create Asset with Color
 ```js
 var asset = geometry([63, 127, 255]);
+```
+
+### Create Asset with Multiple Colors
+You must include the alpha channel when defining multiple colors.
+```js
+var asset = geometry([
+	255, 0, 0, 255,
+	0, 255, 0, 255,
+	0, 0, 255, 255
+], [
+	0, 1, 2
+]);
 ```
 
 ### Create Asset with Image

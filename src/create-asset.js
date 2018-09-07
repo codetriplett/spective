@@ -44,9 +44,22 @@ export function createAsset (state, geometry, color, coordinates, callback) {
 			loader(image);
 		}
 	} else if (Array.isArray(color)) {
-		image = new Uint8Array(4).fill(255);
-		image.set(color.slice(0, 4));
-		coordinates = Array(length * 2).fill(0.5);
+		const colorLength = Math.ceil(color.length / 4);
+
+		image = new Uint8Array(colorLength * 4).fill(255);
+		image.set(color);
+
+		if (Array.isArray(coordinates)) {
+			const coordinateStep = 1 / colorLength;
+			const coordinateStart = coordinateStep / 2;
+
+			coordinates = coordinates.reduce((array, index) => {
+				return array.concat(coordinateStart + coordinateStep * index, 0.5);
+			}, []);
+		} else {
+			coordinates = Array(length * 2).fill(0.5);
+		}
+
 		loader(image);
 	}
 

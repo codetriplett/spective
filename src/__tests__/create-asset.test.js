@@ -33,7 +33,7 @@ describe('create-asset', () => {
 		state = { images: {} };
 		geometry = { assets: [], faces: [0, 1, 2], length: 3 };
 		color = 'mockImage';
-		coordinates = 'mockCoordinates';
+		coordinates = ['mockCoordinates'];
 	});
 
 	it('should create asset', () => {
@@ -41,7 +41,7 @@ describe('create-asset', () => {
 		const asset = geometry.assets[0];
 
 		expect(typeof actual).toBe('function');
-		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], 'mockCoordinates');
+		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], ['mockCoordinates']);
 
 		expect(asset).toEqual({
 			coordinates: 'mockExpandPoints',
@@ -51,11 +51,20 @@ describe('create-asset', () => {
 
 	it('should set color', () => {
 		color = [1, 2, 3];
-		createAsset(state, geometry, color, coordinates);
+		createAsset(state, geometry, color);
 		const asset = geometry.assets[0];
 
 		expect(asset.color).toEqual(new Uint8Array([1, 2, 3, 255]));
 		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]);
+	});
+
+	it('should set multiple colors', () => {
+		color = [1, 2, 3, 255, 10, 20, 30, 255];
+		createAsset(state, geometry, color, [0, 1, 0]);
+		const asset = geometry.assets[0];
+
+		expect(asset.color).toEqual(new Uint8Array([1, 2, 3, 255, 10, 20, 30, 255]));
+		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], [0.25, 0.5, 0.75, 0.5, 0.25, 0.5]);
 	});
 
 	it('should set image', () => {
@@ -64,7 +73,7 @@ describe('create-asset', () => {
 		const asset = geometry.assets[0];
 
 		expect(asset.color).toEqual({ src: 'mockImage' });
-		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], 'mockCoordinates');
+		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], ['mockCoordinates']);
 		
 		expect(state.images).toEqual({
 			mockImage: { src: 'mockImage' }
@@ -80,7 +89,7 @@ describe('create-asset', () => {
 		const asset = geometry.assets[0];
 
 		expect(asset.color).toEqual({ src: 'mockImage' });
-		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], 'mockCoordinates');
+		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], ['mockCoordinates']);
 	});
 	
 	it('should trigger callback once loaded', () => {

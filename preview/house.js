@@ -11,19 +11,44 @@ var scene = window.spective(camera, function (elapsedTime) {
 	return true;
 });
 
-var geometry = scene([
+var room = {
+	position: [0, 0.5, 0],
+	rotation: Math.PI / 4
+};
+
+var floor = scene([
 	0, 1, 2, 3, 2, 1
 ], [
 	-1, 0, -1, 1, 0, -1, -1, 0, 1, 1, 0, 1
 ]);
 
-var asset = geometry('grid.png', [
+var walls = scene([
+	0, 1, 2, 3, 2, 1,
+	4, 5, 6, 7, 6, 5,
+	8, 9, 10, 11, 10, 9,
+	12, 13, 14, 15, 14, 13
+], [
+	-1, 0, -1, -1, 0, 1, -1, 1, -1, -1, 1, 1,
+	-1, 0, 1, 1, 0, 1, -1, 1, 1, 1, 1, 1,
+	1, 0, 1, 1, 0, -1, 1, 1, 1, 1, 1, -1,
+	1, 0, -1, -1, 0, -1, 1, 1, -1, -1, 1, -1
+]);
+
+var gridFloor = floor('grid.png', [
 	0, 0, 4.0625, 0, 0, 4.0625, 4.0625, 4.0625
 ], function (name, loaded) {
 	console.log(name + (!loaded ? ' not' : '') + ' loaded');
 });
 
-asset({
-	position: [0, 0.5, 0],
-	rotation: Math.PI / 4
-});
+var whiteWalls = walls([
+	255, 255, 255, 255,
+	191, 191, 191, 255
+], [
+	0, 0, 0, 0,
+	1, 1, 1, 1,
+	0, 0, 0, 0,
+	1, 1, 1, 1
+]);
+
+gridFloor(room);
+whiteWalls({ scale: [1, 0.25, 1] }, room);
