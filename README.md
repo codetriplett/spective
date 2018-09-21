@@ -1,5 +1,5 @@
 # Spective
-This library provides a simple way to create 3d scenes in your browser. Each function call will either update an entity or create a child. spective.min.js can be found in the dist folder and is less than 7kB.
+This library provides a simple way to create 3d scenes in your browser. Each function call will either update an entity or create a child. spective.min.js can be found in the dist folder and is less than 8kB.
 
 ## Scenes
 Call the main function to have it create a scene that takes up the full size of the window and automatically resizes. You can set up multiple scenes on one page by passing existing canvas elements as the first parameter each time you call the main function. Any properties that are passed when creating the scene will be used to place the camera in that scene.
@@ -166,3 +166,27 @@ The angle in radians along the z axis.
 
 ### Position
 The placement along the x, y and z axis.
+
+## Lights
+You can set the intensity and color of light applied to the instances in the scene. If you don't set any of your own light properties for the scene or any of its instances, all instances will show up with full white light.
+
+### Intensity
+You can pass a number to set the light intensity.
+```js
+scene(0.5); // set ambient light intensity for all instances to 0.5
+instance(0.75); // set glow intensity of a specific instance to 0.75
+```
+
+### Color
+You can pass an array of RGB integers from 0 to 255 to set the light color.
+```js
+scene([31, 191, 127]); // set ambient light color for all instances to [31, 191, 127]
+instance([191, 127, 31]); // set glow color of a specific instance to [191, 127, 31]
+```
+
+### Order of Inputs
+You can pass both light and non-light properties in the following order. If intensity, color or non-light properties are excluded, it will use the previously set values.
+```js
+scene(2, [31, 191, 127], { position: [1, 2, 3] });
+instance(2, [31, 191, 127], { position: [1, 2, 3] });
+```

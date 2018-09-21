@@ -1,7 +1,7 @@
-import { calculateMatrix } from '../calculate-matrix';
+import { updateProperties } from '../update-properties';
 import { createInstance } from '../create-instance';
 
-jest.mock('../calculate-matrix', () => ({ calculateMatrix: jest.fn() }));
+jest.mock('../update-properties', () => ({ updateProperties: jest.fn() }));
 
 describe('create-instance', () => {
 	let state;
@@ -9,8 +9,7 @@ describe('create-instance', () => {
 	let options;
 
 	beforeEach(() => {
-		calculateMatrix.mockClear();
-		calculateMatrix.mockReturnValue(['mockCalculateMatrix']);
+		updateProperties.mockClear();
 
 		state = {};
 		asset = { instances: [], color: 'mockColor' };
@@ -22,11 +21,11 @@ describe('create-instance', () => {
 		const instance = asset.instances[0];
 
 		expect(typeof actual).toBe('function');
-		expect(calculateMatrix).toHaveBeenCalledWith({ key: 'initial' });
-		expect(instance).toEqual(['mockCalculateMatrix']);
+		expect(updateProperties).toHaveBeenCalledWith(state, instance, { key: 'initial' });
+		expect(state.useLight).toBeFalsy();
 	});
 
-	it('should update instance', () => {
+	it('should update instance properties', () => {
 		const updates = { key: 'updates' };
 		const actual = createInstance(state, asset, options);
 		const instance = asset.instances[0];
@@ -34,7 +33,8 @@ describe('create-instance', () => {
 		actual(updates);
 
 		expect(typeof actual).toBe('function');
-		expect(instance).toEqual(['mockCalculateMatrix']);
+		expect(updateProperties).toHaveBeenCalledWith(state, instance, { key: 'initial' });
+		expect(state.useLight).toBeFalsy();
 	});
 
 	it('should update instance with multiple property objects', () => {
@@ -42,12 +42,12 @@ describe('create-instance', () => {
 		const actual = createInstance(state, asset, options);
 		const instance = asset.instances[0];
 
-		calculateMatrix.mockClear();
+		updateProperties.mockClear();
 		actual(updates, { position: [3, 6, 9] });
 
 		expect(typeof actual).toBe('function');
-		expect(calculateMatrix).toHaveBeenCalledWith({ key: 'updates' }, { position: [3, 6, 9] });
-		expect(instance).toEqual(['mockCalculateMatrix']);
+		expect(updateProperties).toHaveBeenCalledWith(state, instance, { key: 'updates' }, { position: [3, 6, 9] });
+		expect(state.useLight).toBeFalsy();
 	});
 
 	it('should render if asset has been loaded', () => {

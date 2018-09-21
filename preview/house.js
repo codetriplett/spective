@@ -4,7 +4,7 @@ var camera = {
 	position: [0, 0, -6]
 };
 
-var scene = window.spective(camera, function (elapsedTime) {
+var scene = window.spective(0.75, [255, 255, 255], camera, function (elapsedTime) {
 	camera.rotation += elapsedTime / 1300;
 	scene(camera);
 
@@ -50,5 +50,5 @@ var whiteWalls = walls([
 	1, 1, 1, 1
 ]);
 
-gridFloor(room);
-whiteWalls({ scale: [1, 0.25, 1] }, room);
+gridFloor(-0.25, [0, 0, 255], room);
+whiteWalls(0.25, [255, 0, 0], { scale: [1, 0.25, 1] }, room);

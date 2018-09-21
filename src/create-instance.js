@@ -1,20 +1,20 @@
-import { calculateMatrix } from './calculate-matrix';
+import { updateProperties } from './update-properties';
 
 export function createInstance (state, asset, ...propertyArray) {
 	const { instances } = asset;
-	const instance = [];
+	const instance = { matrix: [] };
 
 	function updateInstance (...updateArray) {
+		if (asset.color) {
+			state.needsRender = true;
+		}
+
 		if (updateArray.length === 0) {
 			instances.splice(instances.indexOf(instance), 1);
 			return;
 		}
 
-		instance.splice(0, 16, ...calculateMatrix(...updateArray));
-		
-		if (asset.color) {
-			state.needsRender = true;
-		}
+		updateProperties(state, instance, ...updateArray);
 	}
 
 	updateInstance(...propertyArray);

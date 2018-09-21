@@ -1,4 +1,4 @@
-import { calculateMatrix } from './calculate-matrix';
+import { updateProperties } from './update-properties';
 import { resizeScene } from './resize-scene';
 import { initializeRender } from './initialize-render';
 import { createGeometry } from './create-geometry';
@@ -23,11 +23,13 @@ const fragmentCode = `
 	precision mediump float;
 
 	uniform sampler2D uColor;
+	uniform vec3 uAmbient;
+	uniform vec3 uGlow;
 
 	varying vec2 vCoordinate;
 
 	void main() {
-		gl_FragColor = texture2D(uColor, vCoordinate);
+		gl_FragColor = texture2D(uColor, vCoordinate) * vec4(uAmbient + uGlow, 1);
 	}
 `;
 
@@ -87,10 +89,13 @@ export default function spective (...initializationParmeters) {
 	const sceneLocation = gl.getUniformLocation(program, 'uScene');
 	const perspectiveLocation = gl.getUniformLocation(program, 'uPerspective');
 	const colorLocation = gl.getUniformLocation(program, 'uColor');
+	const ambientLocation = gl.getUniformLocation(program, 'uAmbient');
+	const glowLocation = gl.getUniformLocation(program, 'uGlow');
 	const vertexLocation = gl.getAttribLocation(program, 'aVertex');
 	const coordinateLocation = gl.getAttribLocation(program, 'aCoordinate');
 	const state = { images: {} };
 	const geometries = [];
+	const scene = {};
 
 	const creator = (...creationParameters) => {
 		if (creationParameters.length === 0) {
@@ -112,9 +117,11 @@ export default function spective (...initializationParmeters) {
 		} else if (creationParameters.length === 1 && Object.keys(firstParamter).length === 0) {	
 			resizeScene({ gl, perspectiveLocation, canvas, state });
 		} else {
-			const scene = calculateMatrix(true, ...creationParameters);
+			updateProperties(state, scene, true, ...creationParameters);
 
-			gl.uniformMatrix4fv(sceneLocation, false, scene);
+			gl.uniformMatrix4fv(sceneLocation, false, scene.matrix);
+			gl.uniform3fv(ambientLocation, scene.light || [0, 0, 0]);
+
 			state.needsRender = state.initialized;
 		}
 	};
@@ -137,6 +144,7 @@ export default function spective (...initializationParmeters) {
 		gl,
 		instanceLocation,
 		colorLocation,
+		glowLocation,
 		vertexLocation,
 		coordinateLocation,
 		beforeRender,

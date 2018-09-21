@@ -3,13 +3,15 @@ import { setSampler } from '../set-sampler';
 import { initializeRender } from '../initialize-render';
 
 const clear = jest.fn();
+const uniform3fv = jest.fn();
 const uniformMatrix4fv = jest.fn();
 const drawArrays = jest.fn();
 const beforeRender = jest.fn();
 const geometries = [];
+const scene = {};
 let gl;
 let state;
-let scene;
+let initializationProperties;
 
 jest.mock('../set-attribute', () => ({ setAttribute: jest.fn() }));
 jest.mock('../set-sampler', () => ({ setSampler: jest.fn() }));
@@ -19,6 +21,7 @@ Date.now = jest.fn();
 
 function clearMocks () {
 	clear.mockClear();
+	uniform3fv.mockClear();
 	uniformMatrix4fv.mockClear();
 	drawArrays.mockClear();
 
@@ -33,20 +36,23 @@ function clearMocks () {
 		DEPTH_BUFFER_BIT: 'mockDepthBufferBit',
 		TRIANGLES: 'mockTriangles',
 		clear,
+		uniform3fv,
 		uniformMatrix4fv,
 		drawArrays
 	};
 
 	state = { needsRender: true };
 
-	scene = {
+	initializationProperties = {
 		gl,
 		instanceLocation: 'mockInstanceLocation',
 		colorLocation: 'mockColorLocation',
+		glowLocation: 'mockGlowLocation',
 		vertexLocation: 'mockVertexLocation',
 		coordinateLocation: 'mockCoordinateLocation',
 		beforeRender,
 		geometries,
+		scene,
 		state
 	};
 }
@@ -58,7 +64,7 @@ describe('render', () => {
 	});
 
 	it('should render when needed', () => {
-		initializeRender(scene);
+		initializeRender(initializationProperties);
 
 		expect(clear.mock.calls).toEqual([
 			['mockColorBufferBit'],
@@ -70,39 +76,39 @@ describe('render', () => {
 
 	it('should not render when not needed', () => {
 		state.needsRender = false;
-		initializeRender(scene);
+		initializeRender(initializationProperties);
 		
 		expect(clear).not.toHaveBeenCalled();
 	});
 
 	it('should not render when locked', () => {
 		state.renderLocked = true;
-		initializeRender(scene);
+		initializeRender(initializationProperties);
 		
 		expect(clear).not.toHaveBeenCalled();
 	});
 	
 	it('should queue next render', () => {
-		initializeRender(scene);
+		initializeRender(initializationProperties);
 		expect(window.requestAnimationFrame).toHaveBeenCalledWith(expect.any(Function));
 	});
 
 	it('should call before render function the first time with zero elapsed time', () => {
-		initializeRender(scene);
+		initializeRender(initializationProperties);
 		expect(beforeRender).toHaveBeenCalledWith(0);
 	});
 
 	it('should call before render function after the first time with non zero elapsed time', () => {
 		state.previousRender = 1;
 		Date.now.mockReturnValueOnce(3);
-		initializeRender(scene);
+		initializeRender(initializationProperties);
 
 		expect(beforeRender).toHaveBeenCalledWith(2);
 	});
 
 	it('should trigger another render if before render function returned true', () => {
 		beforeRender.mockReturnValueOnce(true);
-		initializeRender(scene);
+		initializeRender(initializationProperties);
 
 		expect(state.needsRender).toBe(true);
 	});
@@ -118,13 +124,13 @@ describe('render', () => {
 		});
 
 		it('should set vertices', () => {
-			initializeRender(scene);
+			initializeRender(initializationProperties);
 			expect(setAttribute).toHaveBeenCalledWith(gl, 'mockVertexLocation', 'mockVertices', 3, undefined);
 		});
 		
 		it('should use existing vertex buffer', () => {
 			geometries[0].vertexBuffer = 'mockVertexBuffer';
-			initializeRender(scene);
+			initializeRender(initializationProperties);
 
 			expect(setAttribute).toHaveBeenCalledWith(gl, 'mockVertexLocation', 'mockVertices', 3, 'mockVertexBuffer');
 		});
@@ -141,7 +147,7 @@ describe('render', () => {
 			});
 	
 			it('should set coordinates and color', () => {
-				initializeRender(scene);
+				initializeRender(initializationProperties);
 
 				expect(setAttribute).toHaveBeenCalledWith(gl, 'mockCoordinateLocation', 'mockCoordinates', 2, undefined);
 				expect(setSampler).toHaveBeenCalledWith(gl, 'mockColorLocation', 0, 'mockColor', undefined);
@@ -150,7 +156,7 @@ describe('render', () => {
 			it('should use existing coordinate buffer and color texture', () => {
 				geometries[0].assets[0].coordinateBuffer = 'mockCoordinateBuffer';
 				geometries[0].assets[0].colorTexture = 'mockColorTexture';
-				initializeRender(scene);
+				initializeRender(initializationProperties);
 	
 				expect(setAttribute).toHaveBeenCalledWith(gl, 'mockCoordinateLocation', 'mockCoordinates', 2, 'mockCoordinateBuffer');
 				expect(setSampler).toHaveBeenCalledWith(gl, 'mockColorLocation', 0, 'mockColor', 'mockColorTexture');
@@ -159,11 +165,15 @@ describe('render', () => {
 			describe('instance', () => {
 				beforeEach(() => {
 					clearMocks();
-					geometries[0].assets[0].instances.splice(0, 1, 'mockInstance');
+
+					geometries[0].assets[0].instances.splice(0, 1, {
+						intensity: 'mockIntensity',
+						matrix: 'mockInstance'
+					});
 				});
 		
 				it('should set instance matrix and draw arrays', () => {
-					initializeRender(scene);
+					initializeRender(initializationProperties);
 
 					expect(uniformMatrix4fv).toHaveBeenCalledWith('mockInstanceLocation', false, 'mockInstance');
 					expect(drawArrays).toHaveBeenCalledWith('mockTriangles', 0, 4);

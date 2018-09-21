@@ -1,9 +1,9 @@
-import { calculateMatrix } from '../calculate-matrix';
+import { updateProperties } from '../update-properties';
 import { resizeScene } from '../resize-scene';
 import { initializeRender } from '../initialize-render';
 import spective from '../spective';
 
-jest.mock('../calculate-matrix', () => ({ calculateMatrix: jest.fn() }));
+jest.mock('../update-properties', () => ({ updateProperties: jest.fn() }));
 jest.mock('../resize-scene', () => ({ resizeScene: jest.fn() }));
 jest.mock('../initialize-render', () => ({ initializeRender: jest.fn() }));
 
@@ -19,6 +19,7 @@ const useProgram = jest.fn();
 const enable = jest.fn();
 const depthFunc = jest.fn();
 const clearColor = jest.fn();
+const uniform3fv = jest.fn();
 const uniformMatrix4fv = jest.fn();
 const clear = jest.fn();
 
@@ -35,8 +36,12 @@ let canvas;
 let gl;
 
 function clearMocks () {
-	calculateMatrix.mockClear();
-	calculateMatrix.mockReturnValue('mockMatrix');
+	updateProperties.mockClear();
+
+	updateProperties.mockImplementation((state, properties) => {
+		properties.light = 'mockLight';
+		properties.matrix = 'mockMatrix';
+	});
 
 	createProgram.mockClear();
 	createShader.mockClear();
@@ -50,6 +55,7 @@ function clearMocks () {
 	enable.mockClear();
 	depthFunc.mockClear();
 	clearColor.mockClear();
+	uniform3fv.mockClear();
 	uniformMatrix4fv.mockClear();
 	clear.mockClear();
 	
@@ -78,6 +84,7 @@ function clearMocks () {
 		enable,
 		depthFunc,
 		clearColor,
+		uniform3fv,
 		uniformMatrix4fv,
 		clear
 	};
@@ -126,7 +133,7 @@ describe('spective', () => {
 	it('should apply scene properties if they are provided along with canvas', () => {
 		spective(canvas, { position: [1, 2, 3] });
 
-		expect(calculateMatrix).toHaveBeenCalledWith(true, { position: [1, 2, 3] });
+		expect(updateProperties).toHaveBeenCalledWith(expect.anything(), expect.anything(), true, { position: [1, 2, 3] });
 		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
 	});
 
@@ -141,14 +148,14 @@ describe('spective', () => {
 	it('should apply scene properties if they are provided without a canvas', () => {
 		spective({ position: [1, 2, 3] });
 
-		expect(calculateMatrix).toHaveBeenCalledWith(true, { position: [1, 2, 3] });
+		expect(updateProperties).toHaveBeenCalledWith(expect.anything(), expect.anything(), true, { position: [1, 2, 3] });
 		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
 	});
 
 	it('should apply default scene properties if none are provided', () => {
 		spective();
 
-		expect(calculateMatrix).toHaveBeenCalledWith(true, {}, {});
+		expect(updateProperties).toHaveBeenCalledWith(expect.anything(), expect.anything(), true, {}, {});
 		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
 	});
 
@@ -168,12 +175,25 @@ describe('spective', () => {
 			gl,
 			instanceLocation: 'uInstanceUniformLocation',
 			colorLocation: 'uColorUniformLocation',
+			glowLocation: 'uGlowUniformLocation',
 			vertexLocation: 'aVertexAttributeLocation',
 			coordinateLocation: 'aCoordinateAttributeLocation',
 			beforeRender: expect.anything(),
 			geometries: expect.anything(),
 			state: expect.anything()
 		});
+	});
+
+	it('should set intensity and color on scene', () => {
+		updateProperties.mockImplementationOnce((state, properties) => {
+			properties.light = 'mockLight';
+			state.useLight = true;
+		});
+
+		spective(2, [51, 102, 153]);
+
+		expect(updateProperties).toHaveBeenCalledWith(expect.anything(), expect.anything(), true, 2, [51, 102, 153]);
+		expect(uniform3fv).toHaveBeenCalledWith('uAmbientUniformLocation', 'mockLight');
 	});
 
 	describe('scenes', () => {
@@ -202,7 +222,7 @@ describe('spective', () => {
 				position: [1, 2, 3]
 			});
 
-			expect(calculateMatrix).toHaveBeenCalledWith(true, {
+			expect(updateProperties).toHaveBeenCalledWith(expect.anything(), expect.anything(), true, {
 				rotation: 1.0471975511965976,
 				tilt: 0.5235987755982988,
 				position: [1, 2, 3]

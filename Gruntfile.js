@@ -58,6 +58,7 @@ module.exports = function (grunt) {
 			dist: {
 				src: [
 					'temp/calculate-matrix.js',
+					'temp/update-properties.js',
 					'temp/expand-points.js',
 					'temp/create-instance.js',
 					'temp/create-asset.js',

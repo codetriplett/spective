@@ -5,6 +5,7 @@ export function initializeRender ({
 	gl,
 	instanceLocation,
 	colorLocation,
+	glowLocation,
 	vertexLocation,
 	coordinateLocation,
 	beforeRender,
@@ -12,10 +13,13 @@ export function initializeRender ({
 	state
 }) {
 	function render () {
-		if (state.needsRender && !state.renderLocked) {
+		const { needsRender, renderLocked, previousRender, useLight } = state;
+
+		if (needsRender && !renderLocked) {
 			const now = Date.now();
-			const elapsedTime = (now - state.previousRender) || 0;
+			const elapsedTime = (now - previousRender) || 0;
 			const incompleteRender = beforeRender(elapsedTime);
+			const defaultLight = useLight ? [0, 0, 0] : [1, 1, 1];
 
 			state.needsRender = incompleteRender;
 			state.previousRender = incompleteRender ? now : undefined;
@@ -36,8 +40,9 @@ export function initializeRender ({
 						asset.coordinateBuffer = setAttribute(gl, coordinateLocation, coordinates, 2, coordinateBuffer);
 						asset.colorTexture = setSampler(gl, colorLocation, 0, color, colorTexture);
 
-						instances.forEach(instance => {
-							gl.uniformMatrix4fv(instanceLocation, false, instance);
+						instances.forEach(({ matrix, light }) => {
+							gl.uniformMatrix4fv(instanceLocation, false, matrix);
+							gl.uniform3fv(glowLocation, useLight && light ? light : defaultLight);
 							gl.drawArrays(gl.TRIANGLES, 0, length);
 						});
 					}
