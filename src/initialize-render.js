@@ -7,6 +7,7 @@ export function initializeRender ({
 	colorLocation,
 	glowLocation,
 	vertexLocation,
+	normalLocation,
 	coordinateLocation,
 	beforeRender,
 	geometries,
@@ -28,10 +29,11 @@ export function initializeRender ({
 			gl.clear(gl.DEPTH_BUFFER_BIT);
 
 			geometries.forEach(geometry => {
-				const { vertices, assets, vertexBuffer } = geometry;
+				const { vertices, normals, assets, vertexBuffer, normalBuffer } = geometry;
 				const length = vertices.length / 3;
 
 				geometry.vertexBuffer = setAttribute(gl, vertexLocation, vertices, 3, vertexBuffer);
+				geometry.normalBuffer = setAttribute(gl, normalLocation, normals, 3, normalBuffer);
 
 				assets.forEach(asset => {
 					const { coordinates, color, instances, coordinateBuffer, colorTexture } = asset;

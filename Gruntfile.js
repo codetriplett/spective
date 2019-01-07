@@ -60,6 +60,7 @@ module.exports = function (grunt) {
 					'temp/calculate-matrix.js',
 					'temp/update-properties.js',
 					'temp/expand-points.js',
+					'temp/calculate-normals.js',
 					'temp/create-instance.js',
 					'temp/create-asset.js',
 					'temp/create-geometry.js',
@@ -67,6 +68,7 @@ module.exports = function (grunt) {
 					'temp/set-sampler.js',
 					'temp/resize-scene.js',
 					'temp/initialize-render.js',
+					'temp/create-canvas.js',
 					'temp/spective.js'
 				],
 				dest: 'temp/spective.js',

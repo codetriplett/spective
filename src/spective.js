@@ -1,3 +1,4 @@
+import { createCanvas } from './create-canvas';
 import { updateProperties } from './update-properties';
 import { resizeScene } from './resize-scene';
 import { initializeRender } from './initialize-render';
@@ -9,12 +10,15 @@ const vertexCode = `
 	uniform mat4 uPerspective;
 
 	attribute vec3 aVertex;
+	attribute vec3 aNormal;
 	attribute vec2 aCoordinate;
 
+	varying vec3 vNormal;
 	varying vec2 vCoordinate;
 
 	void main() {
 		gl_Position = vec4(aVertex, 1) * uInstance * uScene * uPerspective;
+		vNormal = aNormal;
 		vCoordinate = aCoordinate;
 	}
 `;
@@ -26,6 +30,7 @@ const fragmentCode = `
 	uniform vec3 uAmbient;
 	uniform vec3 uGlow;
 
+	varying vec3 vNormal;
 	varying vec2 vCoordinate;
 
 	void main() {
@@ -36,28 +41,10 @@ const fragmentCode = `
 export default function spective (...initializationParmeters) {
 	let canvas = initializationParmeters[0];
 	let beforeRender = initializationParmeters[initializationParmeters.length - 1];
-	const createCanvas = !canvas || typeof canvas.getContext !== 'function';
+	const needsCanvas = !canvas || typeof canvas.getContext !== 'function';
 
-	if (createCanvas) {
-		canvas = document.createElement('canvas');
-
-		const body = document.body;
-		const style = document.createElement('style');
-		
-		style.innerHTML = `
-			body { margin: 0; }
-			canvas {
-				display: block;
-				width: 100vw;
-				height: 100vh;
-				position: absolute;
-				left: 0;
-				top: 0;
-			}
-		`;
-		
-		body.appendChild(style);
-		body.appendChild(canvas);
+	if (needsCanvas) {
+		canvas = createCanvas();
 	} else {
 		initializationParmeters.shift();
 	}
@@ -92,6 +79,7 @@ export default function spective (...initializationParmeters) {
 	const ambientLocation = gl.getUniformLocation(program, 'uAmbient');
 	const glowLocation = gl.getUniformLocation(program, 'uGlow');
 	const vertexLocation = gl.getAttribLocation(program, 'aVertex');
+	const normalLocation = gl.getAttribLocation(program, 'aNormal');
 	const coordinateLocation = gl.getAttribLocation(program, 'aCoordinate');
 	const state = { images: {} };
 	const geometries = [];
@@ -128,7 +116,7 @@ export default function spective (...initializationParmeters) {
 
 	creator({});
 
-	if (createCanvas) {
+	if (needsCanvas) {
 		window.addEventListener('resize', () => {
 			creator({});
 		});
@@ -146,6 +134,7 @@ export default function spective (...initializationParmeters) {
 		colorLocation,
 		glowLocation,
 		vertexLocation,
+		normalLocation,
 		coordinateLocation,
 		beforeRender,
 		geometries,

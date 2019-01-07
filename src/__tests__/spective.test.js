@@ -177,6 +177,7 @@ describe('spective', () => {
 			colorLocation: 'uColorUniformLocation',
 			glowLocation: 'uGlowUniformLocation',
 			vertexLocation: 'aVertexAttributeLocation',
+			normalLocation: 'aNormalAttributeLocation',
 			coordinateLocation: 'aCoordinateAttributeLocation',
 			beforeRender: expect.anything(),
 			geometries: expect.anything(),
