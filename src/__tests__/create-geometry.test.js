@@ -14,7 +14,7 @@ describe('create-geometry', () => {
 	beforeEach(() => {
 		expandPoints.mockClear();
 		expandPoints.mockReturnValue('mockExpandPoints');
-
+		
 		calculateNormals.mockClear();
 		calculateNormals.mockReturnValue('mockCalculateNormals');
 

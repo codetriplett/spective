@@ -1,11 +1,11 @@
-import { updateProperties } from './update-properties';
+import { calculateMatrix } from './calculate-matrix';
 
 export function createInstance (state, asset, ...propertyArray) {
 	const { instances } = asset;
 	const instance = { matrix: [] };
 
 	function updateInstance (...updateArray) {
-		if (asset.color) {
+		if (asset.image) {
 			state.needsRender = true;
 		}
 
@@ -14,7 +14,8 @@ export function createInstance (state, asset, ...propertyArray) {
 			return;
 		}
 
-		updateProperties(state, instance, ...updateArray);
+		instance.matrix = calculateMatrix(...updateArray);
+		instance.inverse = calculateMatrix(true, ...updateArray);
 	}
 
 	updateInstance(...propertyArray);

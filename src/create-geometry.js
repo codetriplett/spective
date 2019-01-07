@@ -20,14 +20,14 @@ export function createGeometry (state, geometries, faces, vertices, normals) {
 
 	geometries.push(geometry);
 
-	return (color, coordinates, callback) => {
-		if (color === undefined && coordinates === undefined) {
+	return (source, coordinates, callback) => {
+		if (source === undefined && coordinates === undefined) {
 			geometries.splice(geometries.indexOf(geometry), 1);
 			state.needsRender = true;
 
 			return;
 		}
 
-		return createAsset(state, geometry, color, coordinates, callback);
+		return createAsset(state, geometry, source, coordinates, callback);
 	};
 }

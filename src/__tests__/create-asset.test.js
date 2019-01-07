@@ -23,7 +23,7 @@ window.Image = class Image {
 describe('create-asset', () => {
 	let state;
 	let geometry;
-	let color;
+	let image;
 	let coordinates;
 
 	beforeEach(() => {
@@ -32,12 +32,12 @@ describe('create-asset', () => {
 
 		state = { images: {} };
 		geometry = { assets: [], faces: [0, 1, 2], length: 3 };
-		color = 'mockImage';
+		image = 'mockImage';
 		coordinates = ['mockCoordinates'];
 	});
 
 	it('should create asset', () => {
-		const actual = createAsset(state, geometry, color, coordinates);
+		const actual = createAsset(state, geometry, image, coordinates);
 		const asset = geometry.assets[0];
 
 		expect(typeof actual).toBe('function');
@@ -50,29 +50,29 @@ describe('create-asset', () => {
 	});
 
 	it('should set color', () => {
-		color = [1, 2, 3];
-		createAsset(state, geometry, color);
+		image = [0.25, 0.5, 0.75];
+		createAsset(state, geometry, image);
 		const asset = geometry.assets[0];
 
-		expect(asset.color).toEqual(new Uint8Array([1, 2, 3, 255]));
+		expect(asset.image).toEqual(new Uint8Array([64, 128, 191, 255]));
 		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]);
 	});
 
 	it('should set multiple colors', () => {
-		color = [1, 2, 3, 255, 10, 20, 30, 255];
-		createAsset(state, geometry, color, [0, 1, 0]);
+		image = [0.2, 0.4, 0.8, 0.3, 0.6, 0.9];
+		createAsset(state, geometry, image, [0, 1, 0]);
 		const asset = geometry.assets[0];
 
-		expect(asset.color).toEqual(new Uint8Array([1, 2, 3, 255, 10, 20, 30, 255]));
+		expect(asset.image).toEqual(new Uint8Array([51, 102, 204, 255, 77, 153, 230, 255]));
 		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], [0.25, 0.5, 0.75, 0.5, 0.25, 0.5]);
 	});
 
 	it('should set image', () => {
-		createAsset(state, geometry, color, coordinates);
+		createAsset(state, geometry, image, coordinates);
 		loadImage();
 		const asset = geometry.assets[0];
 
-		expect(asset.color).toEqual({ src: 'mockImage' });
+		expect(asset.image).toEqual({ src: 'mockImage' });
 		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], ['mockCoordinates']);
 		
 		expect(state.images).toEqual({
@@ -85,16 +85,16 @@ describe('create-asset', () => {
 			mockImage: { src: 'mockImage' }
 		};
 
-		createAsset(state, geometry, color, coordinates);
+		createAsset(state, geometry, image, coordinates);
 		const asset = geometry.assets[0];
 
-		expect(asset.color).toEqual({ src: 'mockImage' });
+		expect(asset.image).toEqual({ src: 'mockImage' });
 		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], ['mockCoordinates']);
 	});
 	
 	it('should trigger callback once loaded', () => {
 		const callback = jest.fn();
-		createAsset(state, geometry, color, coordinates, callback);
+		createAsset(state, geometry, image, coordinates, callback);
 		loadImage();
 
 		expect(callback).toHaveBeenCalledWith('mockImage', true);
@@ -102,14 +102,14 @@ describe('create-asset', () => {
 	
 	it('should trigger callback if it fails to load', () => {
 		const callback = jest.fn();
-		createAsset(state, geometry, color, coordinates, callback);
+		createAsset(state, geometry, image, coordinates, callback);
 		failImage();
 
 		expect(callback).toHaveBeenCalledWith('mockImage', false);
 	});
 
 	it('should delete asset', () => {
-		const actual = createAsset(state, geometry, color, coordinates);
+		const actual = createAsset(state, geometry, image, coordinates);
 		actual();
 
 		expect(geometry.assets).toHaveLength(0);

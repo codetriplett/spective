@@ -1,11 +1,12 @@
 import { createCanvas } from './create-canvas';
-import { updateProperties } from './update-properties';
+import { calculateMatrix } from './calculate-matrix';
 import { resizeScene } from './resize-scene';
 import { initializeRender } from './initialize-render';
 import { createGeometry } from './create-geometry';
 
 const vertexCode = `
 	uniform mat4 uInstance;
+	uniform mat4 uInverse;
 	uniform mat4 uScene;
 	uniform mat4 uPerspective;
 
@@ -14,11 +15,13 @@ const vertexCode = `
 	attribute vec2 aCoordinate;
 
 	varying vec3 vNormal;
+	varying vec3 vDirection;
 	varying vec2 vCoordinate;
 
 	void main() {
 		gl_Position = vec4(aVertex, 1) * uInstance * uScene * uPerspective;
 		vNormal = aNormal;
+		vDirection = (vec4(1, 1, 1, 1) * uInverse).xyz;
 		vCoordinate = aCoordinate;
 	}
 `;
@@ -26,15 +29,16 @@ const vertexCode = `
 const fragmentCode = `
 	precision mediump float;
 
-	uniform sampler2D uColor;
-	uniform vec3 uAmbient;
-	uniform vec3 uGlow;
+	uniform sampler2D uImage;
 
 	varying vec3 vNormal;
+	varying vec3 vDirection;
 	varying vec2 vCoordinate;
 
 	void main() {
-		gl_FragColor = texture2D(uColor, vCoordinate) * vec4(uAmbient + uGlow, 1);
+		float intensity = 0.25 + 0.5 * max(dot(vDirection, vNormal), 0.0);
+		vec3 color = texture2D(uImage, vCoordinate).xyz * intensity;
+		gl_FragColor = vec4(color, 1);
 	}
 `;
 
@@ -73,17 +77,16 @@ export default function spective (...initializationParmeters) {
 	gl.clearColor(0, 0, 0, 1);
 	
 	const instanceLocation = gl.getUniformLocation(program, 'uInstance');
+	const inverseLocation = gl.getUniformLocation(program, 'uInverse');
 	const sceneLocation = gl.getUniformLocation(program, 'uScene');
 	const perspectiveLocation = gl.getUniformLocation(program, 'uPerspective');
-	const colorLocation = gl.getUniformLocation(program, 'uColor');
-	const ambientLocation = gl.getUniformLocation(program, 'uAmbient');
-	const glowLocation = gl.getUniformLocation(program, 'uGlow');
+	const imageLocation = gl.getUniformLocation(program, 'uImage');
 	const vertexLocation = gl.getAttribLocation(program, 'aVertex');
 	const normalLocation = gl.getAttribLocation(program, 'aNormal');
 	const coordinateLocation = gl.getAttribLocation(program, 'aCoordinate');
 	const state = { images: {} };
 	const geometries = [];
-	const scene = {};
+	let scene;
 
 	const creator = (...creationParameters) => {
 		if (creationParameters.length === 0) {
@@ -105,11 +108,8 @@ export default function spective (...initializationParmeters) {
 		} else if (creationParameters.length === 1 && Object.keys(firstParamter).length === 0) {	
 			resizeScene({ gl, perspectiveLocation, canvas, state });
 		} else {
-			updateProperties(state, scene, true, ...creationParameters);
-
-			gl.uniformMatrix4fv(sceneLocation, false, scene.matrix);
-			gl.uniform3fv(ambientLocation, scene.light || [0, 0, 0]);
-
+			scene = calculateMatrix(true, ...creationParameters);
+			gl.uniformMatrix4fv(sceneLocation, false, scene);
 			state.needsRender = state.initialized;
 		}
 	};
@@ -131,8 +131,8 @@ export default function spective (...initializationParmeters) {
 	initializeRender({
 		gl,
 		instanceLocation,
-		colorLocation,
-		glowLocation,
+		inverseLocation,
+		imageLocation,
 		vertexLocation,
 		normalLocation,
 		coordinateLocation,

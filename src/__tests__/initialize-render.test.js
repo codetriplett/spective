@@ -8,7 +8,6 @@ const uniformMatrix4fv = jest.fn();
 const drawArrays = jest.fn();
 const beforeRender = jest.fn();
 const geometries = [];
-const scene = {};
 let gl;
 let state;
 let initializationProperties;
@@ -46,13 +45,14 @@ function clearMocks () {
 	initializationProperties = {
 		gl,
 		instanceLocation: 'mockInstanceLocation',
-		colorLocation: 'mockColorLocation',
+		inverseLocation: 'mockInverseLocation',
+		imageLocation: 'mockImageLocation',
 		glowLocation: 'mockGlowLocation',
 		vertexLocation: 'mockVertexLocation',
+		normalLocation: 'mockNormalLocation',
 		coordinateLocation: 'mockCoordinateLocation',
 		beforeRender,
 		geometries,
-		scene,
 		state
 	};
 }
@@ -141,41 +141,44 @@ describe('render', () => {
 
 				geometries[0].assets.splice(0, 1, {
 					coordinates: 'mockCoordinates',
-					color: 'mockColor',
+					image: 'mockImage',
 					instances: []
 				});
 			});
 	
-			it('should set coordinates and color', () => {
+			it('should set coordinates and image', () => {
 				initializeRender(initializationProperties);
 
 				expect(setAttribute).toHaveBeenCalledWith(gl, 'mockCoordinateLocation', 'mockCoordinates', 2, undefined);
-				expect(setSampler).toHaveBeenCalledWith(gl, 'mockColorLocation', 0, 'mockColor', undefined);
+				expect(setSampler).toHaveBeenCalledWith(gl, 'mockImageLocation', 0, 'mockImage', undefined);
 			});
 		
-			it('should use existing coordinate buffer and color texture', () => {
+			it('should use existing coordinate buffer and image texture', () => {
 				geometries[0].assets[0].coordinateBuffer = 'mockCoordinateBuffer';
-				geometries[0].assets[0].colorTexture = 'mockColorTexture';
+				geometries[0].assets[0].imageTexture = 'mockImageTexture';
 				initializeRender(initializationProperties);
 	
 				expect(setAttribute).toHaveBeenCalledWith(gl, 'mockCoordinateLocation', 'mockCoordinates', 2, 'mockCoordinateBuffer');
-				expect(setSampler).toHaveBeenCalledWith(gl, 'mockColorLocation', 0, 'mockColor', 'mockColorTexture');
+				expect(setSampler).toHaveBeenCalledWith(gl, 'mockImageLocation', 0, 'mockImage', 'mockImageTexture');
 			});
 			
 			describe('instance', () => {
 				beforeEach(() => {
 					clearMocks();
-
 					geometries[0].assets[0].instances.splice(0, 1, {
-						intensity: 'mockIntensity',
-						matrix: 'mockInstance'
+						matrix: 'mockInstance',
+						inverse: 'mockInverse'
 					});
 				});
 		
 				it('should set instance matrix and draw arrays', () => {
 					initializeRender(initializationProperties);
 
-					expect(uniformMatrix4fv).toHaveBeenCalledWith('mockInstanceLocation', false, 'mockInstance');
+					expect(uniformMatrix4fv.mock.calls).toEqual([
+						['mockInstanceLocation', false, 'mockInstance'],
+						['mockInverseLocation', false, 'mockInverse']
+					]);
+
 					expect(drawArrays).toHaveBeenCalledWith('mockTriangles', 0, 4);
 				});
 			});

@@ -1,7 +1,7 @@
-import { updateProperties } from '../update-properties';
+import { calculateMatrix } from '../calculate-matrix';
 import { createInstance } from '../create-instance';
 
-jest.mock('../update-properties', () => ({ updateProperties: jest.fn() }));
+jest.mock('../calculate-matrix', () => ({ calculateMatrix: jest.fn() }));
 
 describe('create-instance', () => {
 	let state;
@@ -9,44 +9,40 @@ describe('create-instance', () => {
 	let options;
 
 	beforeEach(() => {
-		updateProperties.mockClear();
+		calculateMatrix.mockClear();
 
 		state = {};
-		asset = { instances: [], color: 'mockColor' };
+		asset = { instances: [], image: 'mockImage' };
 		options = { key: 'initial' };
 	});
 
 	it('should create instance', () => {
 		const actual = createInstance(state, asset, options);
-		const instance = asset.instances[0];
 
 		expect(typeof actual).toBe('function');
-		expect(updateProperties).toHaveBeenCalledWith(state, instance, { key: 'initial' });
-		expect(state.useLight).toBeFalsy();
+		expect(asset.instances).toHaveLength(1);
+		expect(calculateMatrix).toHaveBeenCalledWith({ key: 'initial' });
 	});
 
 	it('should update instance properties', () => {
 		const updates = { key: 'updates' };
 		const actual = createInstance(state, asset, options);
-		const instance = asset.instances[0];
 
 		actual(updates);
 
 		expect(typeof actual).toBe('function');
-		expect(updateProperties).toHaveBeenCalledWith(state, instance, { key: 'initial' });
-		expect(state.useLight).toBeFalsy();
+		expect(calculateMatrix).toHaveBeenCalledWith({ key: 'initial' });
 	});
 
 	it('should update instance with multiple property objects', () => {
 		const updates = { key: 'updates' };
 		const actual = createInstance(state, asset, options);
-		const instance = asset.instances[0];
 
-		updateProperties.mockClear();
+		calculateMatrix.mockClear();
 		actual(updates, { position: [3, 6, 9] });
 
 		expect(typeof actual).toBe('function');
-		expect(updateProperties).toHaveBeenCalledWith(state, instance, { key: 'updates' }, { position: [3, 6, 9] });
+		expect(calculateMatrix).toHaveBeenCalledWith({ key: 'updates' }, { position: [3, 6, 9] });
 		expect(state.useLight).toBeFalsy();
 	});
 
@@ -56,7 +52,7 @@ describe('create-instance', () => {
 	});
 
 	it('should render if asset has been loaded', () => {
-		delete asset.color;
+		delete asset.image;
 		createInstance(state, asset, options);
 		
 		expect(state.needsRender).toBeFalsy();

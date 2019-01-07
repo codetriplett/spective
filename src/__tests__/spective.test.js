@@ -1,9 +1,11 @@
-import { updateProperties } from '../update-properties';
+import { createCanvas } from '../create-canvas';
+import { calculateMatrix } from '../calculate-matrix';
 import { resizeScene } from '../resize-scene';
 import { initializeRender } from '../initialize-render';
 import spective from '../spective';
 
-jest.mock('../update-properties', () => ({ updateProperties: jest.fn() }));
+jest.mock('../create-canvas', () => ({ createCanvas: jest.fn() }));
+jest.mock('../calculate-matrix', () => ({ calculateMatrix: jest.fn() }));
 jest.mock('../resize-scene', () => ({ resizeScene: jest.fn() }));
 jest.mock('../initialize-render', () => ({ initializeRender: jest.fn() }));
 
@@ -36,13 +38,7 @@ let canvas;
 let gl;
 
 function clearMocks () {
-	updateProperties.mockClear();
-
-	updateProperties.mockImplementation((state, properties) => {
-		properties.light = 'mockLight';
-		properties.matrix = 'mockMatrix';
-	});
-
+	calculateMatrix.mockClear();
 	createProgram.mockClear();
 	createShader.mockClear();
 	shaderSource.mockClear();
@@ -59,13 +55,11 @@ function clearMocks () {
 	uniformMatrix4fv.mockClear();
 	clear.mockClear();
 	
+	calculateMatrix.mockReturnValue('mockMatrix');
 	createProgram.mockReturnValue('mockProgram');
 	createShader.mockImplementation(type => `${type}Created`);
 	getUniformLocation.mockImplementation((program, name) => `${name}UniformLocation`);
 	getAttribLocation.mockImplementation((program, name) => `${name}AttributeLocation`);
-	
-	getContext.mockClear();
-	addEventListener.mockClear();
 
 	gl = {
 		VERTEX_SHADER: 'mockVertexShader',
@@ -88,10 +82,16 @@ function clearMocks () {
 		uniformMatrix4fv,
 		clear
 	};
-
+	
+	addEventListener.mockClear();
+	
+	getContext.mockClear();
 	getContext.mockReturnValue(gl);
 
+	createCanvas.mockClear();
+	createCanvas.mockReturnValue({ getContext });
 	createElement.mockReturnValue({ getContext });
+
 	canvas = document.createElement('canvas');
 	createElement.mockClear();
 
@@ -125,37 +125,30 @@ describe('spective', () => {
 		expect(getUniformLocation).toHaveBeenCalledWith('mockProgram', 'uInstance');
 		expect(getUniformLocation).toHaveBeenCalledWith('mockProgram', 'uScene');
 		expect(getUniformLocation).toHaveBeenCalledWith('mockProgram', 'uPerspective');
-		expect(getUniformLocation).toHaveBeenCalledWith('mockProgram', 'uColor');
+		expect(getUniformLocation).toHaveBeenCalledWith('mockProgram', 'uImage');
 		expect(getAttribLocation).toHaveBeenCalledWith('mockProgram', 'aVertex');
+		expect(getAttribLocation).toHaveBeenCalledWith('mockProgram', 'aNormal');
 		expect(getAttribLocation).toHaveBeenCalledWith('mockProgram', 'aCoordinate');
 	});
 
 	it('should apply scene properties if they are provided along with canvas', () => {
 		spective(canvas, { position: [1, 2, 3] });
 
-		expect(updateProperties).toHaveBeenCalledWith(expect.anything(), expect.anything(), true, { position: [1, 2, 3] });
+		expect(calculateMatrix).toHaveBeenCalledWith(true, { position: [1, 2, 3] });
 		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
-	});
-
-	it('should create a canvas when none is provided', () => {
-		spective();
-
-		expect(createElement).toHaveBeenCalledWith('canvas');
-		expect(createElement).toHaveBeenCalledWith('style');
-		expect(appendChild).toHaveBeenCalledTimes(2);
 	});
 
 	it('should apply scene properties if they are provided without a canvas', () => {
 		spective({ position: [1, 2, 3] });
 
-		expect(updateProperties).toHaveBeenCalledWith(expect.anything(), expect.anything(), true, { position: [1, 2, 3] });
+		expect(calculateMatrix).toHaveBeenCalledWith(true, { position: [1, 2, 3] });
 		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
 	});
 
 	it('should apply default scene properties if none are provided', () => {
 		spective();
 
-		expect(updateProperties).toHaveBeenCalledWith(expect.anything(), expect.anything(), true, {}, {});
+		expect(calculateMatrix).toHaveBeenCalledWith(true, {}, {});
 		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
 	});
 
@@ -174,8 +167,8 @@ describe('spective', () => {
 		expect(initializeRender).toHaveBeenCalledWith({
 			gl,
 			instanceLocation: 'uInstanceUniformLocation',
-			colorLocation: 'uColorUniformLocation',
-			glowLocation: 'uGlowUniformLocation',
+			inverseLocation: 'uInverseUniformLocation',
+			imageLocation: 'uImageUniformLocation',
 			vertexLocation: 'aVertexAttributeLocation',
 			normalLocation: 'aNormalAttributeLocation',
 			coordinateLocation: 'aCoordinateAttributeLocation',
@@ -183,18 +176,6 @@ describe('spective', () => {
 			geometries: expect.anything(),
 			state: expect.anything()
 		});
-	});
-
-	it('should set intensity and color on scene', () => {
-		updateProperties.mockImplementationOnce((state, properties) => {
-			properties.light = 'mockLight';
-			state.useLight = true;
-		});
-
-		spective(2, [51, 102, 153]);
-
-		expect(updateProperties).toHaveBeenCalledWith(expect.anything(), expect.anything(), true, 2, [51, 102, 153]);
-		expect(uniform3fv).toHaveBeenCalledWith('uAmbientUniformLocation', 'mockLight');
 	});
 
 	describe('scenes', () => {
@@ -223,7 +204,7 @@ describe('spective', () => {
 				position: [1, 2, 3]
 			});
 
-			expect(updateProperties).toHaveBeenCalledWith(expect.anything(), expect.anything(), true, {
+			expect(calculateMatrix).toHaveBeenCalledWith(true, {
 				rotation: 1.0471975511965976,
 				tilt: 0.5235987755982988,
 				position: [1, 2, 3]

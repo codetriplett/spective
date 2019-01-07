@@ -1,27 +1,27 @@
 import { expandPoints } from './expand-points';
 import { createInstance } from './create-instance';
 
-export function createAsset (state, geometry, color, coordinates, callback) {
+export function createAsset (state, geometry, source, coordinates, callback) {
 	const { assets, faces, length } = geometry;
 	const instances = [];
 	const asset = { instances };
-	const reportImage = typeof color === 'string' && typeof callback === 'function';
+	const reportImage = typeof source === 'string' && typeof callback === 'function';
 	let image;
 
 	assets.push(asset);
 
 	function loader (image) {
-		const siblingLoaders = state.images[color];
-		asset.color = image;
+		const siblingLoaders = state.images[source];
+		asset.image = image;
 
 		if (Array.isArray(siblingLoaders)) {
-			asset.color = image || new Uint8Array(4).fill(255);
-			state.images[color] = image;
+			asset.image = image || new Uint8Array(4).fill(255);
+			state.images[source] = image;
 			siblingLoaders.forEach(siblingLoader => siblingLoader(image));
 		}
 
 		if (reportImage) {
-			callback(color, !!image);
+			callback(source, !!image);
 		}
 
 		if (instances.length > 0) {
@@ -29,28 +29,33 @@ export function createAsset (state, geometry, color, coordinates, callback) {
 		}
 	}
 
-	if (typeof color === 'string') {
-		image = state.images[color];
+	if (typeof source === 'string') {
+		image = state.images[source];
 
 		if (!image) {
 			image = new window.Image();
-			image.src = color;
+			image.src = source;
 			image.addEventListener('load', () => loader(image));
 			image.addEventListener('error', () => loader());
-			state.images[color] = [];
+			state.images[source] = [];
 		} else if (Array.isArray(image)) {
-			state.images[color].push(loader);
+			state.images[source].push(loader);
 		} else {
 			loader(image);
 		}
-	} else if (Array.isArray(color)) {
-		const colorLength = Math.ceil(color.length / 4);
+	} else if (Array.isArray(source)) {
+		const sourceLength = Math.ceil(source.length / 3);
+		const imageLength = sourceLength * 4;
+		const values = source.map(value => Math.round(value * 255));
 
-		image = new Uint8Array(colorLength * 4).fill(255);
-		image.set(color);
+		image = new Uint8Array(imageLength).fill(255);
+
+		for (let i = 0; i < imageLength; i += 4) {
+			image.set(values.splice(0, 3), i);
+		}
 
 		if (Array.isArray(coordinates)) {
-			const coordinateStep = 1 / colorLength;
+			const coordinateStep = 1 / sourceLength;
 			const coordinateStart = coordinateStep / 2;
 
 			coordinates = coordinates.reduce((array, index) => {
