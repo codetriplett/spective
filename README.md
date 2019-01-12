@@ -48,20 +48,43 @@ scene();
 ```
 
 ## Geometries
-Geometries define each unique shape in the scene. The first value defines the faces and the second defines the vertices.
-
-### Faces
-Every three integers in the array define the index of first, second and third vertex of each face.
+Geometries define each unique shape in the scene. The first value defines the vertices. The second and third values are optional and define the faces and normals respectively.
 
 ### Vertices
 Every three numbers in the array define the x, y and z positions of each vertex.
 
-### Create Geometry
+### Faces
+Every three integers in the array define the index of first, second and third vertex of each face. If these aren't provided, every three vertices will be treated as a separate face in the geometry.
+
+### Normals
+Every three numbers in the array define the x, y and z lengths of a vertex normal vector for each integer in the face array. If these aren't provided, they will be calculated to create a smooth surface.
+
+### Create Geometry Made of Separate Faces
+```js
+// creates one face
+var geometry = scene([
+	-1, 0, -1, 1, 0, -1, -1, 0, 1
+]);
+```
+
+### Create Geometry Made of Connected Faces
+```js
+// creates two faces with a shared edge
+var geometry = scene([
+	-1, 0, -1, 1, 0, -1, -1, 0, 1, 1, 0, 1
+], [
+	0, 1, 2, 3, 2, 1
+]);
+```
+
+### Create Geometry Using Custom Normals
 ```js
 var geometry = scene([
-	0, 1, 2, 3, 2, 1
+	-1, 0, -1, 1, 0, -1, -1, 0, 1
 ], [
-	-1, 0, -1, 1, 0, -1, -1, 0, 1, 1, 0, 1
+	0, 1, 2
+], [
+	-0.1, -0.4, 0.5, 0.8, 0.2, -0.5, 0.3, -0.4, 0.9
 ]);
 ```
 

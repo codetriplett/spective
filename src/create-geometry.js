@@ -2,18 +2,25 @@ import { expandPoints } from './expand-points';
 import { calculateNormals } from './calculate-normals';
 import { createAsset } from './create-asset';
 
-export function createGeometry (state, geometries, faces, vertices, normals) {
-	const length = Math.max(...faces) + 1;
+export function createGeometry (state, geometries, vertices, faces, normals) {
 	const assets = [];
+
+	if (faces === undefined) {
+		faces = Array(vertices.length / 3).fill(0).map((value, i) => i);
+	}
 
 	if (normals === undefined) {
 		normals = calculateNormals(faces, vertices);
+	} else {
+		normals = new Float32Array(normals);
 	}
+
+	const length = Math.max(...faces) + 1;
 
 	const geometry = {
 		length,
-		faces,
 		vertices: expandPoints(length, faces, vertices),
+		faces,
 		normals,
 		assets
 	};

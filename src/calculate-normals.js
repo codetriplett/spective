@@ -1,5 +1,5 @@
 function calculateArea (aH, aV, bH, bV, cH, cV) {
-	return -(aH * (bV - cV) + bH * (cV - aV) + cH * (aV - bV)) / 2;
+	return (aH * (bV - cV) + bH * (cV - aV) + cH * (aV - bV)) / 2;
 }
 
 function normalize (vector) {
@@ -20,20 +20,54 @@ function calculateNormal (a, b, c) {
 	return normalize([xArea, yArea, zArea]);
 }
 
+function calculateAverage (normals) {
+	const length = normals.length / 3;
+	const totals = [0, 0, 0];
+
+	for (let i = 0; i < normals.length; i += 3) {
+		totals[0] += normals[i];
+		totals[1] += normals[i + 1];
+		totals[2] += normals[i + 2];
+	}
+
+	return normalize(totals.map(total => total / length));
+}
+
 export function calculateNormals (faces, vertices) {
 	const normals = new Float32Array(faces.length * 3);
+	const size = Math.max(...faces) + 1;
+	let map = [];
+
+	for (let i = 0; i < size; i++) {
+		map[i] = [];
+	}
 
 	for (let i = 0; i < faces.length; i += 3) {
-		const aStart = faces[i] * 3;
-		const bStart = faces[i + 1] * 3;
-		const cStart = faces[i + 2] * 3;
+		const aId = faces[i];
+		const bId = faces[i + 1];
+		const cId = faces[i + 2];
+		const aStart = aId * 3;
+		const bStart = bId * 3;
+		const cStart = cId * 3;
 		const a = vertices.slice(aStart, aStart + 3);
 		const b = vertices.slice(bStart, bStart + 3);
 		const c = vertices.slice(cStart, cStart + 3);
 		const normal = calculateNormal(a, b, c);
 
-		normals.set([...normal, ...normal, ...normal], i * 3);
+		map[aId] = map[aId].concat(normal);
+		map[bId] = map[bId].concat(normal);
+		map[cId] = map[cId].concat(normal);
 	}
 
+	map = map.map(calculateAverage);
+	
+	for (let i = 0; i < faces.length; i += 3) {
+		const aNormal = map[faces[i]];
+		const bNormal = map[faces[i + 1]];
+		const cNormal = map[faces[i + 2]];
+
+		normals.set([...aNormal, ...bNormal, ...cNormal], i * 3);
+	}
+	
 	return normals;
 }

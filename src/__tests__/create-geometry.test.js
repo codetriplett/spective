@@ -20,35 +20,51 @@ describe('create-geometry', () => {
 
 		state = {};
 		geometries = [];
+		vertices = [-1, 0, 1];
 		faces = [0, 1, 2];
-		vertices = 'mockVertices';
 	});
 
-	it('should create geometry', () => {
-		const actual = createGeometry(state, geometries, faces, vertices);
+	it('should create geometry using only vertices', () => {
+		const actual = createGeometry(state, geometries, vertices);
 		const geometry = geometries[0];
 
 		expect(typeof actual).toBe('function');
-		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], 'mockVertices');
+		expect(expandPoints).toHaveBeenCalledWith(1, [0], [-1, 0, 1]);
+
+		expect(geometry).toMatchObject({
+			length: 1,
+			vertices: 'mockExpandPoints',
+			faces: [0],
+			normals: 'mockCalculateNormals',
+			assets: []
+		});
+	});
+
+	it('should create geometry using vertices and faces', () => {
+		const actual = createGeometry(state, geometries, vertices, faces);
+		const geometry = geometries[0];
+
+		expect(typeof actual).toBe('function');
+		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], [-1, 0, 1]);
 
 		expect(geometry).toMatchObject({
 			length: 3,
-			faces: [0, 1, 2],
 			vertices: 'mockExpandPoints',
+			faces: [0, 1, 2],
 			normals: 'mockCalculateNormals',
 			assets: []
 		});
 	});
 
 	it('should accept custom normals', () => {
-		createGeometry(state, geometries, faces, vertices, 'mockNormals');
+		createGeometry(state, geometries, vertices, faces, [0, 1, 2]);
 		const geometry = geometries[0];
 
-		expect(geometry.normals).toBe('mockNormals');
+		expect(geometry.normals).toEqual(new Float32Array([0, 1, 2]));
 	});
 
 	it('should delete geometry', () => {
-		const actual = createGeometry(state, geometries, faces, vertices);
+		const actual = createGeometry(state, geometries, vertices, faces);
 		actual();
 
 		expect(geometries).toHaveLength(0);
