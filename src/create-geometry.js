@@ -6,6 +6,7 @@ export function createGeometry (state, geometries, vertices, faces, normals) {
 	const assets = [];
 
 	if (faces === undefined) {
+		vertices = vertices.slice(0, Math.floor(vertices.length / 9) * 9);
 		faces = Array(vertices.length / 3).fill(0).map((value, i) => i);
 	}
 
@@ -15,11 +16,8 @@ export function createGeometry (state, geometries, vertices, faces, normals) {
 		normals = new Float32Array(normals);
 	}
 
-	const length = Math.max(...faces) + 1;
-
 	const geometry = {
-		length,
-		vertices: expandPoints(length, faces, vertices),
+		vertices: expandPoints(3, faces, vertices),
 		faces,
 		normals,
 		assets

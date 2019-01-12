@@ -21,20 +21,19 @@ describe('create-geometry', () => {
 		state = {};
 		geometries = [];
 		vertices = [-1, 0, 1];
-		faces = [0, 1, 2];
+		faces = [0, 1, 2, 3, 2 ,1];
 	});
 
 	it('should create geometry using only vertices', () => {
-		const actual = createGeometry(state, geometries, vertices);
+		const actual = createGeometry(state, geometries, [-1, 0, -1, -1, 0, 1, 1, 0, -1]);
 		const geometry = geometries[0];
 
 		expect(typeof actual).toBe('function');
-		expect(expandPoints).toHaveBeenCalledWith(1, [0], [-1, 0, 1]);
+		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], [-1, 0, -1, -1, 0, 1, 1, 0, -1]);
 
 		expect(geometry).toMatchObject({
-			length: 1,
 			vertices: 'mockExpandPoints',
-			faces: [0],
+			faces: [0, 1, 2],
 			normals: 'mockCalculateNormals',
 			assets: []
 		});
@@ -45,12 +44,11 @@ describe('create-geometry', () => {
 		const geometry = geometries[0];
 
 		expect(typeof actual).toBe('function');
-		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], [-1, 0, 1]);
+		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2, 3, 2, 1], [-1, 0, 1]);
 
 		expect(geometry).toMatchObject({
-			length: 3,
 			vertices: 'mockExpandPoints',
-			faces: [0, 1, 2],
+			faces: [0, 1, 2, 3, 2, 1],
 			normals: 'mockCalculateNormals',
 			assets: []
 		});

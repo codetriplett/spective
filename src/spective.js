@@ -101,11 +101,11 @@ export default function spective (...initializationParmeters) {
 			return;
 		}
 
-		const firstParamter = creationParameters[0];
+		const firstParameter = creationParameters[0];
 
-		if (Array.isArray(firstParamter)) {
+		if (Array.isArray(firstParameter)) {
 			return createGeometry(state, geometries, ...creationParameters);
-		} else if (creationParameters.length === 1 && Object.keys(firstParamter).length === 0) {	
+		} else if (creationParameters.length === 1 && Object.keys(firstParameter).length === 0) {	
 			resizeScene({ gl, perspectiveLocation, canvas, state });
 		} else {
 			scene = calculateMatrix(true, ...creationParameters);

@@ -4,7 +4,7 @@ export function createInstance (state, asset, ...propertyArray) {
 	const { instances } = asset;
 	const instance = { matrix: [] };
 
-	function updateInstance (...updateArray) {
+	function updater (...updateArray) {
 		if (asset.image) {
 			state.needsRender = true;
 		}
@@ -18,8 +18,8 @@ export function createInstance (state, asset, ...propertyArray) {
 		instance.inverse = calculateMatrix(true, ...updateArray);
 	}
 
-	updateInstance(...propertyArray);
+	updater(...propertyArray);
 	instances.push(instance);
 
-	return updateInstance;
+	return updater;
 }

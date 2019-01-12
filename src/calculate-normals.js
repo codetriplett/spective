@@ -60,7 +60,7 @@ export function calculateNormals (faces, vertices) {
 	}
 
 	map = map.map(calculateAverage);
-	
+
 	for (let i = 0; i < faces.length; i += 3) {
 		const aNormal = map[faces[i]];
 		const bNormal = map[faces[i + 1]];

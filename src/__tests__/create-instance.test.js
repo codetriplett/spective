@@ -51,7 +51,7 @@ describe('create-instance', () => {
 		expect(state.needsRender).toBeTruthy();
 	});
 
-	it('should render if asset has been loaded', () => {
+	it('should not render if asset has not been loaded', () => {
 		delete asset.image;
 		createInstance(state, asset, options);
 		

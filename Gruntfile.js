@@ -68,6 +68,7 @@ module.exports = function (grunt) {
 					'temp/resize-scene.js',
 					'temp/initialize-render.js',
 					'temp/create-canvas.js',
+					'temp/parse-file.js',
 					'temp/spective.js'
 				],
 				dest: 'temp/spective.js',

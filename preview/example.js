@@ -21,12 +21,12 @@ var scene = window.spective(camera, function (elapsedTime) {
 });
 
 var floor = scene([
-	-1, 0, -1, -1, 0, 1, 1, 0, -1,
-	1, 0, 1, 1, 0, -1, -1, 0, 1
-], [0, 1, 2, 3, 4, 5]);
+	-1, 0, -1, -1, 0, 1,
+	1, 0, -1, 1, 0, 1
+], [0, 1, 2, 3, 2, 1]);
 
 var gridFloor = floor('grid.png', [
-	0, 0, 0, 4.0625, 4.0625, 0, 4.0625, 4.0625, 4.0625, 0, 0, 4.0625
+	0, 0, 0, 4.0625, 4.0625, 0, 4.0625, 4.0625
 ], function (name, loaded) {
 	console.log(name + (!loaded ? ' not' : '') + ' loaded');
 });

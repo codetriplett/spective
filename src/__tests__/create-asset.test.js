@@ -31,9 +31,9 @@ describe('create-asset', () => {
 		expandPoints.mockReturnValue('mockExpandPoints');
 
 		state = { images: {} };
-		geometry = { assets: [], faces: [0, 1, 2], length: 3 };
+		geometry = { assets: [], faces: [0, 1, 2, 3, 2, 1], length: 4 };
 		image = 'mockImage';
-		coordinates = ['mockCoordinates'];
+		coordinates = [1, 1, 2, 2, 3, 3, 4, 4];
 	});
 
 	it('should create asset', () => {
@@ -41,7 +41,7 @@ describe('create-asset', () => {
 		const asset = geometry.assets[0];
 
 		expect(typeof actual).toBe('function');
-		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], ['mockCoordinates']);
+		expect(expandPoints).toHaveBeenCalledWith(2, [0, 1, 2, 3, 2, 1], [1, 1, 2, 2, 3, 3, 4, 4]);
 
 		expect(asset).toEqual({
 			coordinates: 'mockExpandPoints',
@@ -54,17 +54,21 @@ describe('create-asset', () => {
 		createAsset(state, geometry, image);
 		const asset = geometry.assets[0];
 
-		expect(asset.image).toEqual(new Uint8Array([64, 128, 191, 255]));
-		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]);
+		expect(expandPoints).not.toHaveBeenCalled();
+
+		expect(asset).toMatchObject({
+			image: new Uint8Array([64, 128, 191, 255]),
+			coordinates: new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+		});
 	});
 
 	it('should set multiple colors', () => {
 		image = [0.2, 0.4, 0.8, 0.3, 0.6, 0.9];
-		createAsset(state, geometry, image, [0, 1, 0]);
+		createAsset(state, geometry, image, [1, 0, 0, 1]);
 		const asset = geometry.assets[0];
 
 		expect(asset.image).toEqual(new Uint8Array([51, 102, 204, 255, 77, 153, 230, 255]));
-		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], [0.25, 0.5, 0.75, 0.5, 0.25, 0.5]);
+		expect(expandPoints).toHaveBeenCalledWith(2, [0, 1, 2, 3, 2, 1], [0.75, 0.5, 0.25, 0.5, 0.25, 0.5, 0.75, 0.5]);
 	});
 
 	it('should set image', () => {
@@ -73,8 +77,7 @@ describe('create-asset', () => {
 		const asset = geometry.assets[0];
 
 		expect(asset.image).toEqual({ src: 'mockImage' });
-		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], ['mockCoordinates']);
-		
+
 		expect(state.images).toEqual({
 			mockImage: { src: 'mockImage' }
 		});
@@ -89,7 +92,6 @@ describe('create-asset', () => {
 		const asset = geometry.assets[0];
 
 		expect(asset.image).toEqual({ src: 'mockImage' });
-		expect(expandPoints).toHaveBeenCalledWith(3, [0, 1, 2], ['mockCoordinates']);
 	});
 	
 	it('should trigger callback once loaded', () => {

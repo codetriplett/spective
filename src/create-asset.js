@@ -2,9 +2,10 @@ import { expandPoints } from './expand-points';
 import { createInstance } from './create-instance';
 
 export function createAsset (state, geometry, source, coordinates, callback) {
-	const { assets, faces, length } = geometry;
+	const { assets, faces } = geometry;
 	const instances = [];
 	const asset = { instances };
+	const coordinatesIsArray = Array.isArray(coordinates);
 	const reportImage = typeof source === 'string' && typeof callback === 'function';
 	let image;
 
@@ -54,15 +55,13 @@ export function createAsset (state, geometry, source, coordinates, callback) {
 			image.set(values.splice(0, 3), i);
 		}
 
-		if (Array.isArray(coordinates)) {
+		if (coordinatesIsArray) {
 			const coordinateStep = 1 / sourceLength;
 			const coordinateStart = coordinateStep / 2;
 
 			coordinates = coordinates.reduce((array, index) => {
 				return array.concat(coordinateStart + coordinateStep * index, 0.5);
 			}, []);
-		} else {
-			coordinates = Array(length * 2).fill(0.5);
 		}
 
 		loader(image);
@@ -71,8 +70,12 @@ export function createAsset (state, geometry, source, coordinates, callback) {
 	if (!image) {
 		return;
 	}
-	
-	asset.coordinates = expandPoints(length, faces, coordinates);
+
+	if (coordinatesIsArray) {
+		asset.coordinates = expandPoints(2, faces, coordinates);
+	} else {
+		asset.coordinates = new Float32Array(faces.length * 2).fill(0.5);
+	}
 
 	return (...optionArray) => {
 		if (optionArray.length === 0) {
