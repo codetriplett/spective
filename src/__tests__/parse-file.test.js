@@ -1,42 +1,72 @@
 import { parseFile } from '../parse-file';
 
-describe('parse-file', () => {
-	const file = `${
+function buildFile (includeCoordinates, includeNormals) {
+	const faces = `f ${[[1, 2, 3], [4, 3, 2]].map(face => {
+		return face.map(point => {
+			return `${point}${includeCoordinates || includeNormals ? `/${includeCoordinates ? point : ''}` : ''}${includeNormals ? `/${point}` : ''}`;
+		}).join(' ');
+	}).join('\nf ')}`;
+
+	return `${
 		'\nv -1.0 0.0 1.0\nv -2.0 0.0 2.0\nv -3.0 0.0 3.0\nv -4.0 0.0 4.0'
 	}\n${
-		'\nvt 0.1 1.1\nvt 0.1 2.1\nvt 0.1 3.1\nvt 0.1 4.1'
+		includeCoordinates ? '\nvt 0.1 1.1\nvt 0.1 2.1\nvt 0.1 3.1\nvt 0.1 4.1' : ''
 	}\n${
-		'\nvn -1.2 0.2 1.2\nvn -2.2 0.2 2.2\nvn -3.2 0.2 3.2\nvn -4.2 0.2 4.2'
+		includeNormals ? '\nvn -1.2 0.2 1.2\nvn -2.2 0.2 2.2\nvn -3.2 0.2 3.2\nvn -4.2 0.2 4.2' : ''
 	}\n${
-		'\nf 1/1/1 2/2/2 3/3/3\nf 4/4/4 3/3/3 2/2/2'
+		faces
 	}`;
+}
 
-	const scene = jest.fn();
-	const geometry = jest.fn();
-	const asset = jest.fn();
+describe('parse-file', () => {
+	let geometry;
 
 	beforeEach(() => {
-		scene.mockClear();
-		geometry.mockClear();
-		scene.mockReturnValue(geometry);
-		geometry.mockReturnValue(asset);
+		geometry = {};
 	});
 
-	it('should set all point values', () => {
-		const actual = parseFile(scene, file, 'mockImage');
+	it('should update geometry and asset with all values', () => {
+		parseFile(geometry, buildFile(true, true));
 
-		expect(actual).toBe(asset);
+		expect(geometry).toEqual({
+			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
+			coordinates: new Float32Array([0.1, 1.1, 0.1, 2.1, 0.1, 3.1, 0.1, 4.1, 0.1, 3.1, 0.1, 2.1]),
+			normals: new Float32Array([-1.2, 0.2, 1.2, -2.2, 0.2, 2.2, -3.2, 0.2, 3.2, -4.2, 0.2, 4.2, -3.2, 0.2, 3.2, -2.2, 0.2, 2.2])
+		});
+	});
 
-		expect(scene).toHaveBeenCalledWith([
-			-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0
-		], [
-			0, 1, 2, 3, 2, 1
-		], [
-			-1.2, 0.2, 1.2, -2.2, 0.2, 2.2, -3.2, 0.2, 3.2, -4.2, 0.2, 4.2, -3.2, 0.2, 3.2, -2.2, 0.2, 2.2
-		]);
+	it('should update geometry and asset without coordinates', () => {
+		parseFile(geometry, buildFile(false, true, ));
 
-		expect(geometry).toHaveBeenCalledWith('mockImage', [
-			0.1, 1.1, 0.1, 2.1, 0.1, 3.1, 0.1, 4.1, 0.1, 3.1, 0.1, 2.1
-		]);
+		expect(geometry).toEqual({
+			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
+			coordinates: new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
+			normals: new Float32Array([-1.2, 0.2, 1.2, -2.2, 0.2, 2.2, -3.2, 0.2, 3.2, -4.2, 0.2, 4.2, -3.2, 0.2, 3.2, -2.2, 0.2, 2.2])
+		});
+	});
+
+	it('should update geometry and asset without normals', () => {
+		parseFile(geometry, buildFile(true, false));
+
+		expect(geometry).toEqual({
+			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
+			coordinates: new Float32Array([0.1, 1.1, 0.1, 2.1, 0.1, 3.1, 0.1, 4.1, 0.1, 3.1, 0.1, 2.1]),
+			normals: new Float32Array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+		});
+	});
+
+	it('should update geometry and asset without coordinates or normals', () => {
+		parseFile(geometry, buildFile(false, false));
+
+		expect(geometry).toEqual({
+			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
+			coordinates: new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
+			normals: new Float32Array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+		});
+	});
+
+	it('should not update geometry if there are no vertices', () => {
+		parseFile(geometry, '');
+		expect(geometry).toEqual({});
 	});
 });

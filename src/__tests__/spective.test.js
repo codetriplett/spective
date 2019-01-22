@@ -1,221 +1,131 @@
 import { createCanvas } from '../create-canvas';
-import { calculateMatrix } from '../calculate-matrix';
-import { resizeScene } from '../resize-scene';
-import { initializeRender } from '../initialize-render';
+import { Scene } from '../Scene';
+import { updateItem } from '../update-item';
+import { createItem } from '../create-item';
+import { parseFile } from '../parse-file';
 import spective from '../spective';
+import { create } from 'domain';
 
 jest.mock('../create-canvas', () => ({ createCanvas: jest.fn() }));
-jest.mock('../calculate-matrix', () => ({ calculateMatrix: jest.fn() }));
-jest.mock('../resize-scene', () => ({ resizeScene: jest.fn() }));
-jest.mock('../initialize-render', () => ({ initializeRender: jest.fn() }));
+jest.mock('../Scene', () => ({ Scene: jest.fn() }));
+jest.mock('../update-item', () => ({ updateItem: jest.fn() }));
+jest.mock('../create-item', () => ({ createItem: jest.fn() }));
+jest.mock('../parse-file', () => ({ parseFile: jest.fn() }));
 
-const createProgram = jest.fn();
-const createShader = jest.fn();
-const shaderSource = jest.fn();
-const compileShader = jest.fn();
-const attachShader = jest.fn();
-const getUniformLocation = jest.fn();
-const getAttribLocation = jest.fn();
-const linkProgram = jest.fn();
-const useProgram = jest.fn();
-const enable = jest.fn();
-const depthFunc = jest.fn();
-const clearColor = jest.fn();
-const uniform3fv = jest.fn();
-const uniformMatrix4fv = jest.fn();
-const clear = jest.fn();
-
-const getContext = jest.fn();
-const addEventListener = jest.fn();
-
-const createElement = jest.fn();
-document.createElement = createElement;
-
-const appendChild = jest.fn();
-document.body.appendChild = appendChild;
-
-let canvas;
-let gl;
-
-function clearMocks () {
-	calculateMatrix.mockClear();
-	createProgram.mockClear();
-	createShader.mockClear();
-	shaderSource.mockClear();
-	compileShader.mockClear();
-	attachShader.mockClear();
-	getUniformLocation.mockClear();
-	getAttribLocation.mockClear();
-	linkProgram.mockClear();
-	useProgram.mockClear();
-	enable.mockClear();
-	depthFunc.mockClear();
-	clearColor.mockClear();
-	uniform3fv.mockClear();
-	uniformMatrix4fv.mockClear();
-	clear.mockClear();
-	
-	calculateMatrix.mockReturnValue('mockMatrix');
-	createProgram.mockReturnValue('mockProgram');
-	createShader.mockImplementation(type => `${type}Created`);
-	getUniformLocation.mockImplementation((program, name) => `${name}UniformLocation`);
-	getAttribLocation.mockImplementation((program, name) => `${name}AttributeLocation`);
-
-	gl = {
-		VERTEX_SHADER: 'mockVertexShader',
-		FRAGMENT_SHADER: 'mockFragmentShader',
-		DEPTH_TEST: 'mockDepthTest',
-		LESS: 'mockLess',
-		createProgram,
-		createShader,
-		shaderSource,
-		compileShader,
-		attachShader,
-		getUniformLocation,
-		getAttribLocation,
-		linkProgram,
-		useProgram,
-		enable,
-		depthFunc,
-		clearColor,
-		uniform3fv,
-		uniformMatrix4fv,
-		clear
-	};
-	
-	addEventListener.mockClear();
-	
-	getContext.mockClear();
-	getContext.mockReturnValue(gl);
-
-	createCanvas.mockClear();
-	createCanvas.mockReturnValue({ getContext });
-	createElement.mockReturnValue({ getContext });
-
-	canvas = document.createElement('canvas');
-	createElement.mockClear();
-
-	window.addEventListener = addEventListener;
-
-	appendChild.mockClear();
-}
+let providedCanvas;
+let createdCanvas;
+let geometries;
+let bind;
+let render;
+let resize;
+let toggle;
+let scene;
 
 describe('spective', () => {
-	beforeEach(clearMocks);
+	beforeEach(() => {
+		window.addEventListener = jest.fn();
+		providedCanvas = { getContext: () => {} };
+		render = jest.fn();
+		resize = jest.fn();
+		toggle = jest.fn();
+		createCanvas.mockClear().mockReturnValue(createdCanvas);
+		updateItem.mockClear();
+		createItem.mockClear().mockReturnValue('mockCreateItem');
+		parseFile.mockClear();
 
-	it('should set up context', () => {
-		spective(canvas);
+		scene = { render, resize, toggle };
 
-		expect(createElement).not.toHaveBeenCalled();
-		expect(getContext).toHaveBeenCalledWith('webgl');
-		expect(createProgram).toHaveBeenCalled();
-		expect(createShader).toHaveBeenCalledWith('mockVertexShader');
-		expect(createShader).toHaveBeenCalledWith('mockFragmentShader');
-		expect(shaderSource).toHaveBeenCalledWith('mockVertexShaderCreated', expect.any(String));
-		expect(shaderSource).toHaveBeenCalledWith('mockFragmentShaderCreated', expect.any(String));
-		expect(compileShader).toHaveBeenCalledWith('mockVertexShaderCreated');
-		expect(compileShader).toHaveBeenCalledWith('mockFragmentShaderCreated');
-		expect(attachShader).toHaveBeenCalledWith('mockProgram', 'mockVertexShaderCreated');
-		expect(attachShader).toHaveBeenCalledWith('mockProgram', 'mockFragmentShaderCreated');
-		expect(linkProgram).toHaveBeenCalledWith('mockProgram');
-		expect(useProgram).toHaveBeenCalledWith('mockProgram');
-		expect(enable).toHaveBeenCalledWith('mockDepthTest');
-		expect(depthFunc).toHaveBeenCalledWith('mockLess');
-		expect(clearColor).toHaveBeenCalledWith(0, 0, 0, 1);
-		expect(getUniformLocation).toHaveBeenCalledWith('mockProgram', 'uInstance');
-		expect(getUniformLocation).toHaveBeenCalledWith('mockProgram', 'uScene');
-		expect(getUniformLocation).toHaveBeenCalledWith('mockProgram', 'uPerspective');
-		expect(getUniformLocation).toHaveBeenCalledWith('mockProgram', 'uImage');
-		expect(getAttribLocation).toHaveBeenCalledWith('mockProgram', 'aVertex');
-		expect(getAttribLocation).toHaveBeenCalledWith('mockProgram', 'aNormal');
-		expect(getAttribLocation).toHaveBeenCalledWith('mockProgram', 'aCoordinate');
+		Scene.mockClear().mockImplementation((canvas, initialGeometries) => {
+			geometries = initialGeometries;
+			return scene;
+		});
 	});
 
-	it('should apply scene properties if they are provided along with canvas', () => {
-		spective(canvas, { position: [1, 2, 3] });
-
-		expect(calculateMatrix).toHaveBeenCalledWith(true, { position: [1, 2, 3] });
-		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
+	it('should create a scene', () => {
+		const actual = spective();
+		expect(actual).toEqual(expect.any(Function));
 	});
 
-	it('should apply scene properties if they are provided without a canvas', () => {
-		spective({ position: [1, 2, 3] });
-
-		expect(calculateMatrix).toHaveBeenCalledWith(true, { position: [1, 2, 3] });
-		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
-	});
-
-	it('should apply default scene properties if none are provided', () => {
+	it('should create a canvas is none is provided', () => {
 		spective();
 
-		expect(calculateMatrix).toHaveBeenCalledWith(true, {}, {});
-		expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
+		expect(createCanvas).toHaveBeenCalledWith();
+		expect(Scene).toHaveBeenCalledWith(createdCanvas, []);
+		expect(window.addEventListener).toHaveBeenCalledWith('resize', resize);
 	});
 
-	it('should set up resize and render', () => {
-		spective();
+	it('should accept a custom canvas', () => {
+		spective(providedCanvas);
 
-		expect(addEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
-
-		expect(resizeScene).toHaveBeenCalledWith({
-			gl,
-			perspectiveLocation: 'uPerspectiveUniformLocation',
-			canvas: expect.anything(),
-			state: expect.anything()
-		});
-
-		expect(initializeRender).toHaveBeenCalledWith({
-			gl,
-			instanceLocation: 'uInstanceUniformLocation',
-			inverseLocation: 'uInverseUniformLocation',
-			imageLocation: 'uImageUniformLocation',
-			vertexLocation: 'aVertexAttributeLocation',
-			normalLocation: 'aNormalAttributeLocation',
-			coordinateLocation: 'aCoordinateAttributeLocation',
-			beforeRender: expect.anything(),
-			geometries: expect.anything(),
-			state: expect.anything()
-		});
+		expect(createCanvas).not.toHaveBeenCalled();
+		expect(Scene).toHaveBeenCalledWith(providedCanvas, []);
+		expect(window.addEventListener).not.toHaveBeenCalled();
 	});
 
-	describe('scenes', () => {
-		let scene;
+	it('should accept initial properties for scene', () => {
+		spective({ key: 'first' }, { key: 'second' });
+		expect(updateItem).toHaveBeenCalledWith(expect.any(Function), scene, { key: 'first' }, { key: 'second' });
+	});
 
-		beforeEach(() => {
-			clearMocks();
-			scene = spective();
-		});
+	it('should accept custom canvas and initial properties', () => {
+		spective(providedCanvas, { key: 'first' }, { key: 'second' });
+		expect(Scene).toHaveBeenCalledWith(providedCanvas, []);
+		expect(updateItem).toHaveBeenCalledWith(expect.any(Function), scene, { key: 'first' }, { key: 'second' });
+	});
 
-		it('should resize scene when empty object provided', () => {
-			scene({});
+	it('should toggle the scene', () => {
+		const actual = spective();
+		actual();
+		expect(toggle).toHaveBeenCalledWith();
+	});
 
-			expect(resizeScene).toHaveBeenCalledWith({
-				gl,
-				perspectiveLocation: 'uPerspectiveUniformLocation',
-				canvas: expect.anything(),
-				state: expect.anything()
-			});
-		});
+	it('should update the scene', () => {
+		updateItem.mockClear();
+		const actual = spective();
+		actual({ key: 'update' });
 
-		it('should update scene', () => {
-			scene({
-				rotation: Math.PI / 3,
-				tilt: Math.PI / 6,
-				position: [1, 2, 3]
-			});
+		expect(updateItem).toHaveBeenCalledWith(expect.any(Function), scene, { key: 'update' });
+	});
 
-			expect(calculateMatrix).toHaveBeenCalledWith(true, {
-				rotation: 1.0471975511965976,
-				tilt: 0.5235987755982988,
-				position: [1, 2, 3]
-			});
-
-			expect(uniformMatrix4fv).toHaveBeenCalledWith('uSceneUniformLocation', false, 'mockMatrix');
-		});
+	it('should create a geometry', () => {
+		const callback = 'mockCallback';
+		const actual = spective();
+		const geometry = actual('object.obj', callback);
 		
-		it('should create geometries', () => {
-			const actual = scene([0.1, 0.2, 0.3, 1.1, 1.2, 1.3, 2.1, 2.2, 2.3], [0, 1, 2]);
-			expect(typeof actual).toBe('function');
-		});
+		expect(createItem).toHaveBeenCalledWith(expect.any(Function), geometries, parseFile, expect.any(Function), 'object.obj', 'mockCallback');
+		expect(geometry).toBe('mockCreateItem');
+	});
+
+	it('should create an asset', () => {
+		const callback = 'mockCallback';
+		const actual = spective();
+		let createAsset;
+
+		createItem.mockImplementation((render, items, initialize, update) => createAsset = update);
+		actual('object.obj', callback);
+		createItem.mockClear().mockImplementation(() => 'mockCreateItem');
+
+		const asset = createAsset(render, 'mockAssets', 'image.jpg', callback);
+		
+		expect(createItem).toHaveBeenCalledWith(expect.any(Function), 'mockAssets', 'image', expect.any(Function), 'image.jpg', 'mockCallback');
+		expect(asset).toBe('mockCreateItem');
+	});
+
+	it('should create an instance', () => {
+		const callback = 'mockCallback';
+		const actual = spective();
+		let createAsset;
+		let createInstance;
+
+		createItem.mockImplementation((render, items, initialize, update) => createAsset = update);
+		actual('object.obj', callback);
+		createItem.mockImplementation((render, items, initialize, update) => createInstance = update);
+		createAsset(render, 'mockAssets', 'image.jpg', callback);
+		createItem.mockClear().mockImplementation(() => 'mockCreateItem');
+
+		const instance = createInstance(render, 'mockInstances', 'first', 'second');
+		
+		expect(createItem).toHaveBeenCalledWith(expect.any(Function), 'mockInstances', updateItem, updateItem, 'first', 'second');
+		expect(instance).toBe('mockCreateItem');
 	});
 });
