@@ -1,8 +1,10 @@
+import { calculateNormals } from './calculate-normals';
+
 function extractArray (file, type, hasIndices) {
 	const lines = file.match(new RegExp(`(^|\n)${type} [^\n]+`, 'g'));
 
 	if (!lines) {
-		return [];
+		return;
 	}
 
 	return lines.map(line => {
@@ -21,8 +23,12 @@ function extractArray (file, type, hasIndices) {
 function extractValues (points, type, array, fallback) {
 	return [].concat(...points.map(point => {
 		const index = point[type];
-		const value = array[index];
 
+		if (!array) {
+			return index;
+		}
+
+		const value = array[index];
 		return value !== undefined ? value : fallback;
 	}));
 }
@@ -30,18 +36,18 @@ function extractValues (points, type, array, fallback) {
 export function parseFile (geometry, file) {
 	const v = extractArray(file, 'v');
 
-	if (v.length === 0) {
+	if (!v) {
 		return;
 	}
 
-	const vt = extractArray(file, 'vt');
+	const vt = extractArray(file, 'vt') || [];
 	const vn = extractArray(file, 'vn');
 	const f = extractArray(file, 'f', true);
+	const faces = [];
 	const vertices = [];
 	const coordinates = [];
 	const normals = [];
 	const coordinateFallback = [0.5, 0.5];
-	const normalFallback = [0.0, 0.0, 0.0];
 
 	f.forEach(face => {
 		const divisions = face.length - 1;
@@ -49,13 +55,17 @@ export function parseFile (geometry, file) {
 		for (let i = 1; i < divisions; i++) {
 			const points = [face[0], face[i], face[i + 1]];
 
+			faces.push(...extractValues(points, 0));
 			vertices.push(...extractValues(points, 0, v));
 			coordinates.push(...extractValues(points, 1, vt, coordinateFallback));
-			normals.push(...extractValues(points, 2, vn, normalFallback));
+
+			if (vn) {
+				normals.push(...extractValues(points, 2, vn));
+			}
 		}
 	});
 
 	geometry.vertices = new Float32Array(vertices);
 	geometry.coordinates = new Float32Array(coordinates);
-	geometry.normals = new Float32Array(normals);
+	geometry.normals = vn ? new Float32Array(normals) : calculateNormals(faces, [].concat(...v));
 }

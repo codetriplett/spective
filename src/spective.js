@@ -31,7 +31,7 @@ export default function spective (...initializationParameters) {
 	const render = scene.render.bind(scene);
 
 	if (needsCanvas) {
-		window.addEventListener('resize', scene.resize);
+		window.addEventListener('resize', scene.resize.bind(scene));
 	}
 
 	scene.toggle();

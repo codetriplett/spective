@@ -72,6 +72,7 @@ export function Scene (canvas, geometries) {
 
 Scene.prototype.render = function (timestamp) {
 	if (this.locked) {
+		this.resolved = undefined;
 		return;
 	}
 	

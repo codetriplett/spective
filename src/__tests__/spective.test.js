@@ -51,7 +51,7 @@ describe('spective', () => {
 
 		expect(createCanvas).toHaveBeenCalledWith();
 		expect(Scene).toHaveBeenCalledWith(createdCanvas, []);
-		expect(window.addEventListener).toHaveBeenCalledWith('resize', resize);
+		expect(window.addEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
 	});
 
 	it('should accept a custom canvas', () => {
