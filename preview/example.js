@@ -1,24 +1,26 @@
-var camera = {
-	rotation: 0,
-	tilt: Math.PI / 4,
-	position: [0, 0.25, -3]
-};
-
-var room = {
-	position: [0, 0, 0],
-	rotation: Math.PI / 4
-};
-
-var scene = window.spective(camera);
-
-setInterval(() => {
-	camera.rotation -= 0.0025;
-	room.rotation -= 0.005;
-
-	scene(camera);
-	mainWhiteTeapot(room);
+// create a viewport and position the camera
+var scene = spective({
+	position: [0, 0.4, -3]
 });
 
+// update the camera
+scene({
+	tilt: Math.PI / 4,
+	position: [0, 0.25, -3]
+});
+
+// load a 3d object
 var teapot = scene('teapot.obj');
+
+// wrap 3d object in an image or color
 var whiteTeapot = teapot('#fff');
-var mainWhiteTeapot = whiteTeapot(room);
+
+// place an instance of a 3d object into the scene
+var mainWhiteTeapot = whiteTeapot({
+	rotation: Math.PI / 4
+});
+
+// update the instance
+mainWhiteTeapot({
+	rotation: Math.PI * 3 / 4
+});

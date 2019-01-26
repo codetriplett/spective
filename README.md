@@ -1,178 +1,61 @@
 # Spective
-This library provides a simple way to create 3d scenes in your browser. Each function call will either update an entity or create a child. spective.min.js can be found in the dist folder and is less than 10kB.
+This library provides a simple way to create 3d scenes in your browser. spective.min.js can be found in the dist folder and is less than 10kB.
 
-## Scenes
-Call the main function to have it create a scene that takes up the full size of the window and automatically resizes. You can set up multiple scenes on one page by passing existing canvas elements as the first parameter each time you call the main function. Any properties that are passed when creating the scene will be used to place the camera in that scene.
-
-### Create Scene
-A function can also be passed as the last parameter. This function will be called before each render and provides the time that has passed since the previous render. This is useful for incrementally updating properties for animations or determining the frames per second.
+## Example
 ```js
+// create a viewport and position the camera
 var scene = spective({
-	rotation: Math.PI / 4,
-	tilt: Math.PI / 4
-}, function (elapsedTime) {
-	// scene upates
+	position: [0, 0.4, -3]
 });
-```
 
-### Update Camera
-Properties that were used to create the scene or in previous updates will not be remembered in future updates.
-```js
+// update the camera
 scene({
-	rotation: Math.PI / 2,
 	tilt: Math.PI / 4,
-	position: [0, 0, -6]
+	position: [0, 0.25, -3]
+});
+
+// load a 3d object from a standard Wavefront OBJ file
+var teapot = scene('teapot.obj');
+
+// wrap 3d object in an image or color
+var whiteTeapot = teapot('#fff');
+
+// place an instance of a 3d object into the scene
+var mainWhiteTeapot = whiteTeapot({
+	rotation: Math.PI / 4
+});
+
+// update the instance
+mainWhiteTeapot({
+	rotation: Math.PI * 3 / 4
 });
 ```
 
-### Update Camera with Multiple Properties
-The transformation of each set of properties will be processed fully before moving on to the next. The following example will move the camera 1 unit up, rotate and tilt it and then move it 6 units back.
+## Cleanup
+You can remove resources and instances from the scene by calling their update functions without parameters.
 ```js
-scene({
-	position: [0, 1, 0]
-}, {
-	rotation: Math.PI / 4,
-	tilt: Math.PI / 4,
-	position: [0, 0, -6]
-});
+// remove all teapots
+teapot();
+
+// remove all white teapots
+whiteTeapot();
+
+// remove a specific instance of a teapot
+mainWhiteTeapot();
 ```
 
-### Resize Camera
+## Pause, Resume and Resize
+You can pause and resume a scene by calling the scene function without any parameters. When a scene is resumed it will resize the perspective in case the canvas dimensions have changed. Only the default canvas will automatically resize without calling these toggle functions
 ```js
-scene({});
-```
+// pause scene
+scene();
 
-### Pause and Resume Camera
-```js
+// resume scene and resize the perspective of the camera
 scene();
 ```
 
-## Geometries
-Geometries define each unique shape in the scene. The first value defines the vertices. The second and third values are optional and define the faces and normals respectively.
-
-### Vertices
-Every three numbers in the array define the x, y and z positions of each vertex.
-
-### Faces
-Every three integers in the array define the index of first, second and third vertex of each face. If these aren't provided, every three vertices will be treated as a separate face in the geometry.
-
-### Normals
-Every three numbers in the array define the x, y and z lengths of a vertex normal vector for each integer in the face array. If these aren't provided, they will be calculated to create a smooth surface.
-
-### Create Geometry Made of Separate Faces
-```js
-// creates one face
-var geometry = scene([
-	-1, 0, -1, 1, 0, -1, -1, 0, 1
-]);
-```
-
-### Create Geometry Made of Connected Faces
-```js
-// creates two faces with a shared edge
-var geometry = scene([
-	-1, 0, -1, 1, 0, -1, -1, 0, 1, 1, 0, 1
-], [
-	0, 1, 2, 3, 2, 1
-]);
-```
-
-### Create Geometry Using Custom Normals
-```js
-var geometry = scene([
-	-1, 0, -1, 1, 0, -1, -1, 0, 1
-], [
-	0, 1, 2
-], [
-	-0.1, -0.4, 0.5, 0.8, 0.2, -0.5, 0.3, -0.4, 0.9
-]);
-```
-
-### Delete Geometry
-```js
-geometry();
-```
-
-## Assets
-Assets provide painted versions of a geometry. The first value defines either the color or an image and the second defines the coordinates for the image.
-
-### Color
-Array of RGB percentages from 0 to 1. Multple colors can be defined and used in the same asset.
-
-### Coordinates
-When using an image, every two numbers in the array will define the horizontal and vertical placement in the image for each vertex. 0 places it at the left or bottom edge of the image. 1 places it at the right or top edge. The image will repeat if numbers less than 0 or greater than 1 are used. When using a set of colors, each number will be the index of the color to use for each vertex.
-
-### Image
-Path to an image to be loaded.
-
-### Create Asset with Color
-```js
-var asset = geometry([0.25, 0.5, 1]);
-```
-
-### Create Asset with Multiple Colors
-```js
-var asset = geometry([
-	1, 0, 0,
-	0, 1, 0,
-	0, 0, 1
-], [
-	0, 1, 2
-]);
-```
-
-### Create Asset with Image
-A function can be passed as a last parameter. That function will be called once the image has finished loading or if it fails. The first parameter will be the name of the image and the second will tell whether it was successful. This is useful for checking if all images have been loaded before displaying the scene.
-```js
-var asset = geometry('image.jpg', [
-	0, 0, 1, 0, 0, 1, 1, 1
-], function (name, loaded) {
-	// check image
-});
-```
-
-### Delete Asset
-```js
-asset();
-```
-
-## Instances
-Instances place assets in a scene.
-
-### Create Instance
-```js
-var instance = asset({
-	position: [0, 0.5, 0],
-	rotation: Math.PI / 4
-});
-```
-
-### Update Instance
-Properties that were used to create the instance or in previous updates will not be remembered in future updates.
-```js
-instance({
-	position: [0, 0.5, 0],
-	rotation: 0.5
-});
-```
-
-### Update Instance with Multiple Properties
-The transformation of each set of properties will be processed fully before moving on to the next. The following example will set a radius of 1 unit to the right before rotating the object around the center of the scene.
-```js
-instance({
-	position: [1, 0, 0]
-}, {
-	rotation: 0.5
-});
-```
-
-### Delete Instance
-```js
-instance();
-```
-
 ## Properties
-Cameras and instances all use the same properties. Transformations occur in the order below.
+Cameras and instances all use the same properties. Transformations occur in the order below. If multiple properties are provided it will process them in order.
 
 ### Scale
 The relative size along the x, y and z axis. A single value can also be used instead of an array.
