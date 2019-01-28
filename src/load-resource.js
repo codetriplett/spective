@@ -1,7 +1,6 @@
 const hexadecimals = '0123456789abcdef';
 const hexadecimalRegex = /^(#[0-9a-f]{3}|#[0-9a-f]{6})$/;
 const imageRegex = /\.(jpg|jpeg|png|gif|bmp|svg)$/;
-const xmlhttp = new XMLHttpRequest();
 
 function parseColor (source) {
 	if (!hexadecimalRegex.test(source)) {
@@ -30,6 +29,8 @@ function loadImage (source, callback) {
 }
 
 function loadFile (source, callback) {
+	const xmlhttp = new XMLHttpRequest();
+	
 	xmlhttp.onload = () => {
 		if (xmlhttp.status === 200) {
 			callback(xmlhttp.responseText);

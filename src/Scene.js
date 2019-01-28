@@ -79,7 +79,7 @@ Scene.prototype.render = function (timestamp) {
 	const {
 		gl,
 		geometries,
-		inverse: scene,
+		step: sceneStep,
 		resolved,
 		sceneLocation,
 		vertexLocation,
@@ -93,7 +93,16 @@ Scene.prototype.render = function (timestamp) {
 	if (resolved === undefined || timestamp !== undefined && !resolved) {
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.clear(gl.DEPTH_BUFFER_BIT);
-		gl.uniformMatrix4fv(sceneLocation, false, scene);
+
+		const loopTimestamp = Date.now();
+		let resolved = true;
+
+		if (sceneStep) {
+			sceneStep(loopTimestamp);
+			resolved = resolved && !this.step;
+		}
+
+		gl.uniformMatrix4fv(sceneLocation, false, this.inverse);
 
 		geometries.forEach(geometry => {
 			const {
@@ -119,7 +128,16 @@ Scene.prototype.render = function (timestamp) {
 					if (image) {
 						asset.imageTexture = setSampler(gl, imageLocation, 0, image, imageTexture);
 
-						instances.forEach(({ matrix, inverse }) => {
+						instances.forEach(instance => {
+							const step = instance.step;
+
+							if (step) {
+								step(loopTimestamp);
+								resolved = resolved && !instance.step;
+							}
+
+							const { matrix, inverse } = instance;
+
 							gl.uniformMatrix4fv(instanceLocation, false, matrix);
 							gl.uniformMatrix4fv(inverseLocation, false, inverse);
 							gl.drawArrays(gl.TRIANGLES, 0, length);
@@ -129,7 +147,7 @@ Scene.prototype.render = function (timestamp) {
 			}
 		});
 
-		this.resolved = true;
+		this.resolved = resolved;
 		window.requestAnimationFrame(this.render.bind(this));
 	} else {
 		this.resolved = timestamp === undefined ? false : undefined;

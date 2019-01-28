@@ -1,26 +1,14 @@
-// create a viewport and position the camera
-var scene = spective({
-	position: [0, 0.4, -3]
-});
-
-// update the camera
-scene({
+var scene = spective(progress => ({
+	rotation: progress * 2 * Math.PI,
 	tilt: Math.PI / 4,
-	position: [0, 0.25, -3]
-});
+	position: [0, 0.25, -4]
+}), () => 18000);
 
-// load a 3d object
-var teapot = scene('teapot.obj');
+scene('teapot.obj')('#07f')(progress => ({
+	rotation: progress * 2 * Math.PI
+}), () => 6000);
 
-// wrap 3d object in an image or color
-var whiteTeapot = teapot('#fff');
-
-// place an instance of a 3d object into the scene
-var mainWhiteTeapot = whiteTeapot({
-	rotation: Math.PI / 4
-});
-
-// update the instance
-mainWhiteTeapot({
-	rotation: Math.PI * 3 / 4
+scene('cube.obj')('#f70')({
+	scale: 0.2,
+	position: [1.25, 0.5, 0]
 });

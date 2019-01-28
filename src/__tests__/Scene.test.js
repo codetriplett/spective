@@ -252,6 +252,34 @@ describe('Scene', () => {
 		]);
 	});
 
+	it('should render with animations', () => {
+		geometries.splice(1, 1);
+		geometries[0].items.splice(1, 1);
+		geometries[0].items[0].items.splice(1, 1);
+
+		const instance = geometries[0].items[0].items[0];
+
+		instance.step = jest.fn().mockImplementation(() => {
+			instance.matrix = 'mockInstanceMatrixStep';
+			instance.inverse = 'mockInstanceInverseStep';
+		});
+
+		const scene = new Scene(canvas, geometries);
+
+		scene.step = jest.fn().mockImplementation(() => {
+			scene.matrix = 'mockSceneMatrixStep';
+			scene.inverse = 'mockSceneInverseStep';
+		});
+
+		scene.render();
+
+		expect(uniformMatrix4fv.mock.calls).toEqual([
+			['mockUniformScene', false, 'mockSceneInverseStep'],
+			['mockUniformInstance', false, 'mockInstanceMatrixStep'],
+			['mockUniformInverse', false, 'mockInstanceInverseStep']
+		]);
+	});
+
 	it('should render when there are no geometries', () => {
 		geometries = [];
 		const scene = new Scene(canvas, geometries);
