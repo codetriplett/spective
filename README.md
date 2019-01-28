@@ -55,7 +55,7 @@ scene();
 ```
 
 ## Properties
-Cameras and instances all use the same properties. Transformations occur in the order below. If multiple properties are provided it will process them in order.
+Cameras and instances all use the same properties. Transformations occur in the order below.
 
 ### Scale
 The relative size along the x, y and z axis. A single value can also be used instead of an array.

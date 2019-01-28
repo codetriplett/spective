@@ -17,11 +17,11 @@ describe('../update-item', () => {
 	});
 
 	it('should update item', () => {
-		updateItem(render, item, 'first', 'second');
+		updateItem(render, item, 'mockPosition');
 
 		expect(calculateMatrix.mock.calls).toEqual([
-			['first', 'second'],
-			[true, 'first', 'second']
+			['mockPosition'],
+			[true, 'mockPosition']
 		]);
 
 		expect(item).toEqual({

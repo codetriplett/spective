@@ -65,7 +65,10 @@ describe('create-item', () => {
 
 	it('should remove an item if no parameters are passed', () => {
 		const actual = createItem(render, items, initialize, update, 'source', callback);
+		render.mockClear();
 		actual();
+
 		expect(items).toEqual([]);
+		expect(render).toHaveBeenCalled();
 	});
 });

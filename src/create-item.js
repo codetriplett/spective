@@ -27,11 +27,13 @@ export function createItem (render, items, initialize, update, ...parameters) {
 		});
 	} else {
 		initialize(render, item, ...parameters);
+		render();
 	}
 
 	return (...parameters) => {
 		if (parameters.length === 0) {
 			items.splice(items.indexOf(item), 1);
+			render();
 			return;
 		}
 
