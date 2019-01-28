@@ -12,7 +12,7 @@ let item;
 describe('../update-item', () => {
 	beforeEach(() => {
 		calculateMatrix.mockClear().mockImplementation(inverse => {
-			return `mockCalculateMatrix${inverse === true ? 'Inverse' : ''}`
+			return `mockCalculateMatrix${inverse ? 'Inverse' : ''}`
 		});
 
 		window.Date.now = jest.fn().mockReturnValue(1000);
@@ -27,7 +27,7 @@ describe('../update-item', () => {
 		updateItem(render, item, 'mockPosition');
 
 		expect(calculateMatrix.mock.calls).toEqual([
-			['mockPosition'],
+			[false, 'mockPosition'],
 			[true, 'mockPosition']
 		]);
 
@@ -47,7 +47,7 @@ describe('../update-item', () => {
 		item.step(1120);
 
 		expect(calculateMatrix.mock.calls).toEqual([
-			['mockPosition60'],
+			[false, 'mockPosition60'],
 			[true, 'mockPosition60']
 		]);
 
@@ -61,7 +61,7 @@ describe('../update-item', () => {
 		item.step(1240);
 
 		expect(calculateMatrix.mock.calls).toEqual([
-			['mockPosition100'],
+			[false, 'mockPosition100'],
 			[true, 'mockPosition100']
 		]);
 
@@ -78,7 +78,7 @@ describe('../update-item', () => {
 		item.step(1360);
 
 		expect(calculateMatrix.mock.calls).toEqual([
-			['mockPosition20'],
+			[false, 'mockPosition20'],
 			[true, 'mockPosition20']
 		]);
 

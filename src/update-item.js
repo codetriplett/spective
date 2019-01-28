@@ -47,7 +47,7 @@ export function updateItem (render, item, ...parameters) {
 
 		const elapsedPosition = position(animationDuration ? animationElapsed / animationDuration : 1);
 
-		item.matrix = calculateMatrix(elapsedPosition);
+		item.matrix = calculateMatrix(false, elapsedPosition);
 		item.inverse = calculateMatrix(true, elapsedPosition);
 		callback();
 	}
