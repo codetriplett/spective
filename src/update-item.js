@@ -4,7 +4,6 @@ export function updateItem (render, item, ...parameters) {
 	let position = parameters[0];
 	const animate = typeof position === 'function';
 	let duration = animate ? parameters[1] : undefined;
-	let callback = !animate ? parameters[1] : parameters[2];
 
 	if (!animate) {
 		const value = position;
@@ -15,47 +14,44 @@ export function updateItem (render, item, ...parameters) {
 		const value = duration || 0;
 		duration = iteration => iteration === 0 ? value : 0;
 	}
-
-	if (typeof callback !== 'function') {
-		callback = () => {};
-	} else {
-		const action = callback;
-		callback = () => action(item.matrix.concat(item.inverse));
-	}
 	
-	let animationCount = 0;
+	let iteration = 0;
+	let frames = 0;
 	let animationTimestamp = Date.now();
-	let animationDuration = duration(animationCount);
+	let animationDuration = duration(iteration);
 	let animationElapsed;
 
 	function step (timestamp) {
 		animationElapsed = timestamp - animationTimestamp;
 
-		while (animationDuration && animationElapsed >= animationDuration) {
-			const nextAnimationDuration = duration(++animationCount);
+		while (animationElapsed >= animationDuration && animationDuration > 0) {
+			let nextAnimationDuration = duration(++iteration, frames);
 
-			if (!nextAnimationDuration) {
-				animationElapsed = animationDuration;
-				item.step = undefined;
-			} else {
+			if (nextAnimationDuration > 0) {
 				animationElapsed -= animationDuration;
 				animationTimestamp = Date.now() - animationElapsed;
+			} else {
+				animationElapsed = animationDuration;
+				item.step = undefined;
 			}
 			
 			animationDuration = nextAnimationDuration;
+			frames = 0;
 		}
 
-		const elapsedPosition = position(animationDuration ? animationElapsed / animationDuration : 1);
+		const progress = animationDuration ? animationElapsed / animationDuration : 1;
+		const animationPosition = position(progress, iteration);
 
-		item.matrix = calculateMatrix(false, elapsedPosition);
-		item.inverse = calculateMatrix(true, elapsedPosition);
-		callback();
+		item.matrix = calculateMatrix(false, animationPosition);
+		item.inverse = calculateMatrix(true, animationPosition);
+		frames++;
 	}
 
-	if (animationDuration) {
+	if (animationDuration > 0) {
 		item.step = step;
 	} else {
 		step();
-		render();
 	}
+	
+	render();
 }
