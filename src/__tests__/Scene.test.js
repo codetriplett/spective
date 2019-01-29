@@ -77,15 +77,15 @@ describe('Scene', () => {
 		getContext.mockClear().mockReturnValue(gl);
 		canvas = { getContext, clientWidth: 1920, clientHeight: 1080 };
 
-		geometries = [
-			{
+		geometries = {
+			firstGeometry: {
 				vertices: 'mockVerticesOne',
 				normals: 'mockNormalsOne',
 				coordinates: 'mockCoordinatesOne',
-				items: [
-					{
+				assets: {
+					firstAsset: {
 						image: 'mockImageOneOne',
-						items: [
+						instances: [
 							{
 								matrix: 'mockMatrixOneOneOne',
 								inverse: 'mockInverseOneOneOne'
@@ -96,9 +96,9 @@ describe('Scene', () => {
 							}
 						]
 					},
-					{
+					secondAsset: {
 						image: 'mockImageOneTwo',
-						items: [
+						instances: [
 							{
 								matrix: 'mockMatrixOneTwoOne',
 								inverse: 'mockInverseOneTwoOne'
@@ -109,16 +109,16 @@ describe('Scene', () => {
 							}
 						]
 					}
-				]
+				}
 			},
-			{
+			secondGeometry: {
 				vertices: 'mockVerticesTwo',
 				normals: 'mockNormalsTwo',
 				coordinates: 'mockCoordinatesTwo',
-				items: [
-					{
+				assets: {
+					firstAsset: {
 						image: 'mockImageTwoOne',
-						items: [
+						instances: [
 							{
 								matrix: 'mockMatrixTwoOneOne',
 								inverse: 'mockInverseTwoOneOne'
@@ -129,9 +129,9 @@ describe('Scene', () => {
 							}
 						]
 					},
-					{
+					secondAsset: {
 						image: 'mockImageTwoTwo',
-						items: [
+						instances: [
 							{
 								matrix: 'mockMatrixTwoTwoOne',
 								inverse: 'mockInverseTwoTwoOne'
@@ -142,9 +142,9 @@ describe('Scene', () => {
 							}
 						]
 					}
-				]
+				}
 			}
-		];
+		};
 	});
 
 	it('should initialize', () => {
@@ -253,11 +253,11 @@ describe('Scene', () => {
 	});
 
 	it('should render with animations', () => {
-		geometries.splice(1, 1);
-		geometries[0].items.splice(1, 1);
-		geometries[0].items[0].items.splice(1, 1);
+		delete geometries.secondGeometry;
+		delete geometries.firstGeometry.assets.secondAsset;
+		delete geometries.firstGeometry.assets.firstAsset.instances.splice(1, 1);
 
-		const instance = geometries[0].items[0].items[0];
+		const instance = geometries.firstGeometry.assets.firstAsset.instances[0]
 
 		instance.step = jest.fn().mockImplementation(() => {
 			instance.matrix = 'mockInstanceMatrixStep';

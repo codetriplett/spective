@@ -1,20 +1,7 @@
 import { createCanvas } from './create-canvas';
 import { Scene } from './Scene';
 import { updateItem } from './update-item';
-import { createItem } from './create-item';
-import { parseFile } from './parse-file';
-
-function createInstance (render, instances, ...matrices) {
-	return createItem(render, instances, updateItem, updateItem, ...matrices);
-}
-
-function createAsset (render, assets, source, callback) {
-	return createItem(render, assets, 'image', createInstance, source, callback);
-}
-
-function createGeometry (render, geometries, source, callback) {
-	return createItem(render, geometries, parseFile, createAsset, source, callback);
-}
+import { createInstance } from './create-instance';
 
 export default function spective (...initializationParameters) {
 	let canvas = initializationParameters[0];
@@ -26,7 +13,7 @@ export default function spective (...initializationParameters) {
 		initializationParameters.shift();
 	}
 
-	const geometries = [];
+	const geometries = {};
 	const scene = new Scene(canvas, geometries);
 	const render = scene.render.bind(scene);
 
@@ -42,7 +29,7 @@ export default function spective (...initializationParameters) {
 		if (creationParameters.length === 0) {
 			scene.toggle();
 		} else if (typeof creationParameters[0] === 'string') {
-			return createGeometry(render, geometries, ...creationParameters);
+			return createInstance(render, geometries, ...creationParameters);
 		} else {
 			updateItem(render, scene, ...creationParameters);
 		}

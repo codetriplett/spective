@@ -104,12 +104,12 @@ Scene.prototype.render = function (timestamp) {
 
 		gl.uniformMatrix4fv(sceneLocation, false, this.inverse);
 
-		geometries.forEach(geometry => {
+		Object.values(geometries).forEach(geometry => {
 			const {
 				vertices,
 				normals,
 				coordinates,
-				items: assets,
+				assets,
 				vertexBuffer,
 				normalBuffer,
 				coordinateBuffer
@@ -122,8 +122,8 @@ Scene.prototype.render = function (timestamp) {
 				geometry.normalBuffer = setAttribute(gl, normalLocation, normals, 3, normalBuffer);
 				geometry.coordinateBuffer = setAttribute(gl, coordinateLocation, coordinates, 2, coordinateBuffer);
 
-				assets.forEach(asset => {
-					const { image, items: instances, imageTexture } = asset;
+				Object.values(assets).forEach(asset => {
+					const { image, instances, imageTexture } = asset;
 
 					if (image) {
 						asset.imageTexture = setSampler(gl, imageLocation, 0, image, imageTexture);

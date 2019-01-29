@@ -1,21 +1,16 @@
 import { createCanvas } from '../create-canvas';
 import { Scene } from '../Scene';
 import { updateItem } from '../update-item';
-import { createItem } from '../create-item';
-import { parseFile } from '../parse-file';
+import { createInstance } from '../create-instance';
 import spective from '../spective';
-import { create } from 'domain';
 
 jest.mock('../create-canvas', () => ({ createCanvas: jest.fn() }));
 jest.mock('../Scene', () => ({ Scene: jest.fn() }));
 jest.mock('../update-item', () => ({ updateItem: jest.fn() }));
-jest.mock('../create-item', () => ({ createItem: jest.fn() }));
-jest.mock('../parse-file', () => ({ parseFile: jest.fn() }));
+jest.mock('../create-instance', () => ({ createInstance: jest.fn() }));
 
 let providedCanvas;
-let createdCanvas;
 let geometries;
-let bind;
 let render;
 let resize;
 let toggle;
@@ -28,10 +23,9 @@ describe('spective', () => {
 		render = jest.fn();
 		resize = jest.fn();
 		toggle = jest.fn();
-		createCanvas.mockClear().mockReturnValue(createdCanvas);
+		createCanvas.mockClear().mockReturnValue('mockCanvas');
 		updateItem.mockClear();
-		createItem.mockClear().mockReturnValue('mockCreateItem');
-		parseFile.mockClear();
+		createInstance.mockClear().mockReturnValue('mockInstance');
 
 		scene = { render, resize, toggle };
 
@@ -50,7 +44,7 @@ describe('spective', () => {
 		spective();
 
 		expect(createCanvas).toHaveBeenCalledWith();
-		expect(Scene).toHaveBeenCalledWith(createdCanvas, []);
+		expect(Scene).toHaveBeenCalledWith('mockCanvas', {});
 		expect(window.addEventListener).toHaveBeenCalledWith('resize', expect.any(Function));
 	});
 
@@ -58,7 +52,7 @@ describe('spective', () => {
 		spective(providedCanvas);
 
 		expect(createCanvas).not.toHaveBeenCalled();
-		expect(Scene).toHaveBeenCalledWith(providedCanvas, []);
+		expect(Scene).toHaveBeenCalledWith(providedCanvas, {});
 		expect(window.addEventListener).not.toHaveBeenCalled();
 	});
 
@@ -69,7 +63,7 @@ describe('spective', () => {
 
 	it('should accept custom canvas and initial properties', () => {
 		spective(providedCanvas, { key: 'first' }, { key: 'second' });
-		expect(Scene).toHaveBeenCalledWith(providedCanvas, []);
+		expect(Scene).toHaveBeenCalledWith(providedCanvas, {});
 		expect(updateItem).toHaveBeenCalledWith(expect.any(Function), scene, { key: 'first' }, { key: 'second' });
 	});
 
@@ -87,45 +81,11 @@ describe('spective', () => {
 		expect(updateItem).toHaveBeenCalledWith(expect.any(Function), scene, { key: 'update' });
 	});
 
-	it('should create a geometry', () => {
-		const callback = 'mockCallback';
-		const actual = spective();
-		const geometry = actual('object.obj', callback);
-		
-		expect(createItem).toHaveBeenCalledWith(expect.any(Function), geometries, parseFile, expect.any(Function), 'object.obj', 'mockCallback');
-		expect(geometry).toBe('mockCreateItem');
-	});
-
-	it('should create an asset', () => {
-		const callback = 'mockCallback';
-		const actual = spective();
-		let createAsset;
-
-		createItem.mockImplementation((render, items, initialize, update) => createAsset = update);
-		actual('object.obj', callback);
-		createItem.mockClear().mockImplementation(() => 'mockCreateItem');
-
-		const asset = createAsset(render, 'mockAssets', 'image.jpg', callback);
-		
-		expect(createItem).toHaveBeenCalledWith(expect.any(Function), 'mockAssets', 'image', expect.any(Function), 'image.jpg', 'mockCallback');
-		expect(asset).toBe('mockCreateItem');
-	});
-
 	it('should create an instance', () => {
-		const callback = 'mockCallback';
-		const actual = spective();
-		let createAsset;
-		let createInstance;
+		const scene = spective();
+		const actual = scene('object.obj', 'image.jpg', 0, 1);
 
-		createItem.mockImplementation((render, items, initialize, update) => createAsset = update);
-		actual('object.obj', callback);
-		createItem.mockImplementation((render, items, initialize, update) => createInstance = update);
-		createAsset(render, 'mockAssets', 'image.jpg', callback);
-		createItem.mockClear().mockImplementation(() => 'mockCreateItem');
-
-		const instance = createInstance(render, 'mockInstances', 'first', 'second');
-		
-		expect(createItem).toHaveBeenCalledWith(expect.any(Function), 'mockInstances', updateItem, updateItem, 'first', 'second');
-		expect(instance).toBe('mockCreateItem');
+		expect(createInstance).toHaveBeenCalledWith(expect.any(Function), geometries, 'object.obj', 'image.jpg', 0, 1);
+		expect(actual).toBe('mockInstance');
 	});
 });
