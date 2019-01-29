@@ -4,7 +4,7 @@ import { loadGeometry } from '../load-geometry';
 jest.mock('../parse-file', () => ({ parseFile: jest.fn() }));
 
 describe('load-geometry', () => {
-	const callback = jest.fn();
+	const render = jest.fn();
 	let load;
 	let error;
 	let geometries;
@@ -39,50 +39,39 @@ describe('load-geometry', () => {
 			};
 		});
 		
-		parseFile.mockClear().mockReturnValue({ vertices: 'mockVertices' });
-		callback.mockClear();
+		render.mockClear();
+		parseFile.mockClear().mockImplementation(geometry => geometry.vertices = 'mockVertices');
 		geometries = {};
 	});
 
 	it('should create a geometry using a file', () => {
-		const actual = loadGeometry(geometries, 'source', callback);
+		const actual = loadGeometry(render, geometries, 'source');
 
-		const geometry = {
-			vertices: 'mockVertices',
-			assets: []
-		};
+		expect(geometries).toEqual({ source: { assets: [] } });
+		expect(actual).toEqual({ assets: [] });
 
-		expect(actual).toBe(true);
-		expect(callback).not.toHaveBeenCalled();
-		expect(geometries).toEqual({});
-
-		callback.mockClear();
 		load();
-
-		expect(callback).toHaveBeenCalledWith(geometry);
-		expect(geometries).toEqual({ source: geometry });
+		expect(geometries).toEqual({ source: { vertices: 'mockVertices', assets: [] } });
+		expect(render).toHaveBeenCalled();
 	});
 
 	it('should handle a failed file load', () => {
-		const actual = loadGeometry(geometries, 'source', callback);
+		const actual = loadGeometry(render, geometries, 'source');
 
-		expect(actual).toBe(true);
-		expect(callback).not.toHaveBeenCalled();
-		expect(geometries).toEqual({});
+		expect(geometries).toEqual({ source: { assets: [] } });
+		expect(actual).toEqual({ assets: [] });
 
-		callback.mockClear();
 		error();
-
-		expect(callback).toHaveBeenCalledWith({});
 		expect(geometries).toEqual({});
+		expect(render).not.toHaveBeenCalled();
 	});
 
 	it('should use an existing geometry', () => {
 		geometries = { source: 'mockGeometry' };
-		const actual = loadGeometry(geometries, 'source', callback);
+		const actual = loadGeometry(render, geometries, 'source');
 
-		expect(actual).toBeUndefined();
-		expect(callback).toHaveBeenCalledWith('mockGeometry');
 		expect(geometries).toEqual({ source: 'mockGeometry' });
+		expect(actual).toBe('mockGeometry');
+		expect(render).not.toHaveBeenCalled();
 	});
 });

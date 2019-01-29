@@ -12,16 +12,10 @@ export function createInstance (render, geometries, geometrySource, ...creationP
 		creationParameters.shift();
 	}
 
-	loadGeometry(geometries, geometrySource, ({ assets }) => {
-		const pending = loadAsset(assets, assetSource, ({ instances }) => {
-			instances.push(instance);
-
-			if (pending) {
-				render();
-			}
-		});
-	});
-
+	const { assets } = loadGeometry(render, geometries, geometrySource);
+	const { instances } = loadAsset(render, assets, assetSource);
+	
+	instances.push(instance);
 	updateItem(render, instance, ...creationParameters);
 
 	return (...updateParameters) => {

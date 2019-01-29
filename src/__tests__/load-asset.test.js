@@ -1,7 +1,7 @@
 import { loadAsset } from '../load-asset';
 
 describe('load-asset', () => {
-	const callback = jest.fn();
+	const render = jest.fn();
 	let load;
 	let error;
 	let assets;
@@ -20,62 +20,56 @@ describe('load-asset', () => {
 			}
 		};
 
-		callback.mockClear();
+		render.mockClear();
 		assets = {};
 	});
 
 	it('should create an asset using hexadecimal', () => {
-		const actual = loadAsset(assets, '#fff', callback);
+		const actual = loadAsset(render, assets, '#fff');
+		const expected = { image: new Uint8Array([255, 255, 255, 255]), instances: [] };
 
-		const asset = {
-			image: new Uint8Array([255, 255, 255, 255]),
-			instances: []
-		};
+		expect(assets).toEqual({ '#fff': expected });
+		expect(actual).toEqual(expected);
+		expect(render).not.toHaveBeenCalled();
+	});
 
-		expect(assets).toEqual({ '#fff': asset });
-		expect(actual).toBeUndefined();
-		expect(callback).toHaveBeenCalledWith(asset);
+	it('should create an asset using a full length hexadecimal', () => {
+		const actual = loadAsset(render, assets, '#ffffff');
+		const expected = { image: new Uint8Array([255, 255, 255, 255]), instances: [] };
+
+		expect(assets).toEqual({ '#ffffff': expected });
+		expect(actual).toEqual(expected);
+		expect(render).not.toHaveBeenCalled();
 	});
 
 	it('should create an asset using an image', () => {
-		const actual = loadAsset(assets, 'source', callback);
+		const actual = loadAsset(render, assets, 'source');
 
-		const asset = {
-			image: { src: 'source' },
-			instances: []
-		};
+		expect(assets).toEqual({ source: { instances: [] } });
+		expect(actual).toEqual({ instances: [] });
 
-		expect(actual).toBe(true);
-		expect(callback).not.toHaveBeenCalled();
-		expect(assets).toEqual({});
-
-		callback.mockClear();
 		load();
-
-		expect(callback).toHaveBeenCalledWith(asset);
-		expect(assets).toEqual({ source: asset });
+		expect(assets).toEqual({ source: { image: { src: 'source' }, instances: [] } });
+		expect(render).toHaveBeenCalled();
 	});
 
 	it('should handle a failed image load', () => {
-		const actual = loadAsset(assets, 'source', callback);
+		const actual = loadAsset(render, assets, 'source');
 
-		expect(actual).toBe(true);
-		expect(callback).not.toHaveBeenCalled();
-		expect(assets).toEqual({});
+		expect(assets).toEqual({ source: { instances: [] } });
+		expect(actual).toEqual({ instances: [] });
 
-		callback.mockClear();
 		error();
-
-		expect(callback).toHaveBeenCalledWith({});
 		expect(assets).toEqual({});
+		expect(render).not.toHaveBeenCalled();
 	});
 
 	it('should use an existing asset', () => {
 		assets = { source: 'mockAsset' };
-		const actual = loadAsset(assets, 'source', callback);
+		const actual = loadAsset(render, assets, 'source');
 
-		expect(actual).toBeUndefined();
-		expect(callback).toHaveBeenCalledWith('mockAsset');
 		expect(assets).toEqual({ source: 'mockAsset' });
+		expect(actual).toEqual('mockAsset');
+		expect(render).not.toHaveBeenCalled();
 	});
 });

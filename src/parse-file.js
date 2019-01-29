@@ -33,7 +33,7 @@ function extractValues (points, type, array, fallback) {
 	}));
 }
 
-export function parseFile (file) {
+export function parseFile (geometry, file) {
 	const v = extractArray(file, 'v');
 
 	if (!v) {
@@ -65,9 +65,7 @@ export function parseFile (file) {
 		}
 	});
 
-	return {
-		vertices: new Float32Array(vertices),
-		coordinates: new Float32Array(coordinates),
-		normals: vn ? new Float32Array(normals) : calculateNormals(faces, [].concat(...v))
-	};
+	geometry.vertices = new Float32Array(vertices);
+	geometry.coordinates = new Float32Array(coordinates);
+	geometry.normals = vn ? new Float32Array(normals) : calculateNormals(faces, [].concat(...v));
 }

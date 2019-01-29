@@ -1,28 +1,26 @@
 import { parseFile } from './parse-file';
 
-function createGeometry (geometries, source, file) {
-	const geometry = { ...parseFile(file), assets: [] };
-	geometries[source] = geometry;
-	return geometry;
-}
+export function loadGeometry (render, geometries, source) {
+	let geometry = geometries[source];
 
-export function loadGeometry (geometries, source, callback) {
-	if (geometries[source]) {
-		callback(geometries[source]);
-	} else {
+	if (!geometry) {
+		geometry = { assets: [] }
+		geometries[source] = geometry;
+
 		const xmlhttp = new XMLHttpRequest();
 		
 		xmlhttp.onload = () => {
 			if (xmlhttp.status === 200) {
-				callback(createGeometry(geometries, source, xmlhttp.responseText));
+				parseFile(geometry, xmlhttp.responseText);
+				render();
 			} else if (xmlhttp.status === 404) {
-				callback({});
+				delete geometries[source];
 			}
 		};
 
 		xmlhttp.open('GET', source);
 		xmlhttp.send();
-
-		return true;
 	}
+
+	return geometry
 }
