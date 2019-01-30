@@ -1,9 +1,11 @@
-import { setAttribute } from '../set-attribute';
-import { setSampler } from '../set-sampler';
+import { updateItem } from '../update-item';
+import { loadAsset } from '../load-asset';
+import { createInstance } from '../create-instance';
 import { Scene } from '../Scene';
 
-jest.mock('../set-attribute', () => ({ setAttribute: jest.fn() }));
-jest.mock('../set-sampler', () => ({ setSampler: jest.fn() }));
+jest.mock('../update-item', () => ({ updateItem: jest.fn() }));
+jest.mock('../load-asset', () => ({ loadAsset: jest.fn() }));
+jest.mock('../create-instance', () => ({ createInstance: jest.fn() }));
 
 const createProgram = jest.fn();
 const createShader = jest.fn();
@@ -19,6 +21,18 @@ const depthFunc = jest.fn();
 const clearColor = jest.fn();
 const clear = jest.fn();
 const uniformMatrix4fv = jest.fn();
+const createBuffer = jest.fn();
+const bindBuffer = jest.fn();
+const enableVertexAttribArray = jest.fn();
+const bufferData = jest.fn();
+const vertexAttribPointer = jest.fn();
+const createTexture = jest.fn();
+const activeTexture = jest.fn();
+const bindTexture = jest.fn();
+const texImage2D = jest.fn();
+const texParameteri = jest.fn();
+const generateMipmap = jest.fn();
+const uniform1i = jest.fn();
 const drawArrays = jest.fn();
 const viewport = jest.fn();
 const getContext = jest.fn();
@@ -29,8 +43,9 @@ let geometries;
 describe('Scene', () => {
 	beforeEach(() => {
 		window.requestAnimationFrame = jest.fn();
-		setAttribute.mockClear().mockImplementation((gl, location) => `${location}Buffer`);
-		setSampler.mockClear().mockImplementation((gl, location) => `${location}Buffer`);
+		updateItem.mockClear();
+		loadAsset.mockClear();
+		createInstance.mockClear();
 		createProgram.mockClear().mockReturnValue('mockCreateProgram');
 		createShader.mockClear().mockReturnValue('mockCreateShader');
 		shaderSource.mockClear();
@@ -45,6 +60,18 @@ describe('Scene', () => {
 		clearColor.mockClear();
 		clear.mockClear();
 		uniformMatrix4fv.mockClear();
+		createBuffer.mockClear().mockReturnValue('mockBuffer');
+		bindBuffer.mockClear();
+		enableVertexAttribArray.mockClear();
+		bufferData.mockClear();
+		vertexAttribPointer.mockClear();
+		createTexture.mockClear().mockReturnValue('mockTexture');
+		activeTexture.mockClear();
+		bindTexture.mockClear();
+		texImage2D.mockClear();
+		texParameteri.mockClear();
+		generateMipmap.mockClear();
+		uniform1i.mockClear();
 		drawArrays.mockClear();
 		viewport.mockClear();
 
@@ -55,6 +82,19 @@ describe('Scene', () => {
 			LESS: 'mockLess',
 			COLOR_BUFFER_BIT: 'mockColorBufferBit',
 			DEPTH_BUFFER_BIT: 'mockDepthBufferBit',
+			ARRAY_BUFFER: 'mockArrayBuffer',
+			STATIC_DRAW: 'mockStaticDraw',
+			FLOAT: 'mockFloat',
+			TEXTURE0: 'mockTexture0',
+			TEXTURE1: 'mockTexture1',
+			TEXTURE_2D: 'mockTexture2d',
+			RGBA: 'mockRgba',
+			UNSIGNED_BYTE: 'mockUnsignedByte',
+			TEXTURE_WRAP_S: 'mockTextureWrapS',
+			TEXTURE_WRAP_T: 'mockTextureWrapT',
+			CLAMP_TO_EDGE: 'mockClampToEdge',
+			TEXTURE_MIN_FILTER: 'mockTextureMinFilter',
+			LINEAR: 'mockLinear',
 			TRIANGLES: 'mockTriangles',
 			createProgram,
 			createShader,
@@ -70,6 +110,18 @@ describe('Scene', () => {
 			clearColor,
 			clear,
 			uniformMatrix4fv,
+			createBuffer,
+			bindBuffer,
+			enableVertexAttribArray,
+			bufferData,
+			vertexAttribPointer,
+			createTexture,
+			activeTexture,
+			bindTexture,
+			texImage2D,
+			texParameteri,
+			generateMipmap,
+			uniform1i,
 			drawArrays,
 			viewport
 		};
@@ -179,6 +231,14 @@ describe('Scene', () => {
 		expect(clearColor).toHaveBeenCalledWith(0, 0, 0, 1);
 
 		expect(actual).toEqual({
+			setAttribute: expect.any(Function),
+			setSampler: expect.any(Function),
+			resize: expect.any(Function),
+			toggle: expect.any(Function),
+			render: expect.any(Function),
+			updateItem: expect.any(Function),
+			loadAsset: expect.any(Function),
+			createInstance: expect.any(Function),
 			canvas,
 			gl,
 			geometries,
@@ -193,8 +253,80 @@ describe('Scene', () => {
 		});
 	});
 
+	it('should set attribute using new buffer', () => {
+		const scene = new Scene(canvas, geometries);
+		scene.setAttribute('mockLocation', 'mockArray', 2, undefined);
+
+		expect(createBuffer).toHaveBeenCalled();
+		expect(bindBuffer).toHaveBeenCalledWith('mockArrayBuffer', 'mockBuffer');
+		expect(enableVertexAttribArray).toHaveBeenCalledWith('mockLocation');
+		expect(bufferData).toHaveBeenCalledWith('mockArrayBuffer', 'mockArray', 'mockStaticDraw');
+		expect(vertexAttribPointer).toHaveBeenCalledWith('mockLocation', 2, 'mockFloat', false, 0, 0);
+	});
+
+	it('should set attribute using existing buffer', () => {
+		const scene = new Scene(canvas, geometries);
+		scene.setAttribute('mockLocation', 'mockArray', 3, 'existingBuffer');
+
+		expect(createBuffer).not.toHaveBeenCalled();
+		expect(bindBuffer).toHaveBeenCalledWith('mockArrayBuffer', 'existingBuffer');
+		expect(enableVertexAttribArray).toHaveBeenCalledWith('mockLocation');
+		expect(bufferData).toHaveBeenCalledWith('mockArrayBuffer', 'mockArray', 'mockStaticDraw');
+		expect(vertexAttribPointer).toHaveBeenCalledWith('mockLocation', 3, 'mockFloat', false, 0, 0);
+	});
+	
+
+	it('should set sampler using new texture', () => {
+		const scene = new Scene(canvas, geometries);
+		scene.setSampler('mockLocation', 'mockUnit', 'mockImage', undefined);
+
+		expect(createTexture).toHaveBeenCalled();
+		expect(bindTexture).toHaveBeenCalledWith('mockTexture2d', 'mockTexture');
+	
+		expect(texImage2D).toHaveBeenCalledWith('mockTexture2d', 0, 'mockRgba', 'mockRgba', 'mockUnsignedByte', 'mockImage');
+		expect(generateMipmap).toHaveBeenCalledWith('mockTexture2d');
+		expect(uniform1i).toHaveBeenCalledWith('mockLocation', 'mockUnit');
+	});
+	
+	it('should set sampler using existing texture', () => {
+		const scene = new Scene(canvas, geometries);
+		scene.setSampler('mockLocation', 'mockUnit', 'mockImage', 'existingTexture');
+
+		expect(createTexture).not.toHaveBeenCalled();
+		expect(bindTexture).toHaveBeenCalledWith('mockTexture2d', 'existingTexture');
+	
+		expect(texImage2D).toHaveBeenCalledWith('mockTexture2d', 0, 'mockRgba', 'mockRgba', 'mockUnsignedByte', 'mockImage');
+		expect(generateMipmap).toHaveBeenCalledWith('mockTexture2d');
+		expect(uniform1i).toHaveBeenCalledWith('mockLocation', 'mockUnit');
+	});
+	
+	it('should set color texture', () => {
+		const scene = new Scene(canvas, geometries);
+		const color = new Uint8Array([1, 2, 3, 255]);
+		scene.setSampler('mockLocation', 'mockUnit', color, 'existingTexture');
+
+		expect(texImage2D).toHaveBeenCalledWith('mockTexture2d', 0, 'mockRgba', 1, 1, 0, 'mockRgba', 'mockUnsignedByte', color);
+		
+		expect(texParameteri.mock.calls).toEqual([
+			['mockTexture2d', 'mockTextureWrapS', 'mockClampToEdge'],
+			['mockTexture2d', 'mockTextureWrapT', 'mockClampToEdge'],
+			['mockTexture2d', 'mockTextureMinFilter', 'mockLinear']
+		]);
+	});
+	
+	it('should set multiple color texture', () => {
+		const scene = new Scene(canvas, geometries);
+		const color = new Uint8Array([1, 2, 3, 255, 10, 20, 30, 255, 50, 150, 250, 255]);
+		scene.setSampler('mockLocation', 'mockUnit', color, 'existingTexture');
+		
+		expect(texImage2D).toHaveBeenCalledWith('mockTexture2d', 0, 'mockRgba', 3, 1, 0, 'mockRgba', 'mockUnsignedByte', color);
+	});
+
 	it('should render', () => {
 		const scene = new Scene(canvas, geometries);
+
+		scene.setAttribute = jest.fn();
+		scene.setSampler = jest.fn();
 		scene.matrix = 'mockSceneMatrix';
 		scene.inverse = 'mockSceneInverse';
 		scene.render();
@@ -204,20 +336,20 @@ describe('Scene', () => {
 			['mockDepthBufferBit']
 		]);
 
-		expect(setAttribute.mock.calls).toEqual([
-			[gl, 'mockAttributeVertex', 'mockVerticesOne', 3, undefined],
-			[gl, 'mockAttributeNormal', 'mockNormalsOne', 3, undefined],
-			[gl, 'mockAttributeCoordinate', 'mockCoordinatesOne', 2, undefined],
-			[gl, 'mockAttributeVertex', 'mockVerticesTwo', 3, undefined],
-			[gl, 'mockAttributeNormal', 'mockNormalsTwo', 3, undefined],
-			[gl, 'mockAttributeCoordinate', 'mockCoordinatesTwo', 2, undefined]
+		expect(scene.setAttribute.mock.calls).toEqual([
+			['mockAttributeVertex', 'mockVerticesOne', 3, undefined],
+			['mockAttributeNormal', 'mockNormalsOne', 3, undefined],
+			['mockAttributeCoordinate', 'mockCoordinatesOne', 2, undefined],
+			['mockAttributeVertex', 'mockVerticesTwo', 3, undefined],
+			['mockAttributeNormal', 'mockNormalsTwo', 3, undefined],
+			['mockAttributeCoordinate', 'mockCoordinatesTwo', 2, undefined]
 		]);
 
-		expect(setSampler.mock.calls).toEqual([
-			[gl, 'mockUniformImage', 0, 'mockImageOneOne', undefined],
-			[gl, 'mockUniformImage', 0, 'mockImageOneTwo', undefined],
-			[gl, 'mockUniformImage', 0, 'mockImageTwoOne', undefined],
-			[gl, 'mockUniformImage', 0, 'mockImageTwoTwo', undefined]
+		expect(scene.setSampler.mock.calls).toEqual([
+			['mockUniformImage', 0, 'mockImageOneOne', undefined],
+			['mockUniformImage', 0, 'mockImageOneTwo', undefined],
+			['mockUniformImage', 0, 'mockImageTwoOne', undefined],
+			['mockUniformImage', 0, 'mockImageTwoTwo', undefined]
 		]);
 
 		expect(uniformMatrix4fv.mock.calls).toEqual([
@@ -283,6 +415,9 @@ describe('Scene', () => {
 	it('should render when there are no geometries', () => {
 		geometries = [];
 		const scene = new Scene(canvas, geometries);
+
+		scene.setAttribute = jest.fn();
+		scene.setSampler = jest.fn();
 		scene.matrix = 'mockSceneMatrix';
 		scene.inverse = 'mockSceneInverse';
 		scene.render();
@@ -296,8 +431,8 @@ describe('Scene', () => {
 			['mockUniformScene', false, 'mockSceneInverse']
 		]);
 
-		expect(setAttribute).not.toHaveBeenCalled();
-		expect(setSampler).not.toHaveBeenCalled();
+		expect(scene.setAttribute).not.toHaveBeenCalled();
+		expect(scene.setSampler).not.toHaveBeenCalled();
 		expect(drawArrays).not.toHaveBeenCalled();
 	});
 

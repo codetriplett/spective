@@ -1,75 +1,230 @@
+import { parseFile } from '../parse-file';
 import { loadAsset } from '../load-asset';
+
+jest.mock('../parse-file', () => ({ parseFile: jest.fn() }));
 
 describe('load-asset', () => {
 	const render = jest.fn();
-	let load;
-	let error;
-	let assets;
+	let geometries;
+	let originalGeometries;
+	let context;
+	let fileLoad;
+	let fileError;
+	let imageLoad;
+	let imageError;
 
 	beforeEach(() => {
-		load = undefined;
-		error = undefined;
+		fileLoad = undefined;
+		fileError = undefined;
+		imageLoad = undefined;
+		imageError = undefined;
+
+		window.XMLHttpRequest.prototype.send = jest.fn().mockImplementation(function () {
+			fileLoad = () => {
+				Object.defineProperty(window.XMLHttpRequest.prototype, 'status', { 
+					get: () => 200
+				});
+		
+				Object.defineProperty(window.XMLHttpRequest.prototype, 'responseText', { 
+					get: () => 'mockResponseText'
+				});
+
+				this.onload();
+			};
+
+			fileError = () => {
+				Object.defineProperty(window.XMLHttpRequest.prototype, 'status', { 
+					get: () => 404
+				});
+		
+				Object.defineProperty(window.XMLHttpRequest.prototype, 'responseText', { 
+					get: () => undefined
+				});
+				
+				this.onload();
+			};
+		});
 		
 		window.Image = class Image {
 			addEventListener (type, callback) {
 				if (type === 'load') {
-					load = callback;
+					imageLoad = callback;
 				} else if (type === 'error') {
-					error = callback;
+					imageError = callback;
 				}
 			}
 		};
 
+		geometries = {
+			firstGeometry: {
+				assets: {
+					firstAsset: { instances: [] }
+				}
+			}
+		};
+
+		parseFile.mockClear().mockImplementation(geometry => geometry.vertices = 'mockVertices');
 		render.mockClear();
-		assets = {};
+		context = { render, geometries };
+		originalGeometries = JSON.parse(JSON.stringify(geometries));
 	});
 
-	it('should create an asset using hexadecimal', () => {
-		const actual = loadAsset(render, assets, '#fff');
-		const expected = { image: new Uint8Array([255, 255, 255, 255]), instances: [] };
+	it('should use an existing asset', () => {
+		const actual = loadAsset.call(context, 'firstGeometry', 'firstAsset');
 
-		expect(assets).toEqual({ '#fff': expected });
-		expect(actual).toEqual(expected);
+		expect(geometries).toEqual(originalGeometries);
+		expect(actual).toEqual(geometries.firstGeometry.assets.firstAsset);
+		expect(render).not.toHaveBeenCalled();
+	});
+	
+	it('should create an asset using hexadecimal', () => {
+		const actual = loadAsset.call(context, 'firstGeometry', '#fff');
+
+		expect(geometries).toEqual({
+			firstGeometry: {
+				assets: {
+					...originalGeometries.firstGeometry.assets,
+					'#fff': {
+						image: new Uint8Array([255, 255, 255, 255]),
+						instances: []
+					}
+				}
+			}
+		});
+
+		expect(actual).toEqual(geometries.firstGeometry.assets['#fff']);
 		expect(render).not.toHaveBeenCalled();
 	});
 
 	it('should create an asset using a full length hexadecimal', () => {
-		const actual = loadAsset(render, assets, '#ffffff');
-		const expected = { image: new Uint8Array([255, 255, 255, 255]), instances: [] };
+		const actual = loadAsset.call(context, 'firstGeometry', '#ffffff');
 
-		expect(assets).toEqual({ '#ffffff': expected });
-		expect(actual).toEqual(expected);
+		expect(geometries).toEqual({
+			firstGeometry: {
+				assets: {
+					...originalGeometries.firstGeometry.assets,
+					'#ffffff': {
+						image: new Uint8Array([255, 255, 255, 255]),
+						instances: []
+					}
+				}
+			}
+		});
+
+		expect(actual).toEqual(geometries.firstGeometry.assets['#ffffff']);
 		expect(render).not.toHaveBeenCalled();
 	});
 
-	it('should create an asset using an image', () => {
-		const actual = loadAsset(render, assets, 'source');
+	it('should load an asset using an existing geometry', () => {
+		const actual = loadAsset.call(context, 'firstGeometry', 'secondAsset');
 
-		expect(assets).toEqual({ source: { instances: [] } });
-		expect(actual).toEqual({ instances: [] });
+		expect(geometries).toEqual({
+			firstGeometry: {
+				assets: {
+					...originalGeometries.firstGeometry.assets,
+					secondAsset: {
+						instances: []
+					}
+				}
+			}
+		});
 
-		load();
-		expect(assets).toEqual({ source: { image: { src: 'source' }, instances: [] } });
-		expect(render).toHaveBeenCalled();
+		expect(actual).toEqual(geometries.firstGeometry.assets.secondAsset);
+
+		imageLoad();
+
+		expect(geometries).toEqual({
+			firstGeometry: {
+				assets: {
+					...originalGeometries.firstGeometry.assets,
+					secondAsset: {
+						image: { src: 'secondAsset' },
+						instances: []
+					}
+				}
+			}
+		});
+
+		expect(render).toHaveBeenCalledTimes(1);
 	});
 
-	it('should handle a failed image load', () => {
-		const actual = loadAsset(render, assets, 'source');
+	it('should handle error with loading asset', () => {
+		const actual = loadAsset.call(context, 'firstGeometry', 'secondAsset');
 
-		expect(assets).toEqual({ source: { instances: [] } });
-		expect(actual).toEqual({ instances: [] });
+		expect(geometries).toEqual({
+			firstGeometry: {
+				assets: {
+					...originalGeometries.firstGeometry.assets,
+					secondAsset: {
+						instances: []
+					}
+				}
+			}
+		});
 
-		error();
-		expect(assets).toEqual({});
+		expect(actual).toEqual(geometries.firstGeometry.assets.secondAsset);
+
+		imageError();
+
+		expect(geometries).toEqual(originalGeometries);
 		expect(render).not.toHaveBeenCalled();
 	});
 
-	it('should use an existing asset', () => {
-		assets = { source: 'mockAsset' };
-		const actual = loadAsset(render, assets, 'source');
+	it('should load an asset using a new geometry', () => {
+		const actual = loadAsset.call(context, 'secondGeometry', 'firstAsset');
 
-		expect(assets).toEqual({ source: 'mockAsset' });
-		expect(actual).toEqual('mockAsset');
-		expect(render).not.toHaveBeenCalled();
+		expect(geometries).toEqual({
+			...originalGeometries,
+			secondGeometry: {
+				assets: {
+					firstAsset: {
+						instances: []
+					}
+				}
+			}
+		});
+
+		expect(actual).toEqual(geometries.secondGeometry.assets.firstAsset);
+
+		fileLoad();
+		imageLoad();
+
+		expect(geometries).toEqual({
+			...originalGeometries,
+			secondGeometry: {
+				vertices: 'mockVertices',
+				assets: {
+					firstAsset: {
+						image: { src: 'firstAsset' },
+						instances: []
+					}
+				}
+			}
+		});
+
+		expect(render).toHaveBeenCalledTimes(2);
+	});
+
+	it('should handle error with loading geometry', () => {
+		const actual = loadAsset.call(context, 'secondGeometry', 'firstAsset');
+
+		expect(geometries).toEqual({
+			...originalGeometries,
+			secondGeometry: {
+				assets: {
+					firstAsset: {
+						instances: []
+					}
+				}
+			}
+		});
+
+		expect(actual).toEqual(geometries.secondGeometry.assets.firstAsset);
+
+		fileError();
+		imageLoad();
+
+		expect(geometries).toEqual(originalGeometries);
+		expect(render).toHaveBeenCalledTimes(1);
 	});
 });

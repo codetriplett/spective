@@ -27,7 +27,7 @@ describe('spective', () => {
 		updateItem.mockClear();
 		createInstance.mockClear().mockReturnValue('mockInstance');
 
-		scene = { render, resize, toggle };
+		scene = { render, resize, toggle, updateItem, createInstance };
 
 		Scene.mockClear().mockImplementation((canvas, initialGeometries) => {
 			geometries = initialGeometries;
@@ -58,13 +58,13 @@ describe('spective', () => {
 
 	it('should accept initial properties for scene', () => {
 		spective({ key: 'first' }, { key: 'second' });
-		expect(updateItem).toHaveBeenCalledWith(expect.any(Function), scene, { key: 'first' }, { key: 'second' });
+		expect(updateItem).toHaveBeenCalledWith(scene, { key: 'first' }, { key: 'second' });
 	});
 
 	it('should accept custom canvas and initial properties', () => {
 		spective(providedCanvas, { key: 'first' }, { key: 'second' });
 		expect(Scene).toHaveBeenCalledWith(providedCanvas, {});
-		expect(updateItem).toHaveBeenCalledWith(expect.any(Function), scene, { key: 'first' }, { key: 'second' });
+		expect(updateItem).toHaveBeenCalledWith(scene, { key: 'first' }, { key: 'second' });
 	});
 
 	it('should toggle the scene', () => {
@@ -78,14 +78,14 @@ describe('spective', () => {
 		const actual = spective();
 		actual({ key: 'update' });
 
-		expect(updateItem).toHaveBeenCalledWith(expect.any(Function), scene, { key: 'update' });
+		expect(updateItem).toHaveBeenCalledWith(scene, { key: 'update' });
 	});
 
 	it('should create an instance', () => {
 		const scene = spective();
 		const actual = scene('object.obj', 'image.jpg', 0, 1);
 
-		expect(createInstance).toHaveBeenCalledWith(expect.any(Function), geometries, 'object.obj', 'image.jpg', 0, 1);
+		expect(createInstance).toHaveBeenCalledWith('object.obj', 'image.jpg', 0, 1);
 		expect(actual).toBe('mockInstance');
 	});
 });

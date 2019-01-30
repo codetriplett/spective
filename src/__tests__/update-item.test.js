@@ -7,6 +7,7 @@ const render = jest.fn();
 const positionFunction = jest.fn();
 const durationFunction = jest.fn();
 let item;
+let context;
 
 describe('../update-item', () => {
 	beforeEach(() => {
@@ -19,10 +20,11 @@ describe('../update-item', () => {
 		positionFunction.mockClear().mockImplementation((progress, iteration) => `mockPosition${Math.round(progress * 100)}Iteration${iteration}`);
 		durationFunction.mockClear().mockImplementation(iteration => (iteration + 1) * 100);
 		item = {};
+		context = { render };
 	});
 
 	it('should set position', () => {
-		updateItem(render, item, 'mockPosition');
+		updateItem.call(context, item, 'mockPosition');
 
 		expect(calculateMatrix.mock.calls).toEqual([
 			[false, 'mockPosition'],
@@ -36,7 +38,7 @@ describe('../update-item', () => {
 	});
 
 	it('should animate position', () => {
-		updateItem(render, item, positionFunction, 200);
+		updateItem.call(context, item, positionFunction, 200);
 		item.step(1120);
 
 		expect(calculateMatrix.mock.calls).toEqual([
@@ -65,7 +67,7 @@ describe('../update-item', () => {
 	});
 	
 	it('should loop animation', () => {
-		updateItem(render, item, positionFunction, durationFunction);
+		updateItem.call(context, item, positionFunction, durationFunction);
 		item.step(1001);
 		item.step(1002);
 		item.step(1360);

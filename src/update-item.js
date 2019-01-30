@@ -1,6 +1,7 @@
 import { calculateMatrix } from './calculate-matrix';
 
-export function updateItem (render, item, ...parameters) {
+export function updateItem (item, ...parameters) {
+	const render = this.render;
 	let position = parameters[0];
 	const animate = typeof position === 'function';
 	let duration = animate ? parameters[1] : undefined;

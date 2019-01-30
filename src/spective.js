@@ -1,7 +1,5 @@
 import { createCanvas } from './create-canvas';
 import { Scene } from './Scene';
-import { updateItem } from './update-item';
-import { createInstance } from './create-instance';
 
 export default function spective (...initializationParameters) {
 	let canvas = initializationParameters[0];
@@ -15,23 +13,23 @@ export default function spective (...initializationParameters) {
 
 	const geometries = {};
 	const scene = new Scene(canvas, geometries);
-	const render = scene.render.bind(scene);
+	const { resize, toggle, updateItem, createInstance } = scene;
 
 	if (needsCanvas) {
-		window.addEventListener('resize', scene.resize.bind(scene));
+		window.addEventListener('resize', resize);
 	}
 
-	scene.toggle();
-	updateItem(render, scene, ...initializationParameters);
-	scene.toggle();
+	toggle();
+	updateItem(scene, ...initializationParameters);
+	toggle();
 
 	return (...creationParameters) => {
 		if (creationParameters.length === 0) {
-			scene.toggle();
+			toggle();
 		} else if (typeof creationParameters[0] === 'string') {
-			return createInstance(render, geometries, ...creationParameters);
+			return createInstance(...creationParameters);
 		} else {
-			updateItem(render, scene, ...creationParameters);
+			updateItem(scene, ...creationParameters);
 		}
 	};
 }

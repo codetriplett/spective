@@ -1,8 +1,7 @@
-import { loadGeometry } from './load-geometry';
-import { loadAsset } from './load-asset';
 import { updateItem } from './update-item';
 
-export function createInstance (render, geometries, geometrySource, ...creationParameters) {
+export function createInstance (geometrySource, ...creationParameters) {
+	const { updateItem, loadAsset, geometries } = this;
 	let assetSource = creationParameters[0];
 	const instance = {};
 
@@ -12,15 +11,14 @@ export function createInstance (render, geometries, geometrySource, ...creationP
 		creationParameters.shift();
 	}
 
-	const geometry = loadGeometry(render, geometries, geometrySource);
-	const asset = loadAsset(render, geometry.assets, assetSource);
+	const asset = loadAsset(geometrySource, assetSource);
 
 	if (!creationParameters.length) {
 		return;
 	}
 	
 	asset.instances.push(instance);
-	updateItem(render, instance, ...creationParameters);
+	updateItem(instance, ...creationParameters);
 
 	return (...updateParameters) => {
 		if (!updateParameters.length) {
@@ -28,7 +26,7 @@ export function createInstance (render, geometries, geometrySource, ...creationP
 			instances.splice(instances.indexOf(instance), 1);
 	
 			if (!instances.length) {
-				const assets = geometry.assets;
+				const assets = geometries[geometrySource].assets;
 				delete assets[assetSource];
 	
 				if (!Object.keys(assets).length) {
@@ -39,6 +37,6 @@ export function createInstance (render, geometries, geometrySource, ...creationP
 			return;
 		}
 
-		updateItem(render, instance, ...updateParameters);
+		updateItem(instance, ...updateParameters);
 	};
 }

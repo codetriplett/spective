@@ -57,15 +57,12 @@ module.exports = function (grunt) {
 			},
 			dist: {
 				src: [
-					'temp/set-attribute.js',
-					'temp/set-sampler.js',
 					'temp/create-canvas.js',
 					'temp/Scene.js',
 					'temp/update-item.js',
 					'temp/calculate-matrix.js',
 					'temp/calculate-normals.js',
 					'temp/parse-file.js',
-					'temp/load-geometry.js',
 					'temp/load-asset.js',
 					'temp/create-instance.js',
 					'temp/spective.js'
