@@ -1,9 +1,22 @@
-import { updateItem } from './update-item';
-
 export function createInstance (geometrySource, ...creationParameters) {
 	const { updateItem, loadAsset, geometries } = this;
-	let assetSource = creationParameters[0];
 	const instance = {};
+	let anchor;
+
+	if (typeof geometrySource !== 'string') {
+		anchor = geometrySource;
+
+		if (!anchor.children) {
+			anchor.children = [];
+		}
+
+		instance.anchor = anchor;
+		anchor.children.push(instance);
+		geometrySource = creationParameters[0];
+		creationParameters.shift();
+	}
+	
+	let assetSource = creationParameters[0];
 
 	if (typeof assetSource !== 'string') {
 		assetSource = '#fff';
@@ -35,6 +48,14 @@ export function createInstance (geometrySource, ...creationParameters) {
 			}
 
 			return;
+		} else if (typeof updateParameters[0] === 'string') {
+			if (!instance.children) {
+				instance.children = [];
+			}
+
+			const child = createInstance.call(this, instance, ...updateParameters);
+			instance.children.push(child);
+			return child;
 		}
 
 		updateItem(instance, ...updateParameters);

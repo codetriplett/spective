@@ -5,6 +5,7 @@ export function updateItem (item, ...parameters) {
 	let position = parameters[0];
 	const animate = typeof position === 'function';
 	let duration = animate ? parameters[1] : undefined;
+	const anchor = item.anchor;
 
 	if (!animate) {
 		const value = position;
@@ -17,7 +18,6 @@ export function updateItem (item, ...parameters) {
 	}
 	
 	let iteration = 0;
-	let frames = 0;
 	let animationTimestamp = Date.now();
 	let animationDuration = duration(iteration);
 	let animationElapsed;
@@ -26,7 +26,7 @@ export function updateItem (item, ...parameters) {
 		animationElapsed = timestamp - animationTimestamp;
 
 		while (animationElapsed >= animationDuration && animationDuration > 0) {
-			let nextAnimationDuration = duration(++iteration, frames);
+			let nextAnimationDuration = duration(++iteration);
 
 			if (nextAnimationDuration > 0) {
 				animationElapsed -= animationDuration;
@@ -37,15 +37,25 @@ export function updateItem (item, ...parameters) {
 			}
 			
 			animationDuration = nextAnimationDuration;
-			frames = 0;
 		}
 
 		const progress = animationDuration ? animationElapsed / animationDuration : 1;
-		const animationPosition = position(progress, iteration);
+		const animationPosition = { ...item.position, ...position(progress, iteration) };
 
-		item.matrix = calculateMatrix(false, animationPosition);
-		item.inverse = calculateMatrix(true, animationPosition);
-		frames++;
+		item.matrix = calculateMatrix(false, animationPosition, anchor);
+		item.inverse = calculateMatrix(true, animationPosition, anchor);
+		item.position = animationPosition;
+
+		if (item.children) {
+			item.children.forEach(child => {
+				if (!child.step) {
+					const childPosition = child.position;
+
+					child.matrix = calculateMatrix(false, childPosition, item);
+					child.inverse = calculateMatrix(true, childPosition, item);
+				}
+			});
+		}
 	}
 
 	if (animationDuration > 0) {

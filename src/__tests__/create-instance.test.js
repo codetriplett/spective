@@ -33,6 +33,27 @@ describe('create-instance', () => {
 		expect(updateItem).toHaveBeenCalledWith({ matrix: 'mockMatrix' }, 0, 1);
 		expect(actual).toEqual(expect.any(Function));
 	});
+	
+	it('should create a child instance', () => {
+		const instance = createInstance.call(context, 'firstGeometry', 'firstAsset', 0, 1);
+		loadAsset.mockClear();
+		updateItem.mockClear();
+		const actual = instance('firstGeometry', 'firstAsset', 2, 3);
+		
+		expect(loadAsset).toHaveBeenCalledWith('firstGeometry', 'firstAsset');
+
+		expect(instances).toEqual([
+			{ matrix: 'mockMatrix', children: expect.any(Array) },
+			{ matrix: 'mockMatrix', anchor: expect.any(Object) }
+		]);
+
+		expect(updateItem).toHaveBeenCalledWith({
+			matrix: 'mockMatrix',
+			anchor: expect.any(Object)
+		}, 2, 3);
+		
+		expect(actual).toEqual(expect.any(Function));
+	});
 
 	it('should accept updates to the instance', () => {
 		const actual = createInstance.call(context, 'firstGeometry', 'firstAsset', 0, 1);

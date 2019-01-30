@@ -17,24 +17,55 @@ describe('../update-item', () => {
 
 		window.Date.now = jest.fn().mockReturnValue(1000);
 		render.mockClear();
-		positionFunction.mockClear().mockImplementation((progress, iteration) => `mockPosition${Math.round(progress * 100)}Iteration${iteration}`);
+		positionFunction.mockClear().mockImplementation((progress, iteration) => ({ update: `mockPosition${Math.round(progress * 100)}Iteration${iteration}` }));
 		durationFunction.mockClear().mockImplementation(iteration => (iteration + 1) * 100);
 		item = {};
 		context = { render };
 	});
 
 	it('should set position', () => {
-		updateItem.call(context, item, 'mockPosition');
+		item.anchor = 'mockAnchor';
+		updateItem.call(context, item, { existing: 'mockPosition' });
 
 		expect(calculateMatrix.mock.calls).toEqual([
-			[false, 'mockPosition'],
-			[true, 'mockPosition']
+			[false, { existing: 'mockPosition' }, 'mockAnchor'],
+			[true, { existing: 'mockPosition' }, 'mockAnchor']
 		]);
 
 		expect(item).toEqual({
+			anchor: 'mockAnchor',
 			matrix: 'mockCalculateMatrix',
-			inverse: 'mockCalculateMatrixInverse'
+			inverse: 'mockCalculateMatrixInverse',
+			position: { existing: 'mockPosition' }
 		});
+	});
+
+	it('should update children', () => {
+		const child = {
+			anchor: 'mockAnchor',
+			matrix: 'mockAnchorMatrix',
+			position: { existing: 'mockPosition' },
+			inverse: 'mockAnchorInverse'
+		};
+
+		const expected = {
+			matrix: 'mockCalculateMatrix',
+			inverse: 'mockCalculateMatrixInverse',
+			position: { existing: 'mockPosition' },
+			children: [child]
+		};
+
+		item.children = [child];
+		updateItem.call(context, item, { existing: 'mockPosition' });
+
+		expect(calculateMatrix.mock.calls).toEqual([
+			[false, { existing: 'mockPosition' }, undefined],
+			[true, { existing: 'mockPosition' }, undefined],
+			[false, { existing: 'mockPosition' }, expected],
+			[true, { existing: 'mockPosition' }, expected]
+		]);
+
+		expect(item).toEqual(expected);
 	});
 
 	it('should animate position', () => {
@@ -42,27 +73,29 @@ describe('../update-item', () => {
 		item.step(1120);
 
 		expect(calculateMatrix.mock.calls).toEqual([
-			[false, 'mockPosition60Iteration0'],
-			[true, 'mockPosition60Iteration0']
+			[false, { update: 'mockPosition60Iteration0' }, undefined],
+			[true, { update: 'mockPosition60Iteration0' }, undefined]
 		]);
 
 		expect(item).toEqual({
 			step: expect.any(Function),
 			matrix: 'mockCalculateMatrix',
-			inverse: 'mockCalculateMatrixInverse'
+			inverse: 'mockCalculateMatrixInverse',
+			position: { update: 'mockPosition60Iteration0' }
 		});
 
 		calculateMatrix.mockClear();
 		item.step(1240);
 
 		expect(calculateMatrix.mock.calls).toEqual([
-			[false, 'mockPosition100Iteration1'],
-			[true, 'mockPosition100Iteration1']
+			[false, { update: 'mockPosition100Iteration1' }, undefined],
+			[true, { update: 'mockPosition100Iteration1' }, undefined]
 		]);
 
 		expect(item).toEqual({
 			matrix: 'mockCalculateMatrix',
-			inverse: 'mockCalculateMatrixInverse'
+			inverse: 'mockCalculateMatrixInverse',
+			position: { update: 'mockPosition100Iteration1' }
 		});
 	});
 	
@@ -74,23 +107,24 @@ describe('../update-item', () => {
 
 		expect(durationFunction.mock.calls).toEqual([
 			[0],
-			[1, 2],
-			[2, 0]
+			[1],
+			[2]
 		]);
 
 		expect(calculateMatrix.mock.calls).toEqual([
-			[false, 'mockPosition1Iteration0'],
-			[true, 'mockPosition1Iteration0'],
-			[false, 'mockPosition2Iteration0'],
-			[true, 'mockPosition2Iteration0'],
-			[false, 'mockPosition20Iteration2'],
-			[true, 'mockPosition20Iteration2']
+			[false, { update: 'mockPosition1Iteration0' }, undefined],
+			[true, { update: 'mockPosition1Iteration0' }, undefined],
+			[false, { update: 'mockPosition2Iteration0' }, undefined],
+			[true, { update: 'mockPosition2Iteration0' }, undefined],
+			[false, { update: 'mockPosition20Iteration2' }, undefined],
+			[true, { update: 'mockPosition20Iteration2' }, undefined]
 		]);
 
 		expect(item).toEqual({
 			step: expect.any(Function),
 			matrix: 'mockCalculateMatrix',
-			inverse: 'mockCalculateMatrixInverse'
+			inverse: 'mockCalculateMatrixInverse',
+			position: { update: 'mockPosition20Iteration2' }
 		});
 	});
 });

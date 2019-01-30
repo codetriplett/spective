@@ -5,7 +5,7 @@ const identityMatrix = [
 	0, 0, 0, 1
 ];
 
-export function calculateMatrix (inverted, properties, anchorMatrix) {
+export function calculateMatrix (inverted, properties, anchor) {
 	let matrices = [];
 
 	if (typeof properties === 'number') {
@@ -83,8 +83,8 @@ export function calculateMatrix (inverted, properties, anchorMatrix) {
 		return [].concat(identityMatrix);
 	}
 
-	if (Array.isArray(anchorMatrix) && anchorMatrix.length >= 32) {
-		matrices.push(anchorMatrix.slice(inverted ? 16 : 0));
+	if (anchor) {
+		matrices.push(inverted ? anchor.inverse : anchor.matrix);
 	}
 
 	return matrices.reduce((previousMatrix, matrix) => {
