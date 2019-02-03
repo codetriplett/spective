@@ -57,14 +57,17 @@ module.exports = function (grunt) {
 			},
 			dist: {
 				src: [
-					'temp/create-canvas.js',
-					'temp/Scene.js',
-					'temp/update-item.js',
-					'temp/calculate-matrix.js',
+					'temp/merge-values.js',
+					'temp/build-matrices.js',
+					'temp/multiply-matrices.js',
+					'temp/Instance.js',
+					'temp/parse-color.js',
+					'temp/Asset.js',
 					'temp/calculate-normals.js',
 					'temp/parse-file.js',
-					'temp/load-asset.js',
-					'temp/create-instance.js',
+					'temp/Geometry.js',
+					'temp/Scene.js',
+					'temp/create-canvas.js',
 					'temp/spective.js'
 				],
 				dest: 'temp/spective.js',

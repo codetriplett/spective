@@ -1,6 +1,4 @@
-import { updateItem } from './update-item';
-import { loadAsset } from './load-asset';
-import { createInstance } from './create-instance';
+import { Geometry } from './Geometry';
 
 const vertexCode = `
 	uniform mat4 uInstance;
@@ -41,7 +39,7 @@ const fragmentCode = `
 `;
 
 export class Scene {
-	constructor (canvas, geometries) {
+	constructor (canvas, camera) {
 		const gl = canvas.getContext('webgl');
 		const program = gl.createProgram();
 		const vertexShader = gl.createShader(gl.VERTEX_SHADER);
@@ -64,13 +62,13 @@ export class Scene {
 		this.resize = this.resize.bind(this);
 		this.toggle = this.toggle.bind(this);
 		this.render = this.render.bind(this);
-		this.updateItem = this.updateItem.bind(this);
-		this.loadAsset = this.loadAsset.bind(this);
-		this.createInstance = this.createInstance.bind(this);
+		this.createGeometry = this.createGeometry.bind(this);
+		this.destroyGeometry = this.destroyGeometry.bind(this);
 
 		this.canvas = canvas;
 		this.gl = gl;
-		this.geometries = geometries;
+		this.camera = camera;
+		this.geometries = {};
 		this.instanceLocation = gl.getUniformLocation(program, 'uInstance');
 		this.inverseLocation = gl.getUniformLocation(program, 'uInverse');
 		this.sceneLocation = gl.getUniformLocation(program, 'uScene');
@@ -164,8 +162,8 @@ export class Scene {
 			setAttribute,
 			setSampler,
 			gl,
+			camera,
 			geometries,
-			step: sceneStep,
 			resolved,
 			sceneLocation,
 			vertexLocation,
@@ -180,15 +178,16 @@ export class Scene {
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.clear(gl.DEPTH_BUFFER_BIT);
 
+			const cameraStep = camera.step;
 			const loopTimestamp = Date.now();
 			let resolved = true;
 
-			if (sceneStep) {
-				sceneStep(loopTimestamp);
-				resolved = resolved && !this.step;
+			if (cameraStep) {
+				cameraStep(loopTimestamp);
+				resolved = resolved && !camera.step;
 			}
 
-			gl.uniformMatrix4fv(sceneLocation, false, this.inverse);
+			gl.uniformMatrix4fv(sceneLocation, false, camera.relativeMatrix);
 
 			Object.values(geometries).forEach(geometry => {
 				const {
@@ -222,10 +221,15 @@ export class Scene {
 									resolved = resolved && !instance.step;
 								}
 
-								const { matrix, inverse } = instance;
+								const {
+									absoluteMatrix,
+									absoluteInverse,
+									relativeMatrix,
+									relativeInverse
+								} = instance;
 
-								gl.uniformMatrix4fv(instanceLocation, false, matrix);
-								gl.uniformMatrix4fv(inverseLocation, false, inverse);
+								gl.uniformMatrix4fv(instanceLocation, false, absoluteMatrix || relativeMatrix);
+								gl.uniformMatrix4fv(inverseLocation, false, absoluteInverse || relativeInverse);
 								gl.drawArrays(gl.TRIANGLES, 0, length);
 							});
 						}
@@ -239,8 +243,19 @@ export class Scene {
 			this.resolved = timestamp === undefined ? false : undefined;
 		}
 	}
-}
 
-Scene.prototype.updateItem = updateItem;
-Scene.prototype.loadAsset = loadAsset;
-Scene.prototype.createInstance = createInstance;
+	createGeometry (source, callback) {
+		let geometry = this.geometries[source];
+
+		if (!geometry) {
+			geometry = new Geometry(source, callback);
+			this.geometries[source] = geometry;
+		}
+
+		return geometry
+	}
+	
+	destroyGeometry (source) {
+		delete this.geometries[source];
+	}
+}

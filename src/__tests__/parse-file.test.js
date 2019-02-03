@@ -22,55 +22,52 @@ function buildFile (includeCoordinates, includeNormals) {
 }
 
 describe('parse-file', () => {
-	let geometry;
-
 	beforeEach(() => {
-		calculateNormals.mockReturnValue('mockCalculateNormals');
-		geometry = {};
+		calculateNormals.mockClear().mockReturnValue('normals')
 	});
 
-	it('should return geometry with all values', () => {
-		parseFile(geometry, buildFile(true, true));
+	it('should return attributes with all values', () => {
+		const actual = parseFile(buildFile(true, true));
 
-		expect(geometry).toEqual({
+		expect(actual).toEqual({
 			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
 			coordinates: new Float32Array([0.1, 1.1, 0.1, 2.1, 0.1, 3.1, 0.1, 4.1, 0.1, 3.1, 0.1, 2.1]),
 			normals: new Float32Array([-1.2, 0.2, 1.2, -2.2, 0.2, 2.2, -3.2, 0.2, 3.2, -4.2, 0.2, 4.2, -3.2, 0.2, 3.2, -2.2, 0.2, 2.2])
 		});
 	});
 
-	it('should return geometry without coordinates', () => {
-		parseFile(geometry, buildFile(false, true, ));
+	it('should return attributes without coordinates', () => {
+		const actual = parseFile(buildFile(false, true, ));
 
-		expect(geometry).toEqual({
+		expect(actual).toEqual({
 			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
 			coordinates: new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
 			normals: new Float32Array([-1.2, 0.2, 1.2, -2.2, 0.2, 2.2, -3.2, 0.2, 3.2, -4.2, 0.2, 4.2, -3.2, 0.2, 3.2, -2.2, 0.2, 2.2])
 		});
 	});
 
-	it('should return geometry without normals', () => {
-		parseFile(geometry, buildFile(true, false));
+	it('should return attributes without normals', () => {
+		const actual = parseFile(buildFile(true, false));
 
-		expect(geometry).toEqual({
+		expect(actual).toEqual({
 			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
 			coordinates: new Float32Array([0.1, 1.1, 0.1, 2.1, 0.1, 3.1, 0.1, 4.1, 0.1, 3.1, 0.1, 2.1]),
-			normals: 'mockCalculateNormals'
+			normals: 'normals'
 		});
 	});
 
-	it('should return geometry without coordinates or normals', () => {
-		parseFile(geometry, buildFile(false, false));
+	it('should return attributes without coordinates or normals', () => {
+		const actual = parseFile(buildFile(false, false));
 
-		expect(geometry).toEqual({
+		expect(actual).toEqual({
 			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
 			coordinates: new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
-			normals: 'mockCalculateNormals'
+			normals: 'normals'
 		});
 	});
 
-	it('should not return geometry if there are no vertices', () => {
-		parseFile(geometry, '');
-		expect(geometry).toEqual({});
+	it('should not return attributes if there are no vertices', () => {
+		const actual = parseFile('');
+		expect(actual).toBeUndefined;
 	});
 });
