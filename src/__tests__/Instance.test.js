@@ -1,55 +1,162 @@
-import { mergeValues } from '../merge-values';
+import { formatProperties } from '../format-properties';
 import { buildMatrices } from '../build-matrices';
 import { multiplyMatrices } from '../multiply-matrices';
 import { Instance } from '../Instance';
 
-jest.mock('../merge-values', () => ({ mergeValues: jest.fn() }));
+jest.mock('../format-properties', () => ({ formatProperties: jest.fn() }));
 jest.mock('../build-matrices', () => ({ buildMatrices: jest.fn() }));
 jest.mock('../multiply-matrices', () => ({ multiplyMatrices: jest.fn() }));
 
 describe('Instance', () => {
-	describe('constructor', () => {
-		let animate;
+	describe.only('constructor', () => {
+		const animate = jest.fn();
 
 		beforeEach(() => {
-			Instance.prototype.animate = jest.fn();
-			animate = Instance.prototype.animate;
+			formatProperties.mockClear().mockReturnValue('properties');
+			Instance.prototype.animate = animate.mockClear();
 		});
 
 		it('should create an instance without an anchor', () => {
-			const actual = new Instance('properties', 'duration', 'easing');
+			const actual = new Instance(false, 'properties', 'duration');
+
+			expect(animate).toHaveBeenCalledWith('properties', 'duration');
+			expect(actual).toEqual({ properties: 'properties' });
+		});
+
+		it('should create an instance with an anchor', () => {
+			const anchor = new Instance(false, 'properties', 'duration');
+
+			formatProperties.mockClear();
+			animate.mockClear();
+
+			const actual = new Instance(anchor, 'properties', 'duration');
 
 			expect(animate).toHaveBeenCalled();
 
+			expect(anchor).toEqual({
+				children: [actual],
+				properties: 'properties'
+			});
+
 			expect(actual).toEqual({
+				anchor,
+				properties: 'properties'
+			});
+		});
+
+		it('should create an invereted instance', () => {
+			const actual = new Instance(true, 'properties', 'duration');
+
+			expect(animate).toHaveBeenCalledWith('properties', 'duration');
+
+			expect(actual).toEqual({
+				inverted: true,
+				properties: 'properties'
+			});
+		});
+	});
+
+	describe('shift', () => {
+		const shift = Instance.prototype.shift;
+		let context;
+	
+		beforeEach(() => {
+			formatProperties.mockClear().mockImplementation(input => input);
+
+			context = {
 				properties: {
-					scale: [1, 1, 1],
-					offset: [0, 0, 0],
-					rotation: 0,
-					tilt: 0,
-					spin: 0,
-					position: [0, 0, 0]
+					first: 1,
+					second: 2
+				},
+				originalProperties: {
+					first: 3,
+					second: 4
+				}
+			};
+		});
+
+		it('should fully shift if no progress is provided', () => {
+			shift.call(context, { first: 5, second: 6 });
+			expect(context.properties).toEqual({ first: 8, second: 10 });
+		});
+
+		it('should not shift properties if progress is 0', () => {
+			shift.call(context, { first: 5, second: 6 }, 0);
+			expect(context.properties).toEqual({ first: 3, second: 4 });
+		});
+
+		it('should partially shift properties if progress is between 0 and 1', () => {
+			shift.call(context, { first: 5, second: 6 }, 0.5);
+			expect(context.properties).toEqual({ first: 5.5, second: 7 });
+		});
+
+		it('should fully shift properties if progress is 1', () => {
+			shift.call(context, { first: 5, second: 6 }, 1);
+			expect(context.properties).toEqual({ first: 8, second: 10 });
+		});
+	});
+
+	describe('prepare', () => {
+		const prepare = Instance.prototype.prepare;
+		const shift = jest.fn();
+		let context;
+	
+		beforeEach(() => {
+			formatProperties.mockClear().mockImplementation(input => input);
+			shift.mockClear();
+
+			context = {
+				shift,
+				properties: {
+					first: 1,
+					second: 2
+				}
+			};
+		});
+
+		it('should store the current properties', () => {
+			prepare.call(context);
+
+			expect(context).toEqual({
+				shift: expect.any(Function),
+				properties: {
+					first: 1,
+					second: 2
+				},
+				originalProperties: {
+					first: 1,
+					second: 2
 				}
 			});
 		});
 
-		it('should create an instance with an anchor', () => {
-			const anchor = new Instance('properties', 'duration', 'easing');
-			const actual = new Instance(anchor, 'properties', 'duration', 'easing');
+		it('should prepare using an input function', () => {
+			const change = jest.fn().mockReturnValue('properties');
+			const actual = prepare.call(context, change);
 
-			expect(animate).toHaveBeenCalled();
+			expect(actual).toEqual(expect.any(Function));
+			expect(change).not.toHaveBeenCalled();
+			expect(formatProperties).not.toHaveBeenCalled();
+			expect(shift).not.toHaveBeenCalled();
 
-			expect(actual).toEqual({
-				anchor,
-				properties: {
-					scale: [1, 1, 1],
-					offset: [0, 0, 0],
-					rotation: 0,
-					tilt: 0,
-					spin: 0,
-					position: [0, 0, 0]
-				}
-			});
+			actual(0.5);
+
+			expect(change).toHaveBeenCalledWith(0.5);
+			expect(formatProperties).toHaveBeenCalledWith('properties');
+			expect(shift).toHaveBeenCalledWith('properties');
+		});
+
+		it('should prepare using an input object', () => {
+			const change = { key: 'value' };
+			const actual = prepare.call(context, change);
+
+			expect(actual).toEqual(expect.any(Function));
+			expect(formatProperties).toHaveBeenCalledWith(change);
+			expect(shift).not.toHaveBeenCalled();
+
+			actual(0.5);
+
+			expect(shift).toHaveBeenCalledWith({ key: 'value' }, 0.5);
 		});
 	});
 
@@ -89,7 +196,7 @@ describe('Instance', () => {
 
 			expect(context).toEqual({
 				anchor: expect.anything(),
-				properties: 'properties',
+				properties: 'existing',
 				relativeMatrix: 'matrices',
 				relativeInverse: 'inverses',
 				absoluteMatrix: 'absoluteMatrix',
@@ -120,12 +227,14 @@ describe('Instance', () => {
 
 	describe('animate', () => {
 		const animate = Instance.prototype.animate;
+		const prepare = jest.fn();
 		const update = jest.fn();
 		let context;
 		let properties;
 		let duration;
 
 		beforeEach(() => {
+			Instance.prototype.prepare = prepare.mockClear();
 			mergeValues.mockClear().mockReturnValue('values');
 			update.mockClear();
 	
@@ -135,7 +244,7 @@ describe('Instance', () => {
 			context = { update, properties: 'properties' };
 		});
 	
-		it('should set properties', () => {
+		it.only('should set properties', () => {
 			animate.call(context, { property: 'update' });
 	
 			expect(mergeValues.mock.calls).toEqual([

@@ -1,4 +1,4 @@
-import { mergeValues } from './merge-values';
+import { formatProperties } from './format-properties';
 import { buildMatrices } from './build-matrices';
 import { multiplyMatrices } from './multiply-matrices';
 
@@ -15,20 +15,35 @@ export class Instance {
 			this.anchor = anchor;
 		}
 
-		this.properties = {
-			scale: [1, 1, 1],
-			offset: [0, 0, 0],
-			rotation: 0,
-			tilt: 0,
-			spin: 0,
-			position: [0, 0, 0]
-		};
-
+		this.properties = { scaleX: 1, scaleY: 1, scaleZ: 1 };
 		this.animate(...parameters);
+	}
+
+	shift (relativeProperties, progress = 1) {
+		const { originalProperties, properties } = this;
+
+		for (const key in relativeProperties) {
+			const originalValue = originalProperties[key] || 0;
+			const change = relativeProperties[key] * progress;
+
+			properties[key] = originalValue + change;
+		}
+	}
+
+	prepare (change) {
+		const self = this;
+
+		if (typeof change === 'function') {
+			return progress => self.shift(formatProperties(change(progress)));
+		}
+	
+		const relativeProperties = formatProperties(change);
+
+		return progress => self.shift(relativeProperties, progress);
 	}
 	
 	update (properties) {
-		const { inverted, anchor, relativeMatrix, relativeInverse } = this;
+		const { inverted, anchor } = this;
 		let matrices;
 		let inverses;
 
@@ -38,30 +53,33 @@ export class Instance {
 
 			this.relativeMatrix = multiplyMatrices(matrices);
 			this.relativeInverse = multiplyMatrices(inverses);
-			this.properties = properties;
-		} else if (anchor) {
-			const matrix = anchor.absoluteMatrix || anchor.relativeMatrix;
-			const inverse = anchor.absoluteInverse || anchor.relativeInverse;
+		}
+		
+		if (anchor) {
+			const {
+				relativeMatrix, relativeInverse,
+				absoluteMatrix, absoluteInverse
+			} = this;
+
+			const matrix = absoluteMatrix || relativeMatrix;
+			const inverse = absoluteInverse || relativeInverse;
 			
-			this.absoluteMatrix = multiplyMatrices([relativeMatrix, matrix]);
-			this.absoluteInverse = multiplyMatrices([relativeInverse, inverse]);
+			this.absoluteMatrix = multiplyMatrices([this.relativeMatrix, matrix]);
+			this.absoluteInverse = multiplyMatrices([this.relativeInverse, inverse]);
 		}
 	}
 
 	animate (properties, duration) {
-		const relative = typeof properties !== 'function';
-		const self = this;
+		this.originalProperties = { ...this.properties };
 
-		if (relative) {
-			const value = properties;
-			properties = () => value;
-		}
+		const interpolate = this.prepare(properties);
 	
 		if (typeof duration !== 'function') {
 			const value = duration || 0;
 			duration = iteration => iteration === 0 ? value : 0;
 		}
 		
+		const self = this;
 		let iteration = 0;
 		let loopTimestamp = Date.now();
 		let loopDuration = duration(iteration);
@@ -71,11 +89,14 @@ export class Instance {
 			loopElapsed = timestamp - loopTimestamp;
 	
 			while (loopElapsed >= loopDuration && loopDuration > 0) {
+				interpolate(1);
+
 				const nextDuration = duration(++iteration);
 	
 				if (nextDuration > 0) {
 					loopElapsed -= loopDuration;
 					loopTimestamp = Date.now() - loopElapsed;
+					self.originalProperties = { ...self.properties };
 				} else {
 					loopElapsed = loopDuration;
 					self.step = undefined;
@@ -87,7 +108,8 @@ export class Instance {
 			const progress = loopDuration ? loopElapsed / loopDuration : 1;
 			const { children = [] } = self;
 
-			self.update(mergeValues(self.properties, properties(progress)));
+			interpolate(progress);
+			self.update(self.properties);
 			children.forEach(child => child.update());
 		}
 	

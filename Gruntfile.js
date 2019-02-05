@@ -57,7 +57,7 @@ module.exports = function (grunt) {
 			},
 			dist: {
 				src: [
-					'temp/merge-values.js',
+					'temp/format-properties.js',
 					'temp/build-matrices.js',
 					'temp/multiply-matrices.js',
 					'temp/Instance.js',

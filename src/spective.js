@@ -32,6 +32,10 @@ export default function spective (...parameters) {
 			assetSource = '#fff';
 		}
 
+		if (!parameters.length) {
+			return;
+		}
+
 		const geometry = createGeometry(geometrySource, render);
 		const asset = geometry.createAsset(assetSource, render);
 		const instance = asset.createInstance(anchor, ...parameters);

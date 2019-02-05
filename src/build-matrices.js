@@ -6,12 +6,22 @@ const identityMatrix = [
 ];
 
 export function buildMatrices (properties = {}, invert, reduce) {
-	const { scale, offset, rotation, tilt, spin, position } = properties;
-	const sequence = [scale, offset, rotation, tilt, spin, position];
+	const {
+		scaleX, scaleY, scaleZ,
+		offsetX, offsetY, offsetZ,
+		angleX, angleY, angleZ,
+		positionX, positionY, positionZ
+	} = properties;
 
-	const matrices = sequence.map((value, i) => {
+	const sequence = [
+		scaleX !== undefined ? [scaleX, scaleY, scaleZ] : undefined,
+		offsetX !== undefined ? [offsetX, offsetY, offsetZ] : undefined,
+		angleY, angleX, angleZ,
+		positionX !== undefined ? [positionX, positionY, positionZ] : undefined
+	];
+
+	const matrices = sequence.map((value, index) => {
 		const matrix = identityMatrix.slice();
-		const index = i % 6;
 
 		if (value === undefined) {
 			return;
@@ -22,7 +32,7 @@ export function buildMatrices (properties = {}, invert, reduce) {
 			const sin = Math.sin(invert ? -value : value);
 			const start = 10 - (index - 2) * 5;
 			const step = index === 2 ? -2 : 1;
-			
+
 			[cos, -sin, sin, cos].forEach((item, i) => {
 				matrix[start + (i >= 2 ? step << 2 : 0) + (i % 2) * step] = item;
 			});
