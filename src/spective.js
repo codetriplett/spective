@@ -55,6 +55,8 @@ export default function spective (...parameters) {
 				return creator(instance, ...parameters);
 			} else {
 				instance.animate(...parameters);
+				render();
+
 				return updater[0];
 			}
 		}];
@@ -69,6 +71,8 @@ export default function spective (...parameters) {
 			return creator(false, ...parameters);
 		} else {
 			camera.animate(...parameters);
+			render();
+			
 			return updater[0];
 		}
 	}];

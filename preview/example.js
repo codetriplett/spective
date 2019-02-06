@@ -15,7 +15,7 @@ var teapot = scene('teapot.obj', '#07f', {
 	var cup = scene('cylinder.obj', '#f70', {
 		scale: [-0.8, -0.98, -0.8],
 		offsetX: 1.25,
-		angleY: iteration * Math.PI / 3
+		angleY: iteration * Math.PI / 3 + 0.2
 	}, {
 		scaleY: 0.2
 	}, 250, {
@@ -27,8 +27,7 @@ var teapot = scene('teapot.obj', '#07f', {
 	return 1000;
 });
 
-// TODO: fix the anchor calculation
-// teapot('cylinder.obj', {
-// 	scale: [-0.6, -1.02, -0.6],
-// 	offsetX: 1.25
-// });
+teapot('cylinder.obj', {
+	scale: [-0.7, -1.02, -0.7],
+	offsetX: 1.25
+});

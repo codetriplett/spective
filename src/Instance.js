@@ -97,11 +97,11 @@ export class Instance {
 			const {
 				relativeMatrix, relativeInverse,
 				absoluteMatrix, absoluteInverse
-			} = this;
+			} = anchor;
 
 			const matrix = absoluteMatrix || relativeMatrix;
 			const inverse = absoluteInverse || relativeInverse;
-			
+
 			this.absoluteMatrix = multiplyMatrices([this.relativeMatrix, matrix]);
 			this.absoluteInverse = multiplyMatrices([this.relativeInverse, inverse]);
 		}
