@@ -28,6 +28,7 @@ export class Instance {
 		let originalProperties;
 		let relativeProperties;
 		let duration;
+		let callback;
 
 		const interpolate = progress => {
 			const { properties } = self;
@@ -38,12 +39,19 @@ export class Instance {
 			}
 		};
 
+		const report = () => {
+			if (typeof callback === 'function') {
+				callback({ ...self.properties });
+			}
+		};
+
 		const iterate = () => {
 			if (!iteration) {
 				const animation = animations[animationIndex];
 
 				relativeProperties = formatProperties(animation[0]);
 				duration = animation[1];
+				callback = animation[2];
 				animationIndex++;
 				
 				if (typeof duration !== 'function') {
@@ -66,6 +74,7 @@ export class Instance {
 					interpolate(1);
 				}
 
+				report();
 				iteration = 0;
 				
 				if (animationIndex < animations.length) {
@@ -77,7 +86,7 @@ export class Instance {
 			}
 		};
 
-		return [interpolate, iterate];
+		return [interpolate, iterate, report];
 	}
 	
 	update (properties) {
@@ -108,36 +117,47 @@ export class Instance {
 	}
 
 	animate (...parameters) {
-		const [interpolate, iterate] = this.prepare(...parameters);
+		const [interpolate, iterate, report] = this.prepare(...parameters);
 		const self = this;
 		let loopTimestamp = Date.now();
 		let loopDuration = iterate();
 		let loopElapsed;
+
+		if (this.step) {
+			this.step();
+			this.step = undefined;
+		}
 	
 		function step (timestamp) {
 			loopElapsed = timestamp - loopTimestamp;
 	
-			while (loopElapsed >= loopDuration) {
-				const nextDuration = iterate();
-	
-				if (nextDuration > 0) {
-					loopElapsed -= loopDuration;
-					loopTimestamp = Date.now() - loopElapsed;
-				} else {
-					self.step = undefined;
-				}
-				
-				loopDuration = nextDuration;
-			}
-
-			if (loopDuration > 0) {
-				interpolate(loopElapsed / loopDuration);
-			}
+			if (timestamp || !self.step) {
+				if (loopDuration > 0) {
+					while (loopElapsed >= loopDuration) {
+						const nextDuration = iterate();
 			
-			const { properties, children = [] } = self;
+						if (nextDuration > 0) {
+							loopElapsed -= loopDuration;
+							loopTimestamp = Date.now() - loopElapsed;
+						} else {
+							self.step = undefined;
+						}
+						
+						loopDuration = nextDuration;
+					}
 
-			self.update(properties);
-			children.forEach(child => child.update());
+					interpolate(loopElapsed / loopDuration);
+				}
+			
+				const { properties, children = [] } = self;
+
+				self.update(properties);
+				children.forEach(child => child.update());
+			}
+
+			if (timestamp === undefined) {
+				report();
+			}
 		}
 
 		if (loopDuration > 0) {
