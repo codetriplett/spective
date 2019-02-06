@@ -135,8 +135,8 @@ describe('format-properties', () => {
 		expect(actual).toEqual({ angleY: 1 });
 	});
 	
-	it('should return an empty object if no properties were provided', () => {
+	it('should return the default object if no properties were provided', () => {
 		const actual = formatProperties();
-		expect(actual).toEqual({});
+		expect(actual).toEqual({ scaleX: 1, scaleY: 1, scaleZ: 1 });
 	});
 });

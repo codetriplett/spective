@@ -8,7 +8,7 @@ jest.mock('../build-matrices', () => ({ buildMatrices: jest.fn() }));
 jest.mock('../multiply-matrices', () => ({ multiplyMatrices: jest.fn() }));
 
 describe('Instance', () => {
-	describe.only('constructor', () => {
+	describe('constructor', () => {
 		const animate = jest.fn();
 
 		beforeEach(() => {
@@ -56,57 +56,54 @@ describe('Instance', () => {
 		});
 	});
 
-	describe('shift', () => {
-		const shift = Instance.prototype.shift;
-		let context;
+	// describe('shift', () => {
+	// 	const shift = Instance.prototype.shift;
+	// 	let context;
 	
-		beforeEach(() => {
-			formatProperties.mockClear().mockImplementation(input => input);
+	// 	beforeEach(() => {
+	// 		formatProperties.mockClear().mockImplementation(input => input);
 
-			context = {
-				properties: {
-					first: 1,
-					second: 2
-				},
-				originalProperties: {
-					first: 3,
-					second: 4
-				}
-			};
-		});
+	// 		context = {
+	// 			properties: {
+	// 				first: 1,
+	// 				second: 2
+	// 			},
+	// 			originalProperties: {
+	// 				first: 3,
+	// 				second: 4
+	// 			}
+	// 		};
+	// 	});
 
-		it('should fully shift if no progress is provided', () => {
-			shift.call(context, { first: 5, second: 6 });
-			expect(context.properties).toEqual({ first: 8, second: 10 });
-		});
+	// 	it('should fully shift if no progress is provided', () => {
+	// 		shift.call(context, { first: 5, second: 6 });
+	// 		expect(context.properties).toEqual({ first: 8, second: 10 });
+	// 	});
 
-		it('should not shift properties if progress is 0', () => {
-			shift.call(context, { first: 5, second: 6 }, 0);
-			expect(context.properties).toEqual({ first: 3, second: 4 });
-		});
+	// 	it('should not shift properties if progress is 0', () => {
+	// 		shift.call(context, { first: 5, second: 6 }, 0);
+	// 		expect(context.properties).toEqual({ first: 3, second: 4 });
+	// 	});
 
-		it('should partially shift properties if progress is between 0 and 1', () => {
-			shift.call(context, { first: 5, second: 6 }, 0.5);
-			expect(context.properties).toEqual({ first: 5.5, second: 7 });
-		});
+	// 	it('should partially shift properties if progress is between 0 and 1', () => {
+	// 		shift.call(context, { first: 5, second: 6 }, 0.5);
+	// 		expect(context.properties).toEqual({ first: 5.5, second: 7 });
+	// 	});
 
-		it('should fully shift properties if progress is 1', () => {
-			shift.call(context, { first: 5, second: 6 }, 1);
-			expect(context.properties).toEqual({ first: 8, second: 10 });
-		});
-	});
+	// 	it('should fully shift properties if progress is 1', () => {
+	// 		shift.call(context, { first: 5, second: 6 }, 1);
+	// 		expect(context.properties).toEqual({ first: 8, second: 10 });
+	// 	});
+	// });
 
 	describe('prepare', () => {
 		const prepare = Instance.prototype.prepare;
-		const shift = jest.fn();
 		let context;
 	
 		beforeEach(() => {
 			formatProperties.mockClear().mockImplementation(input => input);
-			shift.mockClear();
 
 			context = {
-				shift,
 				properties: {
 					first: 1,
 					second: 2
@@ -114,49 +111,163 @@ describe('Instance', () => {
 			};
 		});
 
-		it('should store the current properties', () => {
-			prepare.call(context);
+		it('should prepare an instant update', () => {
+			const [interpolate, iterate] = prepare.call(context, { first: 3, second: 4 });
+			
+			expect(formatProperties).not.toHaveBeenCalled();
+
+			let actual = iterate();
+
+			expect(formatProperties).toHaveBeenCalledWith({ first: 3, second: 4 });
+			expect(actual).toBeUndefined();
 
 			expect(context).toEqual({
-				shift: expect.any(Function),
-				properties: {
-					first: 1,
-					second: 2
-				},
-				originalProperties: {
-					first: 1,
-					second: 2
-				}
+				properties: { first: 4, second: 6 }
+			});
+
+			interpolate(0.5);
+
+			expect(context).toEqual({
+				properties: { first: 4, second: 6 }
 			});
 		});
 
-		it('should prepare using an input function', () => {
-			const change = jest.fn().mockReturnValue('properties');
-			const actual = prepare.call(context, change);
-
-			expect(actual).toEqual(expect.any(Function));
-			expect(change).not.toHaveBeenCalled();
+		it('should prepare a single run animation', () => {
+			const [interpolate, iterate] = prepare.call(context, { first: 3, second: 4 }, 200);
+			
 			expect(formatProperties).not.toHaveBeenCalled();
-			expect(shift).not.toHaveBeenCalled();
 
-			actual(0.5);
+			let actual = iterate();
 
-			expect(change).toHaveBeenCalledWith(0.5);
-			expect(formatProperties).toHaveBeenCalledWith('properties');
-			expect(shift).toHaveBeenCalledWith('properties');
+			expect(formatProperties).toHaveBeenCalledWith({ first: 3, second: 4 });
+			expect(actual).toBe(200);
+
+			expect(context).toEqual({
+				properties: { first: 1, second: 2 }
+			});
+
+			interpolate(0);
+
+			expect(context).toEqual({
+				properties: { first: 1, second: 2 }
+			});
+
+			interpolate(0.5);
+
+			expect(context).toEqual({
+				properties: { first: 2.5, second: 4 }
+			});
+
+			interpolate(1);
+
+			expect(context).toEqual({
+				properties: { first: 4, second: 6 }
+			});
+
+			actual = iterate();
+
+			expect(actual).toBeUndefined();
+
+			expect(context).toEqual({
+				properties: { first: 4, second: 6 }
+			});
+
+			interpolate(0.5)
+
+			expect(context).toEqual({
+				properties: { first: 4, second: 6 }
+			});
 		});
 
-		it('should prepare using an input object', () => {
-			const change = { key: 'value' };
-			const actual = prepare.call(context, change);
+		it('should prepare a continuous run animation', () => {
+			const duration = jest.fn().mockImplementation(iteration => 2 - iteration);
+			const [interpolate, iterate] = prepare.call(context, { first: 3, second: 4 }, duration);
+			
+			expect(formatProperties).not.toHaveBeenCalled();
 
-			expect(actual).toEqual(expect.any(Function));
-			expect(formatProperties).toHaveBeenCalledWith(change);
-			expect(shift).not.toHaveBeenCalled();
+			let actual = iterate();
 
-			actual(0.5);
+			expect(duration).toHaveBeenCalledWith(0);
+			expect(actual).toBe(2);
 
-			expect(shift).toHaveBeenCalledWith({ key: 'value' }, 0.5);
+			expect(context).toEqual({
+				properties: { first: 1, second: 2 }
+			});
+
+			interpolate(0.5);
+
+			expect(context).toEqual({
+				properties: { first: 2.5, second: 4 }
+			});
+
+			duration.mockClear();
+			actual = iterate();
+
+			expect(duration).toHaveBeenCalledWith(1);
+			expect(actual).toBe(1);
+
+			expect(context).toEqual({
+				properties: { first: 4, second: 6 }
+			});
+
+			interpolate(0.5);
+
+			expect(context).toEqual({
+				properties: { first: 5.5, second: 8 }
+			});
+
+			duration.mockClear();
+			actual = iterate();
+
+			expect(duration).toHaveBeenCalledWith(2);
+			expect(actual).toBeUndefined();
+
+			expect(context).toEqual({
+				properties: { first: 7, second: 10 }
+			});
+
+			interpolate(0.5);
+
+			expect(context).toEqual({
+				properties: { first: 7, second: 10 }
+			});
+		});
+
+		it('should support multiple animations', () => {
+			const [interpolate, iterate] = prepare.call(context, {
+				first: 3, second: 4
+			}, {
+				first: 5, second: 6
+			}, 200);
+			
+			expect(formatProperties).not.toHaveBeenCalled();
+
+			let actual = iterate();
+
+			expect(formatProperties.mock.calls).toEqual([
+				[{ first: 3, second: 4 }],
+				[{ first: 5, second: 6 }]
+			]);
+
+			expect(actual).toBe(200);
+
+			expect(context).toEqual({
+				properties: { first: 4, second: 6 }
+			});
+
+			interpolate(0.5);
+
+			expect(context).toEqual({
+				properties: { first: 6.5, second: 9 }
+			});
+
+			actual = iterate();
+
+			expect(actual).toBeUndefined();
+
+			expect(context).toEqual({
+				properties: { first: 9, second: 12 }
+			});
 		});
 	});
 
@@ -166,10 +277,6 @@ describe('Instance', () => {
 	
 		beforeEach(() => {
 			context = {
-				anchor: {
-					relativeMatrix: 'anchorMatrix',
-					relativeInverse: 'anchorInverse'
-				},
 				properties: 'existing',
 				relativeMatrix: 'relativeMatrix',
 				relativeInverse: 'relativeInverse',
@@ -195,7 +302,6 @@ describe('Instance', () => {
 			]);
 
 			expect(context).toEqual({
-				anchor: expect.anything(),
 				properties: 'existing',
 				relativeMatrix: 'matrices',
 				relativeInverse: 'inverses',
@@ -208,135 +314,130 @@ describe('Instance', () => {
 			update.call(context);
 
 			expect(buildMatrices).not.toHaveBeenCalled();
-
-			expect(multiplyMatrices.mock.calls).toEqual([
-				[['relativeMatrix', 'anchorMatrix']],
-				[['relativeInverse', 'anchorInverse']]
-			]);
+			expect(multiplyMatrices).not.toHaveBeenCalled();
 
 			expect(context).toEqual({
-				anchor: expect.anything(),
 				properties: 'existing',
 				relativeMatrix: 'relativeMatrix',
 				relativeInverse: 'relativeInverse',
-				absoluteMatrix: 'relativeMatrix,anchorMatrix',
-				absoluteInverse: 'relativeInverse,anchorInverse'
+				absoluteMatrix: 'absoluteMatrix',
+				absoluteInverse: 'absoluteInverse'
+			});
+		});
+		
+		it('should update with anchor', () => {
+			const anchor = {
+				relativeMatrix: 'anchorMatrix',
+				relativeInverse: 'anchorInverse'
+			};
+
+			context.anchor = anchor;
+			update.call(context);
+
+			expect(buildMatrices).not.toHaveBeenCalled();
+
+			expect(multiplyMatrices.mock.calls).toEqual([
+				[["relativeMatrix", "absoluteMatrix"]],
+				[["relativeInverse", "absoluteInverse"]]
+			])
+
+			expect(context).toEqual({
+				anchor,
+				properties: 'existing',
+				relativeMatrix: 'relativeMatrix',
+				relativeInverse: 'relativeInverse',
+				absoluteMatrix: 'relativeMatrix,absoluteMatrix',
+				absoluteInverse: 'relativeInverse,absoluteInverse'
 			});
 		});
 	});
 
 	describe('animate', () => {
 		const animate = Instance.prototype.animate;
+		const interpolate = jest.fn();
+		const iterate = jest.fn();
 		const prepare = jest.fn();
 		const update = jest.fn();
 		let context;
 		let properties;
-		let duration;
+		let iteration;
 
 		beforeEach(() => {
-			Instance.prototype.prepare = prepare.mockClear();
-			mergeValues.mockClear().mockReturnValue('values');
+			interpolate.mockClear().mockImplementation(progress => context.properties = progress);
+			iterate.mockClear().mockImplementation(() => (iteration++ + 1) * 100);
+			Instance.prototype.prepare = prepare.mockClear().mockReturnValue([interpolate, iterate]);
 			update.mockClear();
 	
 			window.Date.now = jest.fn().mockReturnValue(1000);
-			properties = jest.fn().mockImplementation(progress => ({ property: `update${progress}` }));
-			duration = jest.fn().mockImplementation(iteration => (iteration + 1) * 100);
-			context = { update, properties: 'properties' };
+			context = { prepare, update, properties: 'properties' };
+			iteration = 0;
 		});
 	
-		it.only('should set properties', () => {
-			animate.call(context, { property: 'update' });
-	
-			expect(mergeValues.mock.calls).toEqual([
-				['properties', { property: 'update' }]
-			]);
+		it('should instantly update properties', () => {
+			iterate.mockReturnValue(undefined);
+			animate.call(context, properties);
+
+			expect(iterate).toHaveBeenCalledTimes(1);
+			expect(interpolate).not.toHaveBeenCalled();
 
 			expect(update.mock.calls).toEqual([
-				['values']
+				['properties']
 			]);
-	
-			expect(context).toEqual({
-				update: expect.anything(),
-				properties: 'properties'
-			});
 		});
 
 		it('should update children', () => {
+			iterate.mockReturnValue(undefined);
 			const childUpdate = jest.fn();
 			context.children = [{ update: childUpdate }];
-			animate.call(context, { property: 'update' });
+			animate.call(context);
 
 			expect(childUpdate.mock.calls).toEqual([
 				[]
 			]);
-	
-			expect(context).toEqual({
-				update: expect.anything(),
-				properties: 'properties',
-				children: [{ update: expect.anything() }]
-			});
 		});
 	
 		it('should animate position', () => {
-			animate.call(context, properties, 200);
+			animate.call(context);
 			context.step(1120);
-	
-			expect(mergeValues.mock.calls).toEqual([
-				['properties', { property: 'update0.6' }]
-			]);
+			
+			expect(iterate).toHaveBeenCalledTimes(2);
+			expect(interpolate).toHaveBeenCalledWith(0.1);
 	
 			expect(update.mock.calls).toEqual([
-				['values']
+				[0.1]
 			]);
 	
-			expect(context).toEqual({
-				update: expect.anything(),
-				properties: 'properties',
-				step: expect.any(Function)
-			});
-	
+			iterate.mockClear();
+			interpolate.mockClear();
 			update.mockClear();
 			context.step(1240);
+			
+			expect(iterate).toHaveBeenCalledTimes(1);
+			expect(interpolate).toHaveBeenCalledWith(0.2);
 	
 			expect(update.mock.calls).toEqual([
-				['values']
+				[0.2]
 			]);
-	
-			expect(context).toEqual({
-				update: expect.anything(),
-				properties: 'properties'
-			});
 		});
 		
 		it('should loop animation', () => {
-			animate.call(context, properties, duration);
+			animate.call(context);
 			context.step(1001);
 			context.step(1002);
 			context.step(1360);
-	
-			expect(mergeValues.mock.calls).toEqual([
-				['properties', { property: 'update0.01' }],
-				['properties', { property: 'update0.02' }],
-				['properties', { property: 'update0.2' }]
-			]);
-	
-			expect(duration.mock.calls).toEqual([
-				[0],
-				[1],
-				[2]
+			
+			expect(iterate).toHaveBeenCalledTimes(3);
+			expect(interpolate.mock.calls).toEqual([
+				[0.01],
+				[0.02],
+				[0.2]
 			]);
 	
 			expect(update.mock.calls).toEqual([
-				['values'],
-				['values'],
-				['values']
+				[0.01],
+				[0.02],
+				[0.2]
 			]);
-	
-			expect(context).toEqual({
-				update: expect.anything(),
-				properties: 'properties',
-				step: expect.any(Function)
-			});
 		});
 	});
 });

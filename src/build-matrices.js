@@ -39,11 +39,11 @@ export function buildMatrices (properties = {}, invert, reduce) {
 		} else if (invert && reduce) {
 			return;
 		} else if (index === 0) {
-			value.forEach((item, i) => {
+			value.forEach((item = 1, i) => {
 				matrix[i * 5] = invert ? 1 / (item || 1) : item;
 			});
 		} else {
-			value.forEach((item, i) => {
+			value.forEach((item = 0, i) => {
 				matrix[i * 4 + 3] = invert ? -item : item;
 			});
 		}

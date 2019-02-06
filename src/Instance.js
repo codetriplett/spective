@@ -1,3 +1,4 @@
+import { organizeAnimations } from './organize-animations';
 import { formatProperties } from './format-properties';
 import { buildMatrices } from './build-matrices';
 import { multiplyMatrices } from './multiply-matrices';
@@ -15,31 +16,68 @@ export class Instance {
 			this.anchor = anchor;
 		}
 
-		this.properties = { scaleX: 1, scaleY: 1, scaleZ: 1 };
+		this.properties = formatProperties();
 		this.animate(...parameters);
 	}
 
-	shift (relativeProperties, progress = 1) {
-		const { originalProperties, properties } = this;
-
-		for (const key in relativeProperties) {
-			const originalValue = originalProperties[key] || 0;
-			const change = relativeProperties[key] * progress;
-
-			properties[key] = originalValue + change;
-		}
-	}
-
-	prepare (change) {
+	prepare (...parameters) {
+		const animations = organizeAnimations(...parameters);
 		const self = this;
+		let animationIndex = 0;
+		let iteration = 0;
+		let originalProperties;
+		let relativeProperties;
+		let duration;
 
-		if (typeof change === 'function') {
-			return progress => self.shift(formatProperties(change(progress)));
-		}
-	
-		const relativeProperties = formatProperties(change);
+		const interpolate = progress => {
+			const { properties } = self;
 
-		return progress => self.shift(relativeProperties, progress);
+			for (const key in relativeProperties) {
+				const originalValue = originalProperties[key] || 0;
+				properties[key] = originalValue + relativeProperties[key] * progress;
+			}
+		};
+
+		const iterate = () => {
+			if (!iteration) {
+				const animation = animations[animationIndex];
+
+				relativeProperties = formatProperties(animation[0]);
+				duration = animation[1];
+				animationIndex++;
+				
+				if (typeof duration !== 'function') {
+					const value = duration;
+					duration = () => !iteration ? value : undefined;
+				}
+			} else {
+				interpolate(1);
+			}
+			
+			const value = duration(iteration);
+			
+			originalProperties = { ...self.properties };
+			iteration++;
+
+			if (value > 0) {
+				return value;
+			} else {
+				if (iteration === 1) {
+					interpolate(1);
+				}
+
+				iteration = 0;
+				
+				if (animationIndex < animations.length) {
+					return iterate();
+				} else {
+					duration = () => {};
+					relativeProperties = {};
+				}
+			}
+		};
+
+		return [interpolate, iterate];
 	}
 	
 	update (properties) {
@@ -69,50 +107,39 @@ export class Instance {
 		}
 	}
 
-	animate (properties, duration) {
-		this.originalProperties = { ...this.properties };
-
-		const interpolate = this.prepare(properties);
-	
-		if (typeof duration !== 'function') {
-			const value = duration || 0;
-			duration = iteration => iteration === 0 ? value : 0;
-		}
-		
+	animate (...parameters) {
+		const [interpolate, iterate] = this.prepare(...parameters);
 		const self = this;
-		let iteration = 0;
 		let loopTimestamp = Date.now();
-		let loopDuration = duration(iteration);
+		let loopDuration = iterate();
 		let loopElapsed;
 	
 		function step (timestamp) {
 			loopElapsed = timestamp - loopTimestamp;
 	
-			while (loopElapsed >= loopDuration && loopDuration > 0) {
-				interpolate(1);
-
-				const nextDuration = duration(++iteration);
+			while (loopElapsed >= loopDuration) {
+				const nextDuration = iterate();
 	
 				if (nextDuration > 0) {
 					loopElapsed -= loopDuration;
 					loopTimestamp = Date.now() - loopElapsed;
-					self.originalProperties = { ...self.properties };
 				} else {
-					loopElapsed = loopDuration;
 					self.step = undefined;
 				}
 				
 				loopDuration = nextDuration;
 			}
 
-			const progress = loopDuration ? loopElapsed / loopDuration : 1;
-			const { children = [] } = self;
+			if (loopDuration > 0) {
+				interpolate(loopElapsed / loopDuration);
+			}
+			
+			const { properties, children = [] } = self;
 
-			interpolate(progress);
-			self.update(self.properties);
+			self.update(properties);
 			children.forEach(child => child.update());
 		}
-	
+
 		if (loopDuration > 0) {
 			this.step = step;
 		} else {
