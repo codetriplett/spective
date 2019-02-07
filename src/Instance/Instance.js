@@ -2,6 +2,7 @@ import { organizeAnimations } from './organize-animations';
 import { formatProperties } from './format-properties';
 import { buildMatrices } from './build-matrices';
 import { multiplyMatrices } from './multiply-matrices';
+import { Animation } from './Animation';
 
 export class Instance {
 	constructor (anchor, ...parameters) {
@@ -17,84 +18,13 @@ export class Instance {
 		}
 
 		this.properties = formatProperties();
-		this.animate(...parameters);
-	}
+		this.animations = [];
 
-	prepare (...parameters) {
-		const animations = organizeAnimations(...parameters);
-		const self = this;
-		let animationIndex = 0;
-		let iteration = 0;
-		let originalProperties;
-		let relativeProperties;
-		let duration;
-		let callback;
-
-		const interpolate = progress => {
-			const { properties } = self;
-			const remaining = 1 - (iteration ? 0 : progress);
-
-			for (const key in relativeProperties) {
-				const originalValue = originalProperties[key] || 0;
-				const value = relativeProperties[key] * progress;
-
-				properties[key] = originalValue * remaining + value;
-			}
-		};
-
-		const report = () => {
-			if (typeof callback === 'function') {
-				callback({ ...self.properties });
-			}
-		};
-
-		const iterate = () => {
-			if (!iteration) {
-				const animation = animations[animationIndex];
-
-				relativeProperties = formatProperties(animation[0]);
-				originalProperties = undefined;
-				duration = animation[1];
-				callback = animation[2];
-				animationIndex++;
-			} else {
-				interpolate(1);
-			}
-			
-			let value = duration;
-			originalProperties = { ...self.properties };
-			
-			if (typeof value === 'function') {
-				value = value(iteration);
-				iteration++;
-			} else {
-				duration = undefined;
-			}
-
-			if (value > 0) {
-				return value;
-			} else {
-				if (iteration === 0) {
-					interpolate(1);
-				}
-
-				report();
-				iteration = 0;
-				
-				if (animationIndex < animations.length) {
-					return iterate();
-				} else {
-					duration = () => {};
-					relativeProperties = {};
-				}
-			}
-		};
-
-		return [interpolate, iterate, report];
+		this.update(...parameters);
 	}
 	
-	update (properties) {
-		const { inverted, anchor } = this;
+	calculate () {
+		const { properties, inverted, anchor } = this;
 		let matrices;
 		let inverses;
 
@@ -118,56 +48,35 @@ export class Instance {
 			this.absoluteMatrix = multiplyMatrices([this.relativeMatrix, matrix]);
 			this.absoluteInverse = multiplyMatrices([this.relativeInverse, inverse]);
 		}
+	}	
+
+	animate (timestamp) {
+		let { duration } = this;
+		let progress = 1;
+
+		if (duration) {
+			let elapsed = timestamp - this.timestamp;
+			this.timestamp = timestamp;
+
+			while (elapsed >= duration) {
+				this.properties = interpolate(progress);
+
+				elapsed -= duration;
+				duration = iterate();
+			}
+
+			if (!duration) {
+				return this.properties;
+			}
+
+			progress = elapsed / duration;
+		}
+
+		return interpolate(progress);
 	}
 
-	animate (...parameters) {
-		const [interpolate, iterate, report] = this.prepare(...parameters);
-		const self = this;
-		let loopTimestamp = Date.now();
-		let loopDuration = iterate();
-		let loopElapsed;
-
-		if (this.step) {
-			this.step();
-			this.step = undefined;
-		}
-	
-		function step (timestamp) {
-			loopElapsed = timestamp - loopTimestamp;
-	
-			if (timestamp || !self.step) {
-				if (loopDuration > 0) {
-					while (loopElapsed >= loopDuration) {
-						const nextDuration = iterate();
-			
-						if (nextDuration > 0) {
-							loopElapsed -= loopDuration;
-							loopTimestamp = Date.now() - loopElapsed;
-						} else {
-							self.step = undefined;
-						}
-						
-						loopDuration = nextDuration;
-					}
-
-					interpolate(loopElapsed / loopDuration);
-				}
-			
-				const { properties, children = [] } = self;
-
-				self.update(properties);
-				children.forEach(child => child.update());
-			}
-
-			if (timestamp === undefined) {
-				report();
-			}
-		}
-
-		if (loopDuration > 0) {
-			this.step = step;
-		} else {
-			step();
-		}
+	update (...parameters) {
+		const animations = organizeAnimations(parameters);
+		this.animations = animations.map(animation => new Animation(...animation));
 	}
 }
