@@ -40,7 +40,7 @@ export default function spective (...parameters) {
 		const asset = geometry.createAsset(assetSource, render);
 		const instance = asset.createInstance(anchor, ...parameters);
 
-		const updater = [(...parameters) => {
+		return (...parameters) => {
 			if (!parameters.length) {
 				asset.destroyInstance(instance);
 
@@ -59,12 +59,10 @@ export default function spective (...parameters) {
 
 				return updater[0];
 			}
-		}];
-
-		return updater[0];
+		};
 	}
 
-	const updater = [(...parameters) => {
+	return (...parameters) => {
 		if (parameters.length === 0) {
 			toggle();
 		} else if (typeof parameters[0] === 'string') {
@@ -72,10 +70,6 @@ export default function spective (...parameters) {
 		} else {
 			camera.animate(...parameters);
 			render();
-			
-			return updater[0];
 		}
-	}];
-
-	return updater[0];
+	};
 }

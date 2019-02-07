@@ -32,10 +32,13 @@ export class Instance {
 
 		const interpolate = progress => {
 			const { properties } = self;
+			const remaining = 1 - (iteration ? 0 : progress);
 
 			for (const key in relativeProperties) {
 				const originalValue = originalProperties[key] || 0;
-				properties[key] = originalValue + relativeProperties[key] * progress;
+				const value = relativeProperties[key] * progress;
+
+				properties[key] = originalValue * remaining + value;
 			}
 		};
 
@@ -50,27 +53,28 @@ export class Instance {
 				const animation = animations[animationIndex];
 
 				relativeProperties = formatProperties(animation[0]);
+				originalProperties = undefined;
 				duration = animation[1];
 				callback = animation[2];
 				animationIndex++;
-				
-				if (typeof duration !== 'function') {
-					const value = duration;
-					duration = () => !iteration ? value : undefined;
-				}
 			} else {
 				interpolate(1);
 			}
 			
-			const value = duration(iteration);
-			
+			let value = duration;
 			originalProperties = { ...self.properties };
-			iteration++;
+			
+			if (typeof value === 'function') {
+				value = value(iteration);
+				iteration++;
+			} else {
+				duration = undefined;
+			}
 
 			if (value > 0) {
 				return value;
 			} else {
-				if (iteration === 1) {
+				if (iteration === 0) {
 					interpolate(1);
 				}
 
