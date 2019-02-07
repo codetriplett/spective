@@ -1,5 +1,5 @@
 import { parseFile } from './parse-file';
-import { Asset } from './Asset';
+import { Asset } from '../Asset/Asset';
 
 export class Geometry {
 	constructor (source, callback = () => {}) {

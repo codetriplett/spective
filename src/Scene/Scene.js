@@ -1,4 +1,4 @@
-import { Geometry } from './Geometry';
+import { Geometry } from '../Geometry/Geometry';
 
 const vertexCode = `
 	uniform mat4 uInstance;

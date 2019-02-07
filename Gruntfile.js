@@ -1,6 +1,10 @@
 module.exports = function (grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
+		clean: {
+			before: ['dist', 'temp'],
+			after: ['temp']
+		},
 		replace: {
 			before: {
 				options: {
@@ -23,7 +27,10 @@ module.exports = function (grunt) {
 					{
 						expand: true,
 						flatten: true,
-						src: ['src/*.js'],
+						src: [
+							'src/**/*.js',
+							'!src/**/__tests__/*.js'
+						],
 						dest: 'temp/'
 					}
 				]
@@ -89,10 +96,6 @@ module.exports = function (grunt) {
 				src: 'temp/spective.js',
 				dest: 'dist/spective.min.js'
 			}
-		},
-		clean: {
-			before: ['dist', 'temp'],
-			after: ['temp']
 		}
 	});
 

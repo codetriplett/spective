@@ -1,5 +1,5 @@
 import { parseColor } from './parse-color';
-import { Instance } from './Instance';
+import { Instance } from '../Instance/Instance';
 
 const hexadecimalRegex = /^(#[0-9a-f]{3}|#[0-9a-f]{6})$/;
 
