@@ -1,11 +1,12 @@
-import { organizeAnimations } from './organize-animations';
 import { formatProperties } from './format-properties';
 import { buildMatrices } from './build-matrices';
 import { multiplyMatrices } from './multiply-matrices';
 import { Animation } from './Animation';
 
-export class Instance {
+export class Instance extends Animation {
 	constructor (anchor, ...parameters) {
+		super();
+		
 		if (anchor === true) {
 			this.inverted = true;
 		} else if (anchor instanceof Instance) {
@@ -20,11 +21,11 @@ export class Instance {
 		this.properties = formatProperties();
 		this.animations = [];
 
-		this.update(...parameters);
+		this.activate(...parameters);
 	}
 	
-	calculate () {
-		const { properties, inverted, anchor } = this;
+	calculate (properties) {
+		const { inverted, anchor } = this;
 		let matrices;
 		let inverses;
 
@@ -48,35 +49,5 @@ export class Instance {
 			this.absoluteMatrix = multiplyMatrices([this.relativeMatrix, matrix]);
 			this.absoluteInverse = multiplyMatrices([this.relativeInverse, inverse]);
 		}
-	}	
-
-	animate (timestamp) {
-		let { duration } = this;
-		let progress = 1;
-
-		if (duration) {
-			let elapsed = timestamp - this.timestamp;
-			this.timestamp = timestamp;
-
-			while (elapsed >= duration) {
-				this.properties = interpolate(progress);
-
-				elapsed -= duration;
-				duration = iterate();
-			}
-
-			if (!duration) {
-				return this.properties;
-			}
-
-			progress = elapsed / duration;
-		}
-
-		return interpolate(progress);
-	}
-
-	update (...parameters) {
-		const animations = organizeAnimations(parameters);
-		this.animations = animations.map(animation => new Animation(...animation));
 	}
 }

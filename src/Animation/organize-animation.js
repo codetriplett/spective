@@ -2,7 +2,7 @@ const propertiesRegex = /^object$/;
 const durationRegex = /^(number|function)$/;
 const callbackRegex = /^function$/;
 
-export function organizeAnimations (...parameters) {
+export function organizeAnimation (...parameters) {
 	const length = parameters.length;
 	const animations = [];
 	let animation = [];

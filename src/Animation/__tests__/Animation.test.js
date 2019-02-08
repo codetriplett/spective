@@ -1,147 +1,173 @@
+import { organizeAnimation } from '../organize-animation';
 import { Animation } from '../Animation';
 
+jest.mock('../organize-animation', () => ({ organizeAnimation: jest.fn() }));
+
 describe('Animation', () => {
-	describe('constructor', () => {
-		const iterate = jest.fn();
+	const calculate = jest.fn();
 
-		beforeEach(() => {
-			Animation.prototype.iterate = iterate;
-		});
+	class Instance extends Animation {
+		constructor (properties, ...parameters) {
+			super();
 
-		it('should create an animation without an iterator', () => {
-			const actual = new Animation({ update: 3, add: 4 });
+			this.properties = properties;
+			this.activate(...parameters);
+		}
+	}
 
-			expect(iterate).toHaveBeenCalled();
-
-			expect(actual).toEqual({
-				changes: { update: 3, add: 4 }
-			});
-		});
-
-		it('should create an animation with a basic iterator', () => {
-			const actual = new Animation({ update: 3, add: 4 }, 200);
-
-			expect(actual).toEqual({
-				changes: { update: 3, add: 4 },
-				iterator: 200
-			});
-		});
-
-		it('should create an animation with a custom iterator', () => {
-			const iterator = jest.fn();
-			const actual = new Animation({ update: 3, add: 4 }, iterator);
-
-			expect(actual).toEqual({
-				changes: { update: 3, add: 4 },
-				iterator
-			});
-		});
+	beforeEach(() => {
+		window.Date.now = jest.fn().mockReturnValue(1000);
+		organizeAnimation.mockClear();
+		Instance.prototype.calculate = calculate.mockClear();
 	});
 
-	describe('iterate', () => {
-		const iterate = Animation.prototype.iterate;
-		let context;
-
-		beforeEach(() => {
-			context = {
-				changes: { update: 3, add: 4 }
-			};
+	it('should apply update instantly', () => {
+		organizeAnimation.mockReturnValue([[{ update: 3, add: 4 }]]);
+		const actual = new Instance({ keep: 1, update: 2 }, 'parameters');
+		
+		expect(actual).toEqual({
+			queue: [],
+			properties: { keep: 1, update: 3, add: 4 }
 		});
 
-		it('should iterate with a basic iterator', () => {
-			context.iterator = 200;
-			let actual = iterate.call(context);
+		calculate.mockClear();
+		actual.animate(1200);
 
-			expect(actual).toBe(200);
-
-			expect(context).toEqual({
-				changes: { update: 3, add: 4 },
-				iterator: 200,
-				iteration: 0,
-				duration: 200
-			});
-
-			actual = iterate.call(context);
-
-			expect(actual).toBeUndefined();
-
-			expect(context).toEqual({
-				changes: { update: 3, add: 4 },
-				iterator: 200
-			});
-		});
-
-		it('should iterate with a custom iterator', () => {
-			const iterator = jest.fn().mockReturnValue(200);
-			context.iterator = iterator;
-			let actual = iterate.call(context);
-
-			expect(actual).toBe(200);
-
-			expect(context).toEqual({
-				changes: { update: 3, add: 4 },
-				iterator,
-				iteration: 0,
-				duration: 200
-			});
-
-			iterator.mockReturnValue();
-			actual = iterate.call(context);
-
-			expect(actual).toBeUndefined();
-
-			expect(context).toEqual({
-				changes: { update: 3, add: 4 },
-				iterator
-			});
+		expect(calculate).toHaveBeenCalledWith({ keep: 1, update: 3, add: 4 });
+		
+		expect(actual).toEqual({
+			queue: [],
+			properties: { keep: 1, update: 3, add: 4 }
 		});
 	});
-
-	describe('interpolator', () => {
-		const interpolate = Animation.prototype.interpolate;
-		let context;
-		let properties;
-
-		beforeEach(() => {
-			context = {
-				changes: { update: 3, add: 4 },
-				iterator: 200,
-			};
-
-			properties = { keep: 1, update: 2 };
+	
+	it('should apply update over a set amount of time', () => {
+		organizeAnimation.mockReturnValue([[{ update: 3, add: 4 }, 200]]);
+		const actual = new Instance({ keep: 1, update: 2 }, 'parameters');
+		
+		expect(actual).toEqual({
+			timestamp: 1000,
+			queue: [],
+			changes: { update: 3, add: 4 },
+			iterator: 200,
+			iteration: 0,
+			duration: 200,
+			properties: { keep: 1, update: 2 }
 		});
 
-		it('should return properties for start of animation', () => {
-			const actual = interpolate.call(context, properties, 0);
+		calculate.mockClear();
+		actual.animate(1100);
 
-			expect(actual).toEqual({ keep: 1, update: 2, add: 0 });
-			expect(properties).toEqual({ keep: 1, update: 2 });
+		expect(calculate).toHaveBeenCalledWith({ keep: 1, update: 2.5, add: 2 });
+		
+		expect(actual).toEqual({
+			timestamp: 1000,
+			queue: [],
+			changes: { update: 3, add: 4 },
+			iterator: 200,
+			iteration: 0,
+			duration: 200,
+			properties: { keep: 1, update: 2 }
 		});
 
-		it('should return properties for middle of absolute animation', () => {
-			const actual = interpolate.call(context, properties, 0.5);
+		calculate.mockClear();
+		actual.animate(1200);
 
-			expect(actual).toEqual({ keep: 1, update: 2.5, add: 2 });
+		expect(calculate).toHaveBeenCalledWith({ keep: 1, update: 3, add: 4 });
+		
+		expect(actual).toEqual({
+			queue: [],
+			properties: { keep: 1, update: 3, add: 4 }
 		});
 
-		it('should return properties for end of absolute animation', () => {
-			const actual = interpolate.call(context, properties, 1);
+		actual.animate(1500);
 
-			expect(actual).toEqual({ keep: 1, update: 3, add: 4 });
-		});
-
-		it('should return properties for middle of relative animation', () => {
-			context.iterator = () => {};
-			const actual = interpolate.call(context, properties, 0.5);
-
-			expect(actual).toEqual({ keep: 1, update: 3.5, add: 2 });
-		});
-
-		it('should return properties for end of relative animation', () => {
-			context.iterator = () => {};
-			const actual = interpolate.call(context, properties, 1);
-
-			expect(actual).toEqual({ keep: 1, update: 5, add: 4 });
+		expect(calculate).toHaveBeenCalledWith({ keep: 1, update: 3, add: 4 });
+		
+		expect(actual).toEqual({
+			queue: [],
+			properties: { keep: 1, update: 3, add: 4 }
 		});
 	});
+	
+	it('should apply update continuously over a set amount of time', () => {
+		const iterator = jest.fn().mockReturnValue(200);
+		organizeAnimation.mockReturnValue([[{ update: 3, add: 4 }, iterator]]);
+		const actual = new Instance({ keep: 1, update: 2 }, 'parameters');
+		
+		expect(actual).toEqual({
+			timestamp: 1000,
+			queue: [],
+			changes: { update: 3, add: 4 },
+			iterator,
+			iteration: 0,
+			duration: 200,
+			properties: { keep: 1, update: 2 }
+		});
+
+		calculate.mockClear();
+		actual.animate(1300);
+
+		expect(calculate).toHaveBeenCalledWith({ keep: 1, update: 6.5, add: 6 });
+		
+		expect(actual).toEqual({
+			timestamp: 1200,
+			queue: [],
+			changes: { update: 3, add: 4 },
+			iterator,
+			iteration: 1,
+			duration: 200,
+			properties: { keep: 1, update: 5, add: 4 }
+		});
+
+		iterator.mockReturnValue();
+		calculate.mockClear();
+		actual.animate(1500);
+
+		expect(calculate).toHaveBeenCalledWith({ keep: 1, update: 8, add: 8 });
+		
+		expect(actual).toEqual({
+			queue: [],
+			properties: { keep: 1, update: 8, add: 8 }
+		});
+
+		calculate.mockClear();
+		actual.animate(2000);
+
+		expect(calculate).toHaveBeenCalledWith({ keep: 1, update: 8, add: 8 });
+		
+		expect(actual).toEqual({
+			queue: [],
+			properties: { keep: 1, update: 8, add: 8 }
+		});
+	});
+	
+	// it('should skip over instant changes', () => {
+	// 	organizeAnimation.mockReturnValue([[{ update: 3, add: 4 }, 200], [{ update: 5 }], [{ update: 8 }, 300]]);
+	// 	const instance = new Instance({ keep: 1, update: 2 }, 'parameters');
+		
+	// 	expect(instance).toEqual({
+	// 		timestamp: 1000,
+	// 		queue: [[{ update: 5 }], [{ update: 8 }, 300]],
+	// 		changes: { update: 3, add: 4 },
+	// 		iterator: 200,
+	// 		iteration: 0,
+	// 		duration: 200,
+	// 		properties: { keep: 1, update: 2 }
+	// 	});
+
+	// 	let actual = instance.animate(1300);
+
+	// 	expect(actual).toEqual({ keep: 1, update: 6, add: 4 });
+		
+	// 	expect(instance).toEqual({
+	// 		timestamp: 1200,
+	// 		queue: [],
+	// 		changes: { update: 8 },
+	// 		iterator: 300,
+	// 		iteration: 0,
+	// 		duration: 300,
+	// 		properties: { keep: 1, update: 5, add: 4 }
+	// 	});
+	// });
 });

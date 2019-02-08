@@ -178,13 +178,12 @@ export class Scene {
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.clear(gl.DEPTH_BUFFER_BIT);
 
-			const cameraStep = camera.step;
 			const loopTimestamp = Date.now();
 			let resolved = true;
 
-			if (cameraStep) {
-				cameraStep(loopTimestamp);
-				resolved = resolved && !camera.step;
+			if (camera.timestamp) {
+				camera.animate(loopTimestamp);
+				resolved = resolved && !camera.timestamp;
 			}
 
 			gl.uniformMatrix4fv(sceneLocation, false, camera.relativeMatrix);
@@ -214,11 +213,9 @@ export class Scene {
 							asset.imageTexture = setSampler(imageLocation, 0, image, imageTexture);
 
 							instances.forEach(instance => {
-								const step = instance.step;
-
-								if (step) {
-									step(loopTimestamp);
-									resolved = resolved && !instance.step;
+								if (instance.timestamp) {
+									instance.animate(loopTimestamp);
+									resolved = resolved && !camera.timestamp;
 								}
 
 								const {

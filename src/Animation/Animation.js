@@ -1,34 +1,65 @@
-export class Animation {
-	constructor (changes, iterator) {
-		this.changes = changes;
-		this.iterator = iterator;
+import { formatProperties } from './format-properties';
+import { organizeAnimation } from './organize-animation';
 
-		this.iterate();
+export class Animation {
+	activate (...parameters) {
+		if (parameters.length) {
+			this.timestamp = Date.now();
+			this.queue = organizeAnimation(...parameters);
+		}
+
+		const { queue } = this;
+
+		const [changes, iterator] = queue.shift() || [];
+
+		this.changes = changes ? formatProperties(changes) : undefined;
+		this.iterator = iterator;
+		this.iteration = undefined;
+		this.duration = undefined;
+
+		if (!changes) {
+			this.timestamp = undefined;
+		} else {
+			this.iterate();
+		}
+		
+		if (parameters.length) {
+			this.animate(this.timestamp);
+		}
 	}
 
 	iterate () {
-		let { iterator, iteration } = this;
-		let duration;
+		const { iterator = 0 } = this;
+		let { iteration, duration } = this;
 
-		this.iteration = iteration === undefined ? iteration = 0 : ++iteration;
-
+		iteration = iteration === undefined ? 0 : iteration + 1;
+		this.iteration = iteration;
+		
 		if (typeof iterator === 'function') {
 			duration = iterator(iteration);
 		} else {
-			duration = iteration > 0 ? undefined : iterator;
+			duration = !iteration ? iterator : 0;
 		}
 
 		if (duration > 0) {
 			this.duration = duration;
-			return duration;
+			return;
 		}
 
-		this.iteration = undefined;
-		this.duration = undefined;
+		if (iteration === 0) {
+			this.properties = this.interpolate(1);
+		}
+
+		this.activate();
 	}
 
-	interpolate (properties, progress) {
-		const { changes, iterator } = this;
+	interpolate (progress) {
+		const { properties, changes, iterator } = this;
+
+		if (!changes) {
+			return properties;
+		}
+
 		const remaining = typeof iterator === 'function' ? 1 : 1 - progress;
 		const result = { ...properties };
 
@@ -42,7 +73,33 @@ export class Animation {
 		return result;
 	}
 
-	update (properties, timestamp) {
-		
+	animate (timestamp) {
+		let properties = this.properties;
+
+		if (this.timestamp !== undefined) {
+			let { duration } = this;
+			let elapsed = timestamp - this.timestamp;
+
+			while (elapsed >= duration) {
+				this.properties = this.interpolate(1);
+				this.timestamp += duration;
+
+				elapsed -= duration;
+				this.iterate();
+				duration = this.duration;
+			}
+
+			if (duration > 0) {
+				const progress = elapsed / duration;
+				properties = this.interpolate(progress);
+			} else {
+				properties = this.properties;
+			}
+		}
+
+		this.calculate(properties);
+
+		const { children = [] } = this;
+		children.forEach(child => child.calculate());
 	}
 }
