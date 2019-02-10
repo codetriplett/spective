@@ -34,18 +34,19 @@ function calculateAverage (normals) {
 }
 
 export function calculateNormals (faces, vertices) {
-	const size = Math.max(...faces) + 1;
+	const indices = faces.map(index => index < 0 ? vertices.length + index : index);
+	const size = Math.max(...indices) + 1;
 	const normals = [];
-	let map = [];
+	let points = [];
 
 	for (let i = 0; i < size; i++) {
-		map[i] = [];
+		points[i] = [];
 	}
 
-	for (let i = 0; i < faces.length; i += 3) {
-		const aId = faces[i];
-		const bId = faces[i + 1];
-		const cId = faces[i + 2];
+	for (let i = 0; i < indices.length; i += 3) {
+		const aId = indices[i];
+		const bId = indices[i + 1];
+		const cId = indices[i + 2];
 		const aStart = aId * 3;
 		const bStart = bId * 3;
 		const cStart = cId * 3;
@@ -54,17 +55,17 @@ export function calculateNormals (faces, vertices) {
 		const c = vertices.slice(cStart, cStart + 3);
 		const normal = calculateNormal(a, b, c);
 
-		map[aId] = map[aId].concat(normal);
-		map[bId] = map[bId].concat(normal);
-		map[cId] = map[cId].concat(normal);
+		points[aId] = points[aId].concat(normal);
+		points[bId] = points[bId].concat(normal);
+		points[cId] = points[cId].concat(normal);
 	}
 
-	map = map.map(calculateAverage);
+	points = points.map(calculateAverage);
 
-	for (let i = 0; i < faces.length; i += 3) {
-		const aNormal = map[faces[i]];
-		const bNormal = map[faces[i + 1]];
-		const cNormal = map[faces[i + 2]];
+	for (let i = 0; i < indices.length; i += 3) {
+		const aNormal = points[indices[i]];
+		const bNormal = points[indices[i + 1]];
+		const cNormal = points[indices[i + 2]];
 
 		normals.push(...aNormal, ...bNormal, ...cNormal);
 	}

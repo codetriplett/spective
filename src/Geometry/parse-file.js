@@ -16,7 +16,7 @@ function extractArray (file, type, hasIndices) {
 			}
 
 			return value.split('/').map(index => {
-				return index !== undefined ? index - 1 : undefined
+				return index > 0 ? index - 1 : Number(index)
 			});
 		});
 	});
@@ -25,7 +25,7 @@ function extractArray (file, type, hasIndices) {
 function extractValues (points, type, array) {
 	return [].concat(...points.map(point => {
 		const index = point[type];
-		return array ? array[index] : index;
+		return array ? array[index + (index < 0 ? array.length : 0)] : index;
 	}));
 }
 
