@@ -25,6 +25,7 @@ export class Asset {
 	createInstance (...parameters) {
 		const instance = new Instance(...parameters);
 		this.instances.push(instance);
+		
 		return instance;
 	}
 

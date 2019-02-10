@@ -56,46 +56,6 @@ describe('Instance', () => {
 		});
 	});
 
-	// describe('shift', () => {
-	// 	const shift = Instance.prototype.shift;
-	// 	let context;
-	
-	// 	beforeEach(() => {
-	// 		formatProperties.mockClear().mockImplementation(input => input);
-
-	// 		context = {
-	// 			properties: {
-	// 				first: 1,
-	// 				second: 2
-	// 			},
-	// 			originalProperties: {
-	// 				first: 3,
-	// 				second: 4
-	// 			}
-	// 		};
-	// 	});
-
-	// 	it('should fully shift if no progress is provided', () => {
-	// 		shift.call(context, { first: 5, second: 6 });
-	// 		expect(context.properties).toEqual({ first: 8, second: 10 });
-	// 	});
-
-	// 	it('should not shift properties if progress is 0', () => {
-	// 		shift.call(context, { first: 5, second: 6 }, 0);
-	// 		expect(context.properties).toEqual({ first: 3, second: 4 });
-	// 	});
-
-	// 	it('should partially shift properties if progress is between 0 and 1', () => {
-	// 		shift.call(context, { first: 5, second: 6 }, 0.5);
-	// 		expect(context.properties).toEqual({ first: 5.5, second: 7 });
-	// 	});
-
-	// 	it('should fully shift properties if progress is 1', () => {
-	// 		shift.call(context, { first: 5, second: 6 }, 1);
-	// 		expect(context.properties).toEqual({ first: 8, second: 10 });
-	// 	});
-	// });
-
 	describe('prepare', () => {
 		const prepare = Instance.prototype.prepare;
 		let context;

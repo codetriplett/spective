@@ -1,34 +1,17 @@
-const propertiesRegex = /^object$/;
-const durationRegex = /^(number|function)$/;
-const callbackRegex = /^function$/;
+import { formatProperties } from './format-properties';
 
 export function organizeAnimation (...parameters) {
-	const length = parameters.length;
 	const animations = [];
 	let animation = [];
-	let index = 0;
-	let animationLength = 0;
 
-	while (index < length) {
-		const value = parameters[index];
-		const type = typeof value;
-		index++;
-
-		if (propertiesRegex.test(type) && animationLength) {
+	parameters.forEach(value => {
+		if (typeof value === 'object') {
+			animation = [formatProperties(value)];
 			animations.push(animation);
-			animation = [];
+		} else {
+			animation.push(value);
 		}
-
-		if (propertiesRegex.test(type)
-				|| animationLength === 1 && durationRegex.test(type)
-				|| animationLength === 2 && callbackRegex.test(type)) {
-			animationLength = animation.push(value);
-		}
-	}
-
-	if (animationLength) {
-		animations.push(animation);
-	}
+	});
 
 	return animations;
 }

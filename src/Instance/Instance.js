@@ -1,4 +1,3 @@
-import { formatProperties } from './format-properties';
 import { buildMatrices } from './build-matrices';
 import { multiplyMatrices } from './multiply-matrices';
 import { Animation } from './Animation';
@@ -18,7 +17,7 @@ export class Instance extends Animation {
 			this.anchor = anchor;
 		}
 
-		this.properties = formatProperties();
+		this.properties = { scaleX: 1, scaleY: 1, scaleZ: 1 };
 		this.animations = [];
 
 		this.activate(...parameters);

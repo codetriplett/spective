@@ -8,7 +8,7 @@ export function parseColor (color) {
 		const first = hexadecimals.indexOf(color[index]);
 		const second = hexadecimals.indexOf(color[index + offset]);
 
-		return (Number(first) << 4) + Number(second);
+		return (first << 4) + second;
 	});
 
 	return new Uint8Array([...values, 255]);

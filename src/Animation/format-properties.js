@@ -2,9 +2,7 @@ export function formatProperties (input) {
 	const properties = { ...input };
 	const { scale } = properties;
 
-	if (!Object.keys(properties).length) {
-		return { scaleX: 1, scaleY: 1, scaleZ: 1 };
-	} else if (typeof scale === 'number') {
+	if (typeof scale === 'number') {
 		properties.scale = Array(3).fill(scale);
 	}
 

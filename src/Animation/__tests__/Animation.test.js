@@ -141,33 +141,4 @@ describe('Animation', () => {
 			properties: { keep: 1, update: 8, add: 8 }
 		});
 	});
-	
-	// it('should skip over instant changes', () => {
-	// 	organizeAnimation.mockReturnValue([[{ update: 3, add: 4 }, 200], [{ update: 5 }], [{ update: 8 }, 300]]);
-	// 	const instance = new Instance({ keep: 1, update: 2 }, 'parameters');
-		
-	// 	expect(instance).toEqual({
-	// 		timestamp: 1000,
-	// 		queue: [[{ update: 5 }], [{ update: 8 }, 300]],
-	// 		changes: { update: 3, add: 4 },
-	// 		iterator: 200,
-	// 		iteration: 0,
-	// 		duration: 200,
-	// 		properties: { keep: 1, update: 2 }
-	// 	});
-
-	// 	let actual = instance.animate(1300);
-
-	// 	expect(actual).toEqual({ keep: 1, update: 6, add: 4 });
-		
-	// 	expect(instance).toEqual({
-	// 		timestamp: 1200,
-	// 		queue: [],
-	// 		changes: { update: 8 },
-	// 		iterator: 300,
-	// 		iteration: 0,
-	// 		duration: 300,
-	// 		properties: { keep: 1, update: 5, add: 4 }
-	// 	});
-	// });
 });
