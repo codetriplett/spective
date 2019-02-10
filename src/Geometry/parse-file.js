@@ -22,17 +22,10 @@ function extractArray (file, type, hasIndices) {
 	});
 }
 
-function extractValues (points, type, array, fallback) {
+function extractValues (points, type, array) {
 	return [].concat(...points.map(point => {
 		const index = point[type];
-
-		if (!array) {
-			return index;
-		}
-
-		const value = array[index];
-		
-		return value !== undefined ? value : fallback;
+		return array ? array[index] : index;
 	}));
 }
 
@@ -43,14 +36,13 @@ export function parseFile (file) {
 		return;
 	}
 
-	const vt = extractArray(file, 'vt') || [];
+	const vt = extractArray(file, 'vt');
 	const vn = extractArray(file, 'vn');
 	const f = extractArray(file, 'f', true);
 	const faces = [];
 	const vertices = [];
-	const coordinates = [];
-	const normals = [];
-	const coordinateFallback = [0.5, 0.5];
+	let coordinates = [];
+	let normals = [];
 
 	f.forEach(face => {
 		const divisions = face.length - 1;
@@ -60,7 +52,10 @@ export function parseFile (file) {
 
 			faces.push(...extractValues(points, 0));
 			vertices.push(...extractValues(points, 0, v));
-			coordinates.push(...extractValues(points, 1, vt, coordinateFallback));
+
+			if (vt) {
+				coordinates.push(...extractValues(points, 1, vt));
+			}
 
 			if (vn) {
 				normals.push(...extractValues(points, 2, vn));
@@ -68,9 +63,17 @@ export function parseFile (file) {
 		}
 	});
 
+	if (!vt) {
+		coordinates = vertices.filter((value, i) => i % 3 !== 2);
+	}
+
+	if (!vn) {
+		normals = calculateNormals(faces, [].concat(...v));
+	}
+
 	return {
 		vertices: new Float32Array(vertices),
 		coordinates: new Float32Array(coordinates),
-		normals: vn ? new Float32Array(normals) : calculateNormals(faces, [].concat(...v))
+		normals: new Float32Array(normals)
 	};
 }

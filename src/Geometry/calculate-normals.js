@@ -34,8 +34,8 @@ function calculateAverage (normals) {
 }
 
 export function calculateNormals (faces, vertices) {
-	const normals = new Float32Array(faces.length * 3);
 	const size = Math.max(...faces) + 1;
+	const normals = [];
 	let map = [];
 
 	for (let i = 0; i < size; i++) {
@@ -66,7 +66,7 @@ export function calculateNormals (faces, vertices) {
 		const bNormal = map[faces[i + 1]];
 		const cNormal = map[faces[i + 2]];
 
-		normals.set([...aNormal, ...bNormal, ...cNormal], i * 3);
+		normals.push(...aNormal, ...bNormal, ...cNormal);
 	}
 	
 	return normals;
