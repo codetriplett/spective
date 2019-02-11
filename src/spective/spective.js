@@ -40,6 +40,8 @@ export default function spective (...parameters) {
 		const asset = geometry.createAsset(assetSource, render);
 		const instance = asset.createInstance(anchor, ...parameters);
 
+		render();
+
 		return (...parameters) => {
 			if (!parameters.length) {
 				asset.destroyInstance(instance);
@@ -56,8 +58,6 @@ export default function spective (...parameters) {
 			} else {
 				instance.animate(...parameters);
 				render();
-
-				return updater[0];
 			}
 		};
 	}

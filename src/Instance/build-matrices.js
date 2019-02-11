@@ -7,17 +7,21 @@ const identityMatrix = [
 
 export function buildMatrices (properties = {}, invert, reduce) {
 	const {
-		scaleX, scaleY, scaleZ,
-		offsetX, offsetY, offsetZ,
+		positionX, positionY, positionZ,
 		angleX, angleY, angleZ,
-		positionX, positionY, positionZ
+		offsetX, offsetY, offsetZ,
+		scaleX, scaleY, scaleZ
 	} = properties;
 
+	const hasPosition = [positionX, positionY, positionZ].some(value => value !== undefined);
+	const hasOffset = [offsetX, offsetY, offsetZ].some(value => value !== undefined);
+	const hasScale = [scaleX, scaleY, scaleZ].some(value => value !== undefined);
+
 	const sequence = [
-		scaleX !== undefined ? [scaleX, scaleY, scaleZ] : undefined,
-		offsetX !== undefined ? [offsetX, offsetY, offsetZ] : undefined,
-		angleY, angleX, angleZ,
-		positionX !== undefined ? [positionX, positionY, positionZ] : undefined
+		hasPosition ? [positionX, positionY, positionZ] : undefined,
+		angleZ, angleX, angleY,
+		hasOffset ? [offsetX, offsetY, offsetZ] : undefined,
+		hasScale ? [scaleX, scaleY, scaleZ] : undefined
 	];
 
 	const matrices = sequence.map((value, index) => {
@@ -27,24 +31,24 @@ export function buildMatrices (properties = {}, invert, reduce) {
 			return;
 		}
 
-		if (index > 1 && index < 5) {
+		if (index > 0 && index < 4) {
 			const cos = Math.cos(value);
 			const sin = Math.sin(invert ? -value : value);
-			const start = 10 - (index - 2) * 5;
-			const step = index === 2 ? -2 : 1;
+			const start = (index - 1) * 5;
+			const step = index === 3 ? -2 : 1;
 
-			[cos, -sin, sin, cos].forEach((item, i) => {
+			[cos, sin, -sin, cos].forEach((item, i) => {
 				matrix[start + (i >= 2 ? step << 2 : 0) + (i % 2) * step] = item;
 			});
 		} else if (invert && reduce) {
 			return;
-		} else if (index === 0) {
+		} else if (index === 5) {
 			value.forEach((item = 1, i) => {
 				matrix[i * 5] = invert ? 1 / (item || 1) : item;
 			});
 		} else {
 			value.forEach((item = 0, i) => {
-				matrix[i * 4 + 3] = invert ? -item : item;
+				matrix[12 + i] = invert ? -item : item;
 			});
 		}
 

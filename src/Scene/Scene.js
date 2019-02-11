@@ -15,7 +15,7 @@ const vertexCode = `
 	varying vec2 vCoordinate;
 
 	void main() {
-		gl_Position = vec4(aVertex, 1) * uInstance * uScene * uPerspective;
+		gl_Position = uPerspective * uScene * uInstance * vec4(aVertex, 1);
 		vNormal = aNormal;
 		vDirection = normalize(vec4(1, 1, 1, 1) * uInverse).xyz;
 		vCoordinate = aCoordinate;
@@ -55,6 +55,8 @@ export class Scene {
 		gl.useProgram(program);
 		gl.enable(gl.DEPTH_TEST);
 		gl.depthFunc(gl.LESS);
+		gl.enable(gl.CULL_FACE);
+		gl.cullFace(gl.BACK);
 		gl.clearColor(0, 0, 0, 1);
 
 		this.setAttribute = this.setAttribute.bind(this);
@@ -127,17 +129,17 @@ export class Scene {
 		gl.viewport(0, 0, clientWidth, clientHeight);
 
 		const max = Math.max(clientWidth, clientHeight);
-		const field = Math.PI / 4;
+		const fov = Math.PI / 4;
+		const f = Math.tan(Math.PI * 0.5 - 0.5 * fov);
 		const near = 1;
 		const far = 1000;
-		const fieldScale = Math.tan((Math.PI - field) / 2);
-		const inverseRange = -1 / (near - far);
+		const rangeInv = 1 / (near - far);
 
 		gl.uniformMatrix4fv(perspectiveLocation, false, [
-			fieldScale * max / clientWidth, 0, 0, 0,
-			0, fieldScale * max / clientHeight, 0, 0,
-			0, 0, (near + far) * inverseRange, -2,
-			0, 0, near * far * inverseRange * 2, 0
+			f * max / clientWidth, 0, 0, 0,
+			0, f * max / clientHeight, 0, 0,
+			0, 0, (near + far) * rangeInv, -1,
+			0, 0, near * far * rangeInv * 2, 0
 		]);
 
 		render();
@@ -215,7 +217,7 @@ export class Scene {
 							instances.forEach(instance => {
 								if (instance.timestamp) {
 									instance.animate(loopTimestamp);
-									resolved = resolved && !camera.timestamp;
+									resolved = resolved && !instance.timestamp;
 								}
 
 								const {
