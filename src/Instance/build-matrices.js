@@ -56,8 +56,8 @@ export function buildMatrices (properties = {}, invert, reduce) {
 	});
 
 	if (invert && !reduce) {
-		const angles = matrices.splice(2, 3);
-		matrices.reverse().splice(1, 0, ...angles);
+		const angles = matrices.splice(1, 3);
+		matrices.reverse().splice(2, 0, ...angles);
 	}
 
 	return matrices.filter(matrix => matrix);

@@ -1,43 +1,33 @@
 var scene = spective({
-	offsetZ: -4
+	offset: [0, -0.125, 4],
+	angleX: -Math.PI / 4
 }, {
-	angleY: Math.PI
-}, () => 6000);
-
-scene('teapot.obj', {
-	offsetZ: 0
+	angleY: 2 * Math.PI
+}, function () {
+	return 18000;
 });
 
-// var scene = spective({
-// 	offset: [0, 0.125, 4],
-// 	angleX: Math.PI / 4
-// }, {
-// 	angleY: 2 * Math.PI
-// }, function () {
-// 	return 18000;
-// });
+var cups = Array(6).fill(function () {});
 
-// var cups = Array(6).fill(function () {});
+var teapot = scene('teapot.obj', '#07f', {
+	angleY: Math.PI / 3
+}, function (iteration) {
+	var cup = scene('cylinder.obj', '#f70', {
+		scale: [0.2, 0.02, 0.2],
+		offsetX: 1.25,
+		angleY: iteration * Math.PI / 3 + 0.2
+	}, {
+		scaleY: 0.2
+	}, 250, {
+		scaleY: 0.02
+	}, 5750);
 
-// var teapot = scene('teapot.obj', '#07f', {
-// 	angleY: Math.PI / 3
-// }, function (iteration) {
-// 	var cup = scene('cylinder.obj', '#f70', {
-// 		scale: [0.2, 0.02, 0.2],
-// 		offsetX: 1.25,
-// 		angleY: iteration * Math.PI / 3 + 0.2
-// 	}, {
-// 		scaleY: 0.2
-// 	}, 250, {
-// 		scaleY: 0.02
-// 	}, 5750);
+	cups.splice(iteration % 6, 1, cup)[0]();
 
-// 	cups.splice(iteration % 6, 1, cup)[0]();
+	return 1000;
+});
 
-// 	return 1000;
-// });
-
-// teapot('cylinder.obj', {
-// 	scale: [0.3, -0.02, 0.3],
-// 	offsetX: 1.25
-// });
+teapot('cylinder.obj', {
+	scale: [0.3, 0.02, 0.3],
+	offset: [1.25, -0.2, 0]
+});

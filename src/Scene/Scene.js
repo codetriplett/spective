@@ -123,23 +123,18 @@ export class Scene {
 	resize () {
 		const { render, canvas, gl, perspectiveLocation } = this;
 		const { clientWidth, clientHeight } = canvas;
+		const max = Math.max(clientWidth, clientHeight);
 
 		canvas.width = clientWidth;
 		canvas.height = clientHeight;
+
 		gl.viewport(0, 0, clientWidth, clientHeight);
 
-		const max = Math.max(clientWidth, clientHeight);
-		const fov = Math.PI / 4;
-		const f = Math.tan(Math.PI * 0.5 - 0.5 * fov);
-		const near = 1;
-		const far = 1000;
-		const rangeInv = 1 / (near - far);
-
 		gl.uniformMatrix4fv(perspectiveLocation, false, [
-			f * max / clientWidth, 0, 0, 0,
-			0, f * max / clientHeight, 0, 0,
-			0, 0, (near + far) * rangeInv, -1,
-			0, 0, near * far * rangeInv * 2, 0
+			max / clientWidth, 0, 0, 0,
+			0, max / clientHeight, 0, 0,
+			0, 0, -1, -1,
+			0, 0, -2, 0
 		]);
 
 		render();
