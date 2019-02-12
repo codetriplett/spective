@@ -45,8 +45,8 @@ export class Instance extends Animation {
 			const matrix = absoluteMatrix || relativeMatrix;
 			const inverse = absoluteInverse || relativeInverse;
 
-			this.absoluteMatrix = multiplyMatrices([this.relativeMatrix, matrix]);
-			this.absoluteInverse = multiplyMatrices([this.relativeInverse, inverse]);
+			this.absoluteMatrix = multiplyMatrices([matrix, this.relativeMatrix]);
+			this.absoluteInverse = multiplyMatrices([inverse, this.relativeInverse]);
 		}
 	}
 }

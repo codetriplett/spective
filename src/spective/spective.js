@@ -56,7 +56,7 @@ export default function spective (...parameters) {
 			} else if (typeof parameters[0] === 'string') {
 				return creator(instance, ...parameters);
 			} else {
-				instance.animate(...parameters);
+				instance.activate(...parameters);
 				render();
 			}
 		};
@@ -68,7 +68,7 @@ export default function spective (...parameters) {
 		} else if (typeof parameters[0] === 'string') {
 			return creator(false, ...parameters);
 		} else {
-			camera.animate(...parameters);
+			camera.activate(...parameters);
 			render();
 		}
 	};
