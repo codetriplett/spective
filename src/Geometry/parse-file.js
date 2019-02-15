@@ -63,6 +63,7 @@ export function parseFile (file) {
 		}
 	});
 
+	// TODO: figure this out (should map u and v 0-1 to vertex x and y min/max)
 	if (!vt) {
 		coordinates = vertices.filter((value, i) => i % 3 !== 2);
 	}
@@ -71,9 +72,13 @@ export function parseFile (file) {
 		normals = calculateNormals(faces, [].concat(...v));
 	}
 
+	const minCoordinate = Math.min(...coordinates);
+	const maxCoordinate = Math.max(...coordinates);
+
 	return {
 		vertices: new Float32Array(vertices),
 		coordinates: new Float32Array(coordinates),
-		normals: new Float32Array(normals)
+		normals: new Float32Array(normals),
+		repeatTexture: minCoordinate < 0 || maxCoordinate > 1
 	};
 }

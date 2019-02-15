@@ -64,9 +64,9 @@ module.exports = function (grunt) {
 			},
 			dist: {
 				src: [
+					'temp/format-properties.js',
 					'temp/organize-animation.js',
 					'temp/Animation.js',
-					'temp/format-properties.js',
 					'temp/build-matrices.js',
 					'temp/multiply-matrices.js',
 					'temp/Instance.js',

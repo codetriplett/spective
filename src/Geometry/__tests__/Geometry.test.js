@@ -1,9 +1,9 @@
 import { parseFile } from '../parse-file';
-import { Asset } from '../Asset';
+import { Asset } from '../../Asset/Asset';
 import { Geometry } from '../Geometry';
 
 jest.mock('../parse-file', () => ({ parseFile: jest.fn() }));
-jest.mock('../Asset', () => ({ Asset: jest.fn() }));
+jest.mock('../../Asset/Asset', () => ({ Asset: jest.fn() }));
 
 describe('Geometry', () => {
 	const callback = jest.fn();

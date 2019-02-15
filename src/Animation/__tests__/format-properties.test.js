@@ -94,7 +94,7 @@ describe('format-properties', () => {
 		});
 	});
 
-	it('should overwrite grouped properties with invalid granular properties', () => {
+	it('should not overwrite grouped properties with invalid granular properties', () => {
 		const actual = formatProperties({
 			scale: [0, 1, 2],
 			offset: [3, 4, 5],
@@ -130,13 +130,13 @@ describe('format-properties', () => {
 		});
 	});
 
-	it('should treat a number input as a angleY property', () => {
-		const actual = formatProperties(1);
-		expect(actual).toEqual({ angleY: 1 });
+	it('should set same scale for all dimensions', () => {
+		const actual = formatProperties({ scale: 2 });
+		expect(actual).toEqual({ scaleX: 2, scaleY: 2, scaleZ: 2 });
 	});
 	
 	it('should return the default object if no properties were provided', () => {
 		const actual = formatProperties();
-		expect(actual).toEqual({ scaleX: 1, scaleY: 1, scaleZ: 1 });
+		expect(actual).toEqual({});
 	});
 });

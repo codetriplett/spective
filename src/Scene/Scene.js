@@ -17,7 +17,7 @@ const vertexCode = `
 	void main() {
 		gl_Position = uPerspective * uScene * uInstance * vec4(aVertex, 1);
 		vNormal = aNormal;
-		vDirection = normalize(vec4(1, 1, 1, 1) * uInverse).xyz;
+		vDirection = normalize(uInverse * vec4(1, 1, 1, 1)).xyz;
 		vCoordinate = aCoordinate;
 	}
 `;
@@ -95,7 +95,7 @@ export class Scene {
 		return buffer;
 	}
 
-	setSampler (location, unit, image, texture) {
+	setSampler (location, unit, repeatTexture, image, texture) {
 		const gl = this.gl;
 		const { TEXTURE_2D, RGBA, CLAMP_TO_EDGE } = gl;
 		const isColor = image instanceof Uint8Array;
@@ -105,14 +105,17 @@ export class Scene {
 	
 		gl.activeTexture(gl[`TEXTURE${unit}`]);
 		gl.bindTexture(TEXTURE_2D, texture);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 		gl.texImage2D(TEXTURE_2D, 0, RGBA, ...dimensions, RGBA, gl.UNSIGNED_BYTE, image);
-	
-		if (isColor) {
+
+		if (!isColor) {
+			gl.generateMipmap(TEXTURE_2D);
+			gl.texParameteri(TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		}
+
+		if (!repeatTexture) {
 			gl.texParameteri(TEXTURE_2D, gl.TEXTURE_WRAP_S, CLAMP_TO_EDGE);
 			gl.texParameteri(TEXTURE_2D, gl.TEXTURE_WRAP_T, CLAMP_TO_EDGE);
-			gl.texParameteri(TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		} else {
-			gl.generateMipmap(TEXTURE_2D);
 		}
 	
 		gl.uniform1i(location, unit);
@@ -190,6 +193,7 @@ export class Scene {
 					vertices,
 					normals,
 					coordinates,
+					repeatTexture,
 					assets,
 					vertexBuffer,
 					normalBuffer,
@@ -207,7 +211,7 @@ export class Scene {
 						const { image, instances, imageTexture } = asset;
 
 						if (image) {
-							asset.imageTexture = setSampler(imageLocation, 0, image, imageTexture);
+							asset.imageTexture = setSampler(imageLocation, 0, repeatTexture, image, imageTexture);
 
 							instances.forEach(instance => {
 								if (instance.timestamp) {

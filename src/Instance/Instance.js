@@ -1,6 +1,6 @@
 import { buildMatrices } from './build-matrices';
 import { multiplyMatrices } from './multiply-matrices';
-import { Animation } from './Animation';
+import { Animation } from '../Animation/Animation';
 
 export class Instance extends Animation {
 	constructor (anchor, ...parameters) {

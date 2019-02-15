@@ -8,20 +8,23 @@ export class Animation {
 		}
 
 		const { queue } = this;
-
-		if (queue.length === 0) {
-			this.timestamp = undefined;
-			return;
-		}
-
-		const [changes, iterator] = queue.shift();
+		const isComplete = !queue.length;
+		const [changes, iterator] = queue.shift() || [];
 
 		this.changes = changes;
 		this.iterator = iterator;
+		this.duration = undefined;
+		
+		if (isComplete) {
+			this.timestamp = undefined;
+			this.looping = undefined;
+			this.iteration = undefined;
+
+			return;
+		}
+
 		this.looping = typeof iterator === 'function';
 		this.iteration = -1;
-		this.duration = undefined;
-
 		this.iterate();
 		
 		if (parameters.length) {

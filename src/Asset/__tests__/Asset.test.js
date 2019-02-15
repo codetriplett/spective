@@ -1,9 +1,9 @@
 import { parseColor } from '../parse-color';
-import { Instance } from '../Instance';
+import { Instance } from '../../Instance/Instance';
 import { Asset } from '../Asset';
 
 jest.mock('../parse-color', () => ({ parseColor: jest.fn() }));
-jest.mock('../Instance', () => ({ Instance: jest.fn() }));
+jest.mock('../../Instance/Instance', () => ({ Instance: jest.fn() }));
 
 describe('Asset', () => {
 	const callback = jest.fn();

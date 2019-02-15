@@ -15,7 +15,7 @@ describe('Animation', () => {
 		}
 	}
 
-	beforeEach(() => {
+	beforeEach(() => { 
 		window.Date.now = jest.fn().mockReturnValue(1000);
 		organizeAnimation.mockClear();
 		Instance.prototype.calculate = calculate.mockClear();
@@ -50,6 +50,7 @@ describe('Animation', () => {
 			queue: [],
 			changes: { update: 3, add: 4 },
 			iterator: 200,
+			looping: false,
 			iteration: 0,
 			duration: 200,
 			properties: { keep: 1, update: 2 }
@@ -65,6 +66,7 @@ describe('Animation', () => {
 			queue: [],
 			changes: { update: 3, add: 4 },
 			iterator: 200,
+			looping: false,
 			iteration: 0,
 			duration: 200,
 			properties: { keep: 1, update: 2 }
@@ -100,6 +102,7 @@ describe('Animation', () => {
 			queue: [],
 			changes: { update: 3, add: 4 },
 			iterator,
+			looping: true,
 			iteration: 0,
 			duration: 200,
 			properties: { keep: 1, update: 2 }
@@ -115,6 +118,7 @@ describe('Animation', () => {
 			queue: [],
 			changes: { update: 3, add: 4 },
 			iterator,
+			looping: true,
 			iteration: 1,
 			duration: 200,
 			properties: { keep: 1, update: 5, add: 4 }

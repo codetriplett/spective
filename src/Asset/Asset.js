@@ -13,6 +13,9 @@ export class Asset {
 
 			image.addEventListener('load', () => {
 				this.image = image;
+
+				// TODO: convert image to squared image if it isn't already
+
 				callback(source);
 			});
 

@@ -13,13 +13,13 @@ var teapot = scene('teapot.obj', '#07f', {
 	angleY: Math.PI / 3
 }, function (iteration) {
 	var cup = scene('cylinder.obj', '#f70', {
-		scale: [0.2, 0.02, 0.2],
+		scale: [0.4, 0.04, 0.4],
 		offsetX: 1.25,
 		angleY: iteration * Math.PI / 3 + 0.2
 	}, {
-		scaleY: 0.2
+		scaleY: 0.4
 	}, 250, {
-		scaleY: 0.02
+		scaleY: 0.04
 	}, 5750);
 
 	cups.splice(iteration % 6, 1, cup)[0]();
@@ -28,6 +28,6 @@ var teapot = scene('teapot.obj', '#07f', {
 });
 
 teapot('cylinder.obj', {
-	scale: [0.3, 0.02, 0.3],
-	offset: [1.25, -0.2, 0]
+	scale: [0.6, 0.04, 0.6],
+	offset: [1.25, -0.04, 0]
 });
