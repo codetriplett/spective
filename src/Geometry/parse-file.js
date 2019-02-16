@@ -63,9 +63,10 @@ export function parseFile (file) {
 		}
 	});
 
-	// TODO: figure this out (should map u and v 0-1 to vertex x and y min/max)
 	if (!vt) {
-		coordinates = vertices.filter((value, i) => i % 3 !== 2);
+		coordinates = vertices
+			.filter((value, i) => i % 3 !== 1)
+			.map((value, i) => i % 2 === 1 ? -value : value);
 	}
 
 	if (!vn) {

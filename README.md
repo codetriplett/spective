@@ -1,32 +1,69 @@
 # Spective
-This library provides a simple way to create 3d scenes in your browser. spective.min.js can be found in the dist folder and is less than 12 kB.
+This library provides a simple way to create 3d scenes in your browser. spective.min.js can be found in the dist folder and is around 15 kB.
 
 ## Example
 ```js
 // create a scene
 var scene = spective({
-	position: [0, 0.4, -3]
+	position: [0, 0.4, 3]
 });
 
 // update the camera
 scene({
-	tilt: Math.PI / 4,
-	position: [0, 0.25, -3]
+	angleY: Math.PI / 4,
+	positionY: 0.25
 });
 
 // create an object
+// objects defined with the same geometry and/or texture files will share those resources
 var table = scene('table.obj', 'wood.jpg', {
-	rotation: Math.PI / 4
+	angleY: Math.PI / 4
 });
 
 // update the object
 table({
-	rotation: Math.PI * 3 / 4
+	angleY: Math.PI * 3 / 4
 });
 
-// create an object that is linked to another
+// create an object that defines its properties relative to another
 var chair = table('chair.obj', '#fff', {
-	position: [-1, 0, 0]
+	offsetX: -1
+});
+```
+
+## Animations
+```js
+// apply new properties instantly
+scene({
+	angle: 0.5
+});
+
+// apply new properties over a set amount of milliseconds
+scene({
+	angleY: 1.2
+}, 1500);
+
+// shift properties over a set amount of milliseconds and repeat
+// input properties will be added to the current properties instead of overwriting them
+// the duration of each iteration is defined by the number returned by the function
+// the loop ends once a value is returned that is not greater than 0
+scene({
+	angleY: 1
+}, function (iteration) {
+	return 1000;
+});
+
+// the above animations can be chained together
+scene({
+	angle: 0.5
+}, {
+	angleY: 1.2
+}, 1500, {
+	positionX: 1
+}, 500, {
+	angleY: 1
+}, function (iteration) {
+	return (3 - iteration) * 1000;	
 });
 ```
 

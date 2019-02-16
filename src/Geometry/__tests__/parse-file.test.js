@@ -37,14 +37,14 @@ describe('parse-file', () => {
 		});
 	});
 
-	it.skip('should return attributes without coordinates', () => {
+	it('should return attributes without coordinates', () => {
 		const actual = parseFile(buildFile(false, true));
 
 		expect(actual).toEqual({
 			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
-			coordinates: new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
+			coordinates: new Float32Array([-1.0, -1.0, -2.0, -2.0, -3.0, -3.0, -4.0, -4.0, -3.0, -3.0, -2.0, -2.0]),
 			normals: new Float32Array([-1.2, 0.2, 1.2, -2.2, 0.2, 2.2, -3.2, 0.2, 3.2, -4.2, 0.2, 4.2, -3.2, 0.2, 3.2, -2.2, 0.2, 2.2]),
-			repeatTexture: false
+			repeatTexture: true
 		});
 	});
 
@@ -59,14 +59,14 @@ describe('parse-file', () => {
 		});
 	});
 
-	it.skip('should return attributes without coordinates or normals', () => {
+	it('should return attributes without coordinates or normals', () => {
 		const actual = parseFile(buildFile(false, false));
 
 		expect(actual).toEqual({
 			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
-			coordinates: new Float32Array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
+			coordinates: new Float32Array([-1.0, -1.0, -2.0, -2.0, -3.0, -3.0, -4.0, -4.0, -3.0, -3.0, -2.0, -2.0]),
 			normals: new Float32Array([2]),
-			repeatTexture: false
+			repeatTexture: true
 		});
 	});
 

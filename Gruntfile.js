@@ -74,6 +74,7 @@ module.exports = function (grunt) {
 					'temp/Asset.js',
 					'temp/calculate-normals.js',
 					'temp/parse-file.js',
+					'temp/square-image.js',
 					'temp/Geometry.js',
 					'temp/Scene.js',
 					'temp/create-canvas.js',

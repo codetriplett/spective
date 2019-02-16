@@ -1,8 +1,10 @@
 import { parseColor } from '../parse-color';
+import { squareImage } from '../square-image';
 import { Instance } from '../../Instance/Instance';
 import { Asset } from '../Asset';
 
 jest.mock('../parse-color', () => ({ parseColor: jest.fn() }));
+jest.mock('../square-image', () => ({ squareImage: jest.fn() }));
 jest.mock('../../Instance/Instance', () => ({ Instance: jest.fn() }));
 
 describe('Asset', () => {
@@ -12,6 +14,7 @@ describe('Asset', () => {
 
 	beforeEach(() => {
 		parseColor.mockClear().mockReturnValue('color');
+		squareImage.mockClear().mockReturnValue('image');
 		Instance.mockClear().mockImplementation(function (properties) { this.properties = properties; });
 		callback.mockClear();
 		
@@ -52,7 +55,7 @@ describe('Asset', () => {
 
 		expect(actual).toEqual({ instances: [] });
 		imageLoad();
-		expect(actual).toEqual({ image: { src: 'source' }, instances: [] });
+		expect(actual).toEqual({ image: 'image', instances: [] });
 	});
 	
 	it('should handle failed image load', () => {

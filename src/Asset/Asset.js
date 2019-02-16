@@ -1,4 +1,5 @@
 import { parseColor } from './parse-color';
+import { squareImage } from './square-image';
 import { Instance } from '../Instance/Instance';
 
 const hexadecimalRegex = /^(#[0-9a-f]{3}|#[0-9a-f]{6})$/;
@@ -12,10 +13,7 @@ export class Asset {
 			image.src = source;
 
 			image.addEventListener('load', () => {
-				this.image = image;
-
-				// TODO: convert image to squared image if it isn't already
-
+				this.image = squareImage(image);
 				callback(source);
 			});
 
