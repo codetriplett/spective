@@ -1,42 +1,6 @@
+import { vertexCode } from './vertex-code';
+import { fragmentCode } from './fragment-code';
 import { Geometry } from '../Geometry/Geometry';
-
-const vertexCode = `
-	uniform mat4 uInstance;
-	uniform mat4 uInverse;
-	uniform mat4 uScene;
-	uniform mat4 uPerspective;
-
-	attribute vec3 aVertex;
-	attribute vec3 aNormal;
-	attribute vec2 aCoordinate;
-
-	varying vec3 vNormal;
-	varying vec3 vDirection;
-	varying vec2 vCoordinate;
-
-	void main() {
-		gl_Position = uPerspective * uScene * uInstance * vec4(aVertex, 1);
-		vNormal = aNormal;
-		vDirection = normalize(uInverse * vec4(1, 1, 1, 1)).xyz;
-		vCoordinate = aCoordinate;
-	}
-`;
-
-const fragmentCode = `
-	precision mediump float;
-
-	uniform sampler2D uImage;
-
-	varying vec3 vNormal;
-	varying vec3 vDirection;
-	varying vec2 vCoordinate;
-
-	void main() {
-		float intensity = 0.5 + 0.5 * (dot(vDirection, vNormal) + 0.7) / 1.7;
-		vec3 color = texture2D(uImage, vCoordinate).xyz * intensity;
-		gl_FragColor = vec4(color, 1);
-	}
-`;
 
 export class Scene {
 	constructor (canvas, camera) {
@@ -44,7 +8,7 @@ export class Scene {
 		const program = gl.createProgram();
 		const vertexShader = gl.createShader(gl.VERTEX_SHADER);
 		const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-		
+
 		gl.shaderSource(vertexShader, vertexCode);
 		gl.shaderSource(fragmentShader, fragmentCode);
 		gl.compileShader(vertexShader);

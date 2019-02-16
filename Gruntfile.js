@@ -76,6 +76,8 @@ module.exports = function (grunt) {
 					'temp/parse-file.js',
 					'temp/square-image.js',
 					'temp/Geometry.js',
+					'temp/vertex-code.js',
+					'temp/fragment-code.js',
 					'temp/Scene.js',
 					'temp/create-canvas.js',
 					'temp/spective.js'

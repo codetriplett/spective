@@ -1,6 +1,6 @@
 import { createCanvas } from './create-canvas';
-import { Instance } from './Instance/Instance';
-import { Scene } from './Scene/Scene';
+import { Instance } from '../Instance/Instance';
+import { Scene } from '../Scene/Scene';
 
 export default function spective (...parameters) {
 	let canvas = parameters[0];
