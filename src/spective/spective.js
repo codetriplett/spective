@@ -49,7 +49,7 @@ export default function spective (...parameters) {
 				if (!asset.instances.length) {
 					geometry.destroyAsset(assetSource);
 
-					if (!geometry.assets.length) {
+					if (!Object.keys(geometry.assets).length) {
 						destroyGeometry(geometrySource);
 					}
 				}
