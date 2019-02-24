@@ -1,5 +1,5 @@
 # Spective
-This library provides a simple way to create 3d scenes in your browser. spective.min.js can be found in the dist folder and is around 15 kB.
+This library provides a simple way to create 3d graphics in your browser. Resource management, animations and basic lighting are all handled automatically. It only needs to be told where the resources are that define each object and where to position them at any given time.
 
 ## Example
 ```js
@@ -15,7 +15,6 @@ scene({
 });
 
 // create an object
-// objects defined with the same geometry and/or texture files will share those resources
 var table = scene('table.obj', 'wood.jpg', {
 	angleY: Math.PI / 4
 });
@@ -25,7 +24,7 @@ table({
 	angleY: Math.PI * 3 / 4
 });
 
-// create an object that defines its properties relative to another
+// create a linked object
 var chair = table('chair.obj', '#fff', {
 	offsetX: -1
 });
@@ -33,20 +32,19 @@ var chair = table('chair.obj', '#fff', {
 
 ## Animations
 ```js
-// apply new properties instantly
+// set new properties instantly
 scene({
 	angle: 0.5
 });
 
-// apply new properties over a set amount of milliseconds
+// animate to new properties over a set amount of time in milliseconds
 scene({
 	angleY: 1.2
 }, 1500);
 
-// shift properties over a set amount of milliseconds and repeat
-// input properties will be added to the current properties instead of overwriting them
-// the duration of each iteration is defined by the number returned by the function
-// the loop ends once a value is returned that is not greater than 0
+// animate a shift in the current properties over a set amount of time in milliseconds and repeat
+// the function you provide runs before each animation and returns the duration
+// the loop ends if a duration is returned that is not greater than zero
 scene({
 	angleY: 1
 }, function (iteration) {
@@ -71,28 +69,22 @@ scene({
 Each scene is made up of a single light and camera. If you provide your own HTML canvas element as the first parameter, it will be used as the viewport. Otherwise one will be created automatically that fills the entire screen.
 
 ## Objects
-Wavefront OBJ files are used to load in the geometries for all the objects in the scene. Each geometry can be wrapped with either an image or hexadecimal color. If no image or color is provided, it will default to white. Objects can share geometries and images without loading the same resource multiple times.
+Wavefront OBJ files are used to load in the geometries for all the objects in the scene. Each geometry can be wrapped with either an image or hexadecimal color. If no image or color is provided, it will default to white. Objects created from the same geometries and images will share those resources without loading them multiple times.
 
 ## Management
-You can remove an object from the scene by updating it without any parameters. Geometries and images will automatically unload if no objects remain that use them. If you do the same for the scene itself, it will pause or resume any active animations. When a scene is resumed, it will update the perspective of the camera in case the canvas dimensions have changed. If you use the default canvas, it will update the perspective whenever the window is resized.
+You can remove an object from the scene by calling it the way you normally would to update it, but without any parameters. Geometries and images will automatically unload if no objects remain that use them. If you do the same for the scene itself, it will pause or resume any active animations or future updates. When a scene is resumed, it will update the perspective of the camera in case the canvas dimensions have changed. If you use the default canvas, it will update the perspective whenever the window is resized.
 
 ## Properties
-The following properties are used by the camera and instances to affect their placement and orientation within the scene.
+The following properties are used by the camera and objects to affect their placement and orientation within the scene. Each one can be defined as an array to define all three dimensions at once or can be followed by an X, Y or Z to set a single dimension (e.g. angleY).
 
-### Scale
-Changes the size of the object. If an array is used, it will affect the size of each dimension independently.
+### scale
+Its size along each axis relative to its original size. Can be defined by a single number instead of an array to set the same value to all dimensions.
 
-### Offset
-The location of the object in relation to its own pivot point.
+### position
+Its placement within the scene.
 
-### Position
-The location of the objects pivot point in relation to the entire scene.
+### angle
+Its rotation around each axis. Rotations occur in the order Y, X then Z.
 
-### Rotation
-The angle in radians along the y axis.
-
-### Tilt
-The angle in radians along the x axis.
-
-### Spin
-The angle in radians along the z axis.
+### offset
+A shift in its placement after it has been rotated. This is useful for creating orbits.
