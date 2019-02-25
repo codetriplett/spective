@@ -9,7 +9,7 @@ var scene = spective({
 
 var cups = Array(6).fill(function () {});
 
-var teapot = scene('teapot.obj', '#07f', {
+var teapot = scene('teapot.obj', 'grid.png', {
 	angleY: Math.PI / 3
 }, function (iteration) {
 	var cup = scene('cylinder.obj', '#f70', {

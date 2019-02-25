@@ -14,6 +14,8 @@ export function squareImage (image) {
 	const canvas = document.createElement('canvas');
 	const context = canvas.getContext('2d');
 
+	canvas.width = squaredWidth;
+	canvas.height = squaredHeight
 	context.drawImage(image, 0, 0, squaredWidth, squaredHeight);
 
 	return context.getImageData(0, 0, squaredWidth, squaredHeight);

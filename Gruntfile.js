@@ -56,6 +56,28 @@ module.exports = function (grunt) {
 						dest: 'temp/'
 					}
 				]
+			},
+			other: {
+				options: {
+					patterns: [
+						{
+							match: /dist\//,
+							replacement: ''
+						},
+						{
+							match: /example/,
+							replacement: 'prototype'
+						}
+					]
+				},
+				files: [
+					{
+						expand: true,
+						flatten: true,
+						src: ['preview/prototype.html'],
+						dest: 'temp/'
+					}
+				]
 			}
 		},
 		concat: {
@@ -100,6 +122,20 @@ module.exports = function (grunt) {
 				src: 'temp/spective.js',
 				dest: 'dist/spective.min.js'
 			}
+		},
+		zip: {
+			main: {
+				router: function (filepath) {
+					return filepath.slice(filepath.indexOf('/') + 1);
+				},
+				src: [
+					'dist/spective.min.js',
+					'preview/prototype.js',
+					'temp/prototype.html',
+					'preview/index.js'
+				],
+				dest: 'dist/prototype.zip'
+			}
 		}
 	});
 
@@ -108,6 +144,7 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-babel');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-zip');
 
 	grunt.registerTask('default', [
 		'clean:before',
@@ -116,6 +153,8 @@ module.exports = function (grunt) {
 		'babel',
 		'replace:after',
 		'uglify',
+		'replace:other',
+		'zip:main',
 		'clean:after'
 	]);
 };
