@@ -30,7 +30,11 @@ export class Asset {
 		return instance;
 	}
 
-	destroyInstance (instance) {
+	destroyInstance (instance, anchor) {
+		if (anchor && anchor !== instance.anchor) {
+			return;
+		}
+
 		const instances = this.instances;
 		instances.splice(instances.indexOf(instance), 1);
 	}

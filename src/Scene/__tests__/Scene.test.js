@@ -5,6 +5,7 @@ jest.mock('../vertex-code', () => ({ vertexCode: 'vertexCode' }));
 jest.mock('../fragment-code', () => ({ fragmentCode: 'fragmentCode' }));
 jest.mock('../../Geometry/Geometry', () => ({ Geometry: jest.fn() }));
 
+const destroyAsset = jest.fn();
 const getContext = jest.fn();
 const createProgram = jest.fn();
 const createShader = jest.fn();
@@ -55,7 +56,11 @@ function resetMocks () {
 	createGeometry = Scene.prototype.createGeometry;
 	destroyGeometry = Scene.prototype.destroyGeometry;
 	
-	Geometry.mockClear().mockImplementation(function (source) { this.vertices = source; });
+	Geometry.mockClear().mockImplementation(function (source) {
+		this.destroyAsset = destroyAsset;
+		this.vertices = source;
+		this.assets = {};
+	});
 
 	createProgram.mockClear().mockReturnValue('program');
 	createShader.mockClear().mockImplementation(shader => shader);
@@ -635,7 +640,14 @@ describe('Scene', () => {
 			createGeometry.call({ geometries }, 'source', 'callback');
 	
 			expect(Geometry).toHaveBeenCalledWith('source', 'callback');
-			expect(geometries).toEqual({ source: { vertices: 'source' } });
+
+			expect(geometries).toEqual({
+				source: {
+					destroyAsset,
+					vertices: 'source',
+					assets: {}
+				}
+			});
 		});
 
 		it('should use an existing Geometry', () => {
@@ -646,7 +658,9 @@ describe('Scene', () => {
 			Geometry.mockClear();
 
 			expect(Geometry).not.toHaveBeenCalled();
-			expect(geometries).toEqual({ source: geometry });
+			expect(geometries).toEqual({
+				source: geometry
+			});
 		});
 	});
 
@@ -659,6 +673,20 @@ describe('Scene', () => {
 			destroyGeometry.call({ geometries }, 'source');
 
 			expect(geometries).toEqual({});
+		});
+
+		it('should destroy an anchored instances of an asset', () => {
+			const geometry = new Geometry('source');
+			const geometries = { source: geometry };
+			Object.assign(geometry.assets, { first: 'asset', second: 'asset' });
+			destroyGeometry.call({ geometries }, 'source', 'anchor');
+
+			expect(destroyAsset.mock.calls).toEqual([
+				['first', 'anchor'],
+				['second', 'anchor']
+			]);
+
+			expect(geometries).toEqual({ source: geometry });
 		});
 	});
 });

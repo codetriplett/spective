@@ -217,7 +217,17 @@ export class Scene {
 		return geometry
 	}
 	
-	destroyGeometry (source) {
-		delete this.geometries[source];
+	destroyGeometry (source, anchor) {
+		if (!anchor) {
+			delete this.geometries[source];
+			return;
+		}
+
+		const geometry = this.geometries[source];
+		const { assets } = geometry;
+
+		for (const assetSource in assets) {
+			geometry.destroyAsset(assetSource, anchor);
+		}
 	}
 }

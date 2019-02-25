@@ -34,7 +34,14 @@ export class Geometry {
 		return asset;
 	}
 
-	destroyAsset (source) {
-		delete this.assets[source];
+	destroyAsset (source, anchor) {
+		if (!anchor) {
+			delete this.assets[source];
+			return;
+		}
+
+		const asset = this.assets[source];
+
+		asset.instances.forEach(instance => asset.destroyInstance(instance, anchor));
 	}
 }

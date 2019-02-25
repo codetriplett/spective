@@ -28,15 +28,25 @@ export default function spective (...parameters) {
 
 		if (typeof parameters[0] === 'string') {
 			assetSource = parameters.shift();
+		} else if (!parameters.length) {
+			destroyGeometry(geometrySource, anchor);
+			return;
 		} else {
 			assetSource = '#fff';
 		}
 
+		const geometry = createGeometry(geometrySource, render);
+
 		if (!parameters.length) {
+			geometry.destroyAsset(assetSource, anchor);
+
+			if (!Object.keys(geometry.assets).length) {
+				destroyGeometry(geometrySource, anchor);
+			}
+
 			return;
 		}
 
-		const geometry = createGeometry(geometrySource, render);
 		const asset = geometry.createAsset(assetSource, render);
 		const instance = asset.createInstance(anchor, ...parameters);
 

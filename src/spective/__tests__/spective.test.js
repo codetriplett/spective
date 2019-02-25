@@ -142,7 +142,7 @@ describe('spective', () => {
 			expect(destroyGeometry).not.toHaveBeenCalled();
 		});
 
-		it('should destroy an asset', () => {
+		it('should destroy an empty asset after an instance is destroyed', () => {
 			assets.asset = 'asset';
 			const instance = scene('source.obj', 'source.png', { property: 'property' });
 			instance();
@@ -152,13 +152,57 @@ describe('spective', () => {
 			expect(destroyGeometry).not.toHaveBeenCalled();
 		});
 
-		it('should destroy a geometry', () => {
+		it('should destroy an empty geometry after an instance is destroyed', () => {
 			const instance = scene('source.obj', 'source.png', { property: 'property' });
 			instance();
 
 			expect(destroyInstance).toHaveBeenCalledWith({ activate });
 			expect(destroyAsset).toHaveBeenCalledWith('source.png');
 			expect(destroyGeometry).toHaveBeenCalledWith('source.obj');
+		});
+
+		it('should destroy all instances of an asset', () => {
+			assets.asset = 'asset';
+			scene('source.obj', 'source.png', { property: 'property' });
+			scene('source.obj', 'source.png');
+
+			expect(destroyAsset).toHaveBeenCalledWith('source.png', false);
+			expect(destroyGeometry).not.toHaveBeenCalled();
+		});
+
+		it('should destroy an empty geometry after asset is destroyed', () => {
+			scene('source.obj', 'source.png', { property: 'property' });
+			scene('source.obj', 'source.png');
+
+			expect(destroyAsset).toHaveBeenCalledWith('source.png', false);
+			expect(destroyGeometry).toHaveBeenCalledWith('source.obj', false);
+		});
+
+		it('should destroy all instances of a geometry', () => {
+			assets.asset = 'asset';
+			scene('source.obj', 'source.png', { property: 'property' });
+			scene('source.obj');
+
+			expect(destroyAsset).not.toHaveBeenCalled();
+			expect(destroyGeometry).toHaveBeenCalledWith('source.obj', false);
+		});
+
+		it('should destroy anchored instances of an asset', () => {
+			assets.asset = 'asset';
+			const anchor = scene('source.obj', 'source.png', { property: 'property' });
+			anchor('child.obj', 'child.png');
+
+			expect(destroyAsset).toHaveBeenCalledWith('child.png', { activate });
+			expect(destroyGeometry).not.toHaveBeenCalled();
+		});
+
+		it('should destroy anchored instances of a geometry', () => {
+			assets.asset = 'asset';
+			const anchor = scene('source.obj', 'source.png', { property: 'property' });
+			anchor('child.obj');
+
+			expect(destroyAsset).not.toHaveBeenCalled();
+			expect(destroyGeometry).toHaveBeenCalledWith('child.obj', { activate });
 		});
 
 		it('should create an anchored instance', () => {

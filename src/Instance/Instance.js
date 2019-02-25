@@ -20,6 +20,10 @@ export class Instance extends Animation {
 		this.properties = { scaleX: 1, scaleY: 1, scaleZ: 1 };
 		this.animations = [];
 
+		if (!parameters.length) {
+			parameters = [{}];
+		}
+
 		this.activate(...parameters);
 	}
 	

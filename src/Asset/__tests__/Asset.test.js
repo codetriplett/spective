@@ -97,4 +97,35 @@ describe('Asset', () => {
 
 		expect(asset.instances).toEqual([]);
 	});
+
+	it('should destroy an anchored instance', () => {
+		const asset = new Asset('source');
+		const anchor = asset.createInstance('properties', 'duration');
+
+		Instance.mockImplementation(function (anchor, properties) {
+			this.anchor = anchor;
+			this.properties = properties;
+		});
+
+		const actual = asset.createInstance(anchor, 'properties', 'duration');
+		asset.destroyInstance(actual, anchor);
+
+		expect(asset.instances).toEqual([anchor]);
+	});
+
+	it('should not destroy instances that use a different anchor', () => {
+		const asset = new Asset('source');
+		const anchor = asset.createInstance('properties', 'duration');
+		const other = asset.createInstance('properties', 'duration');
+
+		Instance.mockImplementation(function (anchor, properties) {
+			this.anchor = anchor;
+			this.properties = properties;
+		});
+
+		const actual = asset.createInstance(other, 'properties', 'duration');
+		asset.destroyInstance(actual, anchor);
+
+		expect(asset.instances).toEqual([anchor, other, actual]);
+	});
 });

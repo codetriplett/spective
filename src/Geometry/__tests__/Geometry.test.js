@@ -6,16 +6,22 @@ jest.mock('../parse-file', () => ({ parseFile: jest.fn() }));
 jest.mock('../../Asset/Asset', () => ({ Asset: jest.fn() }));
 
 describe('Geometry', () => {
+	const destroyInstance = jest.fn();
 	const callback = jest.fn();
 	let fileLoad;
 	let fileError;
 
 	beforeEach(() => {
 		parseFile.mockClear().mockImplementation(() => ({ vertices: 'vertices' }));
-		Asset.mockClear().mockImplementation(function (source) { this.image = source; });
 		callback.mockClear();
 		fileLoad = undefined;
 		fileError = undefined;
+		
+		Asset.mockClear().mockImplementation(function (source) {
+			this.destroyInstance = destroyInstance;
+			this.image = source;
+			this.instances = [];
+		});
 		
 		window.XMLHttpRequest.prototype.send = jest.fn().mockImplementation(function () {
 			fileLoad = () => {
@@ -81,7 +87,14 @@ describe('Geometry', () => {
 		geometry.createAsset('source', 'callback');
 
 		expect(Asset).toHaveBeenCalledWith('source', 'callback');
-		expect(geometry.assets).toEqual({ source: { image: 'source' } });
+
+		expect(geometry.assets).toEqual({
+			source: {
+				destroyInstance,
+				image: 'source',
+				instances: []
+			}
+		});
 	});
 
 	it('should use an existing Asset', () => {
@@ -92,7 +105,14 @@ describe('Geometry', () => {
 		Asset.mockClear();
 
 		expect(Asset).not.toHaveBeenCalled();
-		expect(geometry.assets).toEqual({ source: { image: 'source' } });
+
+		expect(geometry.assets).toEqual({
+			source: {
+				destroyInstance,
+				image: 'source',
+				instances: []
+			}
+		});
 	});
 
 	it('should destroy an Asset', () => {
@@ -101,5 +121,25 @@ describe('Geometry', () => {
 		geometry.destroyAsset('source');
 
 		expect(geometry.assets).toEqual({});
+	});
+
+	it('should destroy an anchored instances of an asset', () => {
+		const geometry = new Geometry('source');
+		geometry.createAsset('source', 'callback');
+		geometry.assets.source.instances.push('first', 'second');
+		geometry.destroyAsset('source', 'anchor');
+
+		expect(destroyInstance.mock.calls).toEqual([
+			['first', 'anchor'],
+			['second', 'anchor']
+		]);
+
+		expect(geometry.assets).toEqual({
+			source: {
+				destroyInstance,
+				image: 'source',
+				instances: ['first', 'second']
+			}
+		});
 	});
 });
