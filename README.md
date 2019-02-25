@@ -28,6 +28,21 @@ table({
 var chair = table('chair.obj', '#fff', {
 	offsetX: -1
 });
+
+// remove an object
+table();
+
+// remove an asset
+scene('table.obj', 'wood.jpg'); // in entire scene
+table('chair.obj', '#fff'); // only ones linked to a specific object
+
+// remove a geometry
+scene('chair.obj'); // in entire scene
+table('chair.obj'); // only ones linked to a specific object
+
+// pause or resume the scene
+// resuming the scene will recalculate the perspective in case the canvas has been resized
+scene();
 ```
 
 ## Animations
@@ -70,9 +85,6 @@ Each scene is made up of a single light and camera. If you provide your own HTML
 
 ## Objects
 Wavefront OBJ files are used to load in the geometries for all the objects in the scene. Each geometry can be wrapped with either an image or hexadecimal color. If no image or color is provided, it will default to white. Objects created from the same geometries and images will share those resources without loading them multiple times.
-
-## Management
-You can remove an object from the scene by calling it the way you normally would to update it, but without any parameters. Geometries and images will automatically unload if no objects remain that use them. If you do the same for the scene itself, it will pause or resume any active animations or future updates. When a scene is resumed, it will update the perspective of the camera in case the canvas dimensions have changed. If you use the default canvas, it will update the perspective whenever the window is resized.
 
 ## Properties
 The following properties are used by the camera and objects to affect their placement and orientation within the scene. Each one can be defined as an array to define all three dimensions at once or can be followed by an X, Y or Z to set a single dimension (e.g. angleY).
