@@ -17,6 +17,7 @@ export class Animation {
 		
 		if (isComplete) {
 			this.timestamp = undefined;
+			this.existing = undefined;
 			this.looping = undefined;
 			this.iteration = undefined;
 
@@ -33,6 +34,7 @@ export class Animation {
 	}
 
 	iterate () {
+		this.existing = { ...this.properties };
 		this.iteration++;
 
 		const { looping, iterator } = this;
@@ -50,25 +52,22 @@ export class Animation {
 		}
 
 		if (iteration === 0) {
-			this.properties = this.interpolate(1);
+			this.interpolate(1);
 		}
 
 		this.activate();
 	}
 
 	interpolate (progress) {
-		const { properties, changes, looping } = this;
+		const { existing, changes, properties, looping } = this;
 		const remaining = 1 - (looping ? 0 : progress);
-		const result = { ...properties };
 
 		for (const key in changes) {
-			const property = properties[key] || 0;
+			const property = existing[key] || 0;
 			const change = changes[key] * progress;
 
-			result[key] = property * remaining + change;
+			properties[key] = property * remaining + change;
 		}
-
-		return result;
 	}
 
 	animate (now) {
@@ -77,7 +76,7 @@ export class Animation {
 		let elapsed = now - timestamp;
 
 		while (elapsed >= duration) {
-			this.properties = this.interpolate(1);
+			this.interpolate(1);
 			this.timestamp += duration;
 
 			elapsed -= duration;
@@ -87,9 +86,7 @@ export class Animation {
 
 		if (duration > 0) {
 			const progress = elapsed / duration;
-			properties = this.interpolate(progress);
-		} else {
-			properties = this.properties;
+			this.interpolate(progress);
 		}
 
 		this.calculate(properties);

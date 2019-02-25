@@ -53,7 +53,8 @@ describe('Animation', () => {
 			looping: false,
 			iteration: 0,
 			duration: 200,
-			properties: { keep: 1, update: 2 }
+			existing: { keep: 1, update: 2 },
+			properties: { keep: 1, update: 2, add: 0 }
 		});
 
 		calculate.mockClear();
@@ -69,7 +70,8 @@ describe('Animation', () => {
 			looping: false,
 			iteration: 0,
 			duration: 200,
-			properties: { keep: 1, update: 2 }
+			existing: { keep: 1, update: 2 },
+			properties: { keep: 1, update: 2.5, add: 2 }
 		});
 
 		calculate.mockClear();
@@ -105,7 +107,8 @@ describe('Animation', () => {
 			looping: true,
 			iteration: 0,
 			duration: 200,
-			properties: { keep: 1, update: 2 }
+			existing: { keep: 1, update: 2 },
+			properties: { keep: 1, update: 2, add: 0 }
 		});
 
 		calculate.mockClear();
@@ -121,7 +124,8 @@ describe('Animation', () => {
 			looping: true,
 			iteration: 1,
 			duration: 200,
-			properties: { keep: 1, update: 5, add: 4 }
+			existing: { keep: 1, update: 5, add: 4 },
+			properties: { keep: 1, update: 6.5, add: 6 }
 		});
 
 		iterator.mockReturnValue();
