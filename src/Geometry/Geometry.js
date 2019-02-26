@@ -41,7 +41,10 @@ export class Geometry {
 		}
 
 		const asset = this.assets[source];
+		const { instances } = asset;
 
-		asset.instances.forEach(instance => asset.destroyInstance(instance, anchor));
+		for (let i = instances.length - 1; i >= 0; i--) {
+			asset.destroyInstance(instances[i], anchor);
+		}
 	}
 }

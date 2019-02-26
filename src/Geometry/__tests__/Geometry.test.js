@@ -130,8 +130,8 @@ describe('Geometry', () => {
 		geometry.destroyAsset('source', 'anchor');
 
 		expect(destroyInstance.mock.calls).toEqual([
-			['first', 'anchor'],
-			['second', 'anchor']
+			['second', 'anchor'],
+			['first', 'anchor']
 		]);
 
 		expect(geometry.assets).toEqual({
