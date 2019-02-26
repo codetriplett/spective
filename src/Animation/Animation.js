@@ -71,7 +71,7 @@ export class Animation {
 	}
 
 	animate (now) {
-		const { timestamp, children = [] } = this;
+		const { timestamp } = this;
 		let { properties, duration } = this;
 		let elapsed = now - timestamp;
 
@@ -90,6 +90,5 @@ export class Animation {
 		}
 
 		this.calculate(properties);
-		children.forEach(child => child.calculate());
 	}
 }

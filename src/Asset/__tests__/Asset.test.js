@@ -113,6 +113,22 @@ describe('Asset', () => {
 		expect(asset.instances).toEqual([anchor]);
 	});
 
+	it('should destroy a deeply anchored instance', () => {
+		const asset = new Asset('source');
+		const deepAnchor = asset.createInstance('properties', 'duration');
+
+		Instance.mockImplementation(function (anchor, properties) {
+			this.anchor = anchor;
+			this.properties = properties;
+		});
+
+		const anchor = asset.createInstance(deepAnchor, 'properties', 'duration');
+		const actual = asset.createInstance(anchor, 'properties', 'duration');
+		asset.destroyInstance(actual, deepAnchor);
+
+		expect(asset.instances).toEqual([deepAnchor, anchor]);
+	});
+
 	it('should not destroy instances that use a different anchor', () => {
 		const asset = new Asset('source');
 		const anchor = asset.createInstance('properties', 'duration');

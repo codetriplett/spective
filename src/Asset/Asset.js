@@ -31,8 +31,16 @@ export class Asset {
 	}
 
 	destroyInstance (instance, anchor) {
-		if (anchor && anchor !== instance.anchor) {
-			return;
+		if (anchor) {
+			let { anchor: instanceAnchor } = instance;
+
+			while (instanceAnchor && instanceAnchor !== anchor) {
+				instanceAnchor = instanceAnchor.anchor;
+			}
+
+			if (!instanceAnchor) {
+				return;
+			}
 		}
 
 		const instances = this.instances;

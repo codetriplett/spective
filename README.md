@@ -25,6 +25,7 @@ table({
 });
 
 // create a linked object
+// properties from the object it links to will be applied before applying its own
 var chair = table('chair.obj', '#fff', {
 	offsetX: -1
 });

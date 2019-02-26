@@ -28,7 +28,7 @@ export class Instance extends Animation {
 	}
 	
 	calculate (properties) {
-		const { inverted, anchor } = this;
+		const { inverted, anchor, children = [] } = this;
 		let matrices;
 		let inverses;
 
@@ -52,5 +52,7 @@ export class Instance extends Animation {
 			this.absoluteMatrix = multiplyMatrices([matrix, this.relativeMatrix]);
 			this.absoluteInverse = multiplyMatrices([inverse, this.relativeInverse]);
 		}
+
+		children.forEach(child => child.calculate());
 	}
 }

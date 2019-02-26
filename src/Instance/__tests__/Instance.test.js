@@ -133,5 +133,18 @@ describe('Instance', () => {
 				absoluteInverse: 'anchorInverse,relativeInverse'
 			});
 		});
+
+		it('should run calculate on children', () => {
+			const childCalculate = jest.fn();
+
+			context.children = [
+				{ calculate: childCalculate },
+				{ calculate: childCalculate }
+			];
+
+			calculate.call(context, 'properties');
+
+			expect(childCalculate).toHaveBeenCalledTimes(2);
+		});
 	});
 });
