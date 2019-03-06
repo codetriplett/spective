@@ -1,9 +1,24 @@
 import { createCanvas } from './create-canvas';
 import { Instance } from '../Instance/Instance';
 import { Scene } from '../Scene/Scene';
+import { Meter } from '../Meter/Meter';
 
 export default function spective (...parameters) {
-	let canvas = parameters[0];
+	let first = parameters[0];
+
+	if (/function|number/.test(typeof first)) {
+		const meter = new Meter(...parameters);
+
+		return (...parameters) => {
+			if (parameters.length < 2) {
+				return meter.update(...parameters);
+			}
+			
+			return meter.schedule(...parameters);
+		};
+	}
+
+	let canvas = first;
 	const needsCanvas = !canvas || typeof canvas.getContext !== 'function';
 
 	if (needsCanvas) {

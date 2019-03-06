@@ -1,11 +1,13 @@
 import { createCanvas } from '../create-canvas';
 import { Instance } from '../../Instance/Instance';
 import { Scene } from '../../Scene/Scene';
+import { Meter } from '../../Meter/Meter';
 import spective from '../spective';
 
 jest.mock('../create-canvas', () => ({ createCanvas: jest.fn() }));
 jest.mock('../../Instance/Instance', () => ({ Instance: jest.fn() }));
 jest.mock('../../Scene/Scene', () => ({ Scene: jest.fn() }));
+jest.mock('../../Meter/Meter', () => ({ Meter: jest.fn() }));
 
 const addEventListener = jest.fn();
 const activate = jest.fn();
@@ -18,6 +20,8 @@ const createAsset = jest.fn();
 const destroyAsset = jest.fn();
 const createInstance = jest.fn();
 const destroyInstance = jest.fn();
+const update = jest.fn();
+const schedule = jest.fn();
 let assets;
 let instances;
 
@@ -29,6 +33,11 @@ function resetMocks (skipScene) {
 
 	Instance.mockClear().mockImplementation(function () {
 		this.activate = activate.mockClear();
+	});
+
+	Meter.mockClear().mockImplementation(function () {
+		this.update = update.mockClear().mockReturnValue('update');
+		this.schedule = schedule.mockClear().mockReturnValue('schedule');
 	});
 
 	if (skipScene === true) {
@@ -216,6 +225,49 @@ describe('spective', () => {
 			expect(render).toHaveBeenCalledWith();
 
 			expect(actual).toEqual(expect.any(Function));
+		});
+	});
+
+	describe('Meter', () => {
+		beforeEach(() => resetMocks());
+
+		it('should create a meter if parameters start with a function', () => {
+			const action = () => {};
+			const actual = spective(action, 'second');
+
+			expect(Meter).toHaveBeenCalledWith(action, 'second');
+			expect(actual).toEqual(expect.any(Function));
+		});
+
+		it('should create a meter if parameters start with a number', () => {
+			const actual = spective(2, 'second');
+
+			expect(Meter).toHaveBeenCalledWith(2, 'second');
+			expect(actual).toEqual(expect.any(Function));
+		});
+
+		it('should update the meter if no parameters are passed to it', () => {
+			const meter = spective(2, 'second');
+			const actual = meter();
+
+			expect(update).toHaveBeenCalledWith();
+			expect(actual).toBe('update');
+		});
+
+		it('should update the meter if only one parameter is passed to it', () => {
+			const meter = spective(2, 'second');
+			const actual = meter(1);
+
+			expect(update).toHaveBeenCalledWith(1);
+			expect(actual).toBe('update');
+		});
+
+		it('should schedule the meter if two parameters are passed to it', () => {
+			const meter = spective(2, 'second');
+			const actual = meter(1, 1000);
+
+			expect(schedule).toHaveBeenCalledWith(1, 1000);
+			expect(actual).toBe('schedule');
 		});
 	});
 });
