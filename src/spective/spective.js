@@ -64,6 +64,7 @@ export default function spective (...parameters) {
 
 		const asset = geometry.createAsset(assetSource, render);
 		const instance = asset.createInstance(anchor, ...parameters);
+		const children = [];
 
 		render();
 
@@ -78,8 +79,11 @@ export default function spective (...parameters) {
 						destroyGeometry(geometrySource);
 					}
 				}
+
+				children.forEach(child => child());
 			} else if (typeof parameters[0] === 'string') {
-				return creator(instance, ...parameters);
+				children.push(creator(instance, ...parameters));
+				return children[children.length - 1];
 			} else {
 				instance.activate(...parameters);
 				render();

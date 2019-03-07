@@ -144,9 +144,14 @@ describe('spective', () => {
 			assets.asset = 'asset';
 			instances.push('instance');
 			const instance = scene('source.obj', 'source.png', { property: 'property' });
+			instance('child.obj', 'child.png', { property: 'property' });
 			instance();
 
-			expect(destroyInstance).toHaveBeenCalledWith({ activate });
+			expect(destroyInstance.mock.calls).toEqual([
+				[{ activate }],
+				[{ activate }]
+			]);
+
 			expect(destroyAsset).not.toHaveBeenCalled();
 			expect(destroyGeometry).not.toHaveBeenCalled();
 		});
