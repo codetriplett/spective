@@ -2,117 +2,101 @@ import { organizeSegments } from './organize-segments';
 
 export class Meter {
 	constructor (...parameters) {
-		const lastParameter = parameters.slice(-1)[0];
-		let initialValue = 0;
+		const trailingNumbers = [];
 
-		if (typeof lastParameter === 'number') {
-			initialValue = parameters.pop();
+		while (typeof parameters.slice(-1)[0] === 'number') {
+			trailingNumbers.unshift(parameters.pop());
 		}
-
-		const segments = organizeSegments(...parameters);
 		
 		this.value = 0;
 		this.index = 0;
-		this.segments = segments;
-		this.range = segments.slice(-1)[0].threshold;
+		this.segments = organizeSegments(...parameters);
 
+		this.measure = this.measure.bind(this);
 		this.update = this.update.bind(this);
-		this.update(initialValue, true);
+
+		this.update(...trailingNumbers);
 	}
 
-	update (value, skipActions) {
-		const { duration, timeout, timestamp, segments, range } = this;
-		let { fromValue, toValue, index } = this;
+	measure () {
+		const now = Date.now();
+		const { fromValue, toValue, duration, timestamp = now } = this;
 
-		if (typeof value === 'number') {
-			clearTimeout(timeout);
-
-			if (value < 0) {
-				value = range + value;
-			}
-
-			fromValue = this.value;
-			toValue = value;
-
-			this.fromValue = undefined;
-			this.toValue = undefined;
-			this.duration = undefined;
-			this.timeout = undefined;
-			this.timestamp = undefined;
-		} else {
-			const progress = duration ? (Date.now() - timestamp) / duration : 1;
-			value = fromValue * (1 - progress) + toValue * progress;
-		}
-
-		if (isNaN(value) || toValue === fromValue) {
+		if (fromValue === undefined || toValue === undefined) {
 			return this.value;
 		}
 
-		const iterator = toValue > fromValue ? 1 : -1;
-		const segmentsLength = segments.length;
-		let resolved = false;
+		let progress = duration ? (Date.now() - timestamp) / duration : 1;
+		progress = Math.min(Math.max(0, progress), 1);
 
-		while (!resolved) {
-			const {
-				callback: currentCallback,
-				threshold: currentThreshold
-			} = segments[index];
+		const value = fromValue * (1 - progress) + toValue * progress;
 
-			const {
-				callback: previousCallback,
-				threshold: previousThreshold = 0
-			} = segments[index - 1] || {};
-
-			let callback;
-
-			if (value >= currentThreshold) {
-				callback = this.value !== currentThreshold && currentCallback;
-			} else if (value <= previousThreshold) {
-				callback = this.value !== previousThreshold && previousCallback;
-			} else {
-				resolved = true;
-			}
-
-			if (typeof callback === 'function' && !skipActions) {
-				callback(iterator);
-			}
-
-			if (!resolved) {
-				index += iterator;
-
-				if (index < 0 || index >= segmentsLength) {
-					index -= iterator;
-					break;
-				}
-			}
-		}
-
-		value = Math.min(Math.max(0, value), range);
-		this.value = value;
-		this.index = index;
-
-		return value;
+		return this.value = value;
 	}
 
-	schedule (change, duration = 0) {
-		const { update, timeout } = this;
-
-		if (timeout) {
-			clearTimeout(timeout);
-			update();
+	update (change, duration) {
+		if (!change || isNaN(change)) {
+			return this.value;
 		}
+
+		const { measure, update, value, segments, timeout } = this;
+		let { index } = this;
+		const { lowerValue, lowerCallback, upperValue, upperCallback } = segments[index];
+		const isAbsolute = duration === undefined;
+
+		clearTimeout(timeout);
+		measure();
 		
-		const  { range, value } = this;
-		const totalValue = value + change;
-		const toValue = Math.min(Math.max(0, totalValue), range);
-		const limitedDuration = Math.round(duration * (toValue - value) / change);
+		const totalValue = isAbsolute ? change : value + change;
+		const toValue = Math.min(Math.max(lowerValue, totalValue), upperValue);
+		let limitedDuration;
+		
+		if (!isAbsolute) {
+			limitedDuration = Math.round(duration * (toValue - value) / change);
+		}
 
 		this.fromValue = value;
 		this.toValue = toValue;
 		this.duration = limitedDuration;
-		this.timeout = setTimeout(() => update(toValue), limitedDuration);
 		this.timestamp = Date.now();
 
-		return value;
+		this.timeout = setTimeout(() => {
+			let iterator = 0;
+			let callback;
+
+			if (toValue >= upperValue) {
+				iterator = 1;
+				callback = upperCallback;
+			} else if (toValue <= lowerValue) {
+				iterator = -1;
+				callback = lowerCallback;
+			}
+
+			this.value = toValue;
+			index += iterator;
+
+			if (callback && toValue !== value && !isAbsolute) {
+				callback(iterator);
+			}
+
+			if (index !== this.index && index >= 0 && index < segments.length) {
+				const remainingChange = totalValue - toValue;
+				let remainingDuration;
+				
+				if (!isAbsolute) {
+					remainingDuration = duration - limitedDuration;
+				}
+
+				this.index = index;
+				update(remainingChange, remainingDuration);
+			} else {
+				this.fromValue = undefined;
+				this.toValue = undefined;
+				this.duration = undefined;
+				this.timestamp = undefined;
+			}
+		}, limitedDuration || 0);
+
+		return this.value;
 	}
 }

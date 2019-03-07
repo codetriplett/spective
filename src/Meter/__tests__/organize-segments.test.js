@@ -5,7 +5,10 @@ describe('organize-segments', () => {
 		const actual = organizeSegments();
 
 		expect(actual).toEqual([
-			{ threshold: 1 }
+			{
+				lowerValue: 0,
+				upperValue: 1
+			}
 		]);
 	});
 
@@ -13,7 +16,10 @@ describe('organize-segments', () => {
 		const actual = organizeSegments(2);
 
 		expect(actual).toEqual([
-			{ threshold: 2 }
+			{
+				lowerValue: 0,
+				upperValue: 2
+			}
 		]);
 	});
 
@@ -23,8 +29,9 @@ describe('organize-segments', () => {
 
 		expect(actual).toEqual([
 			{
-				callback,
-				threshold: 1
+				lowerValue: 0,
+				upperValue: 1,
+				upperCallback: callback
 			}
 		]);
 	});
@@ -35,8 +42,9 @@ describe('organize-segments', () => {
 
 		expect(actual).toEqual([
 			{
-				callback,
-				threshold: 2
+				lowerValue: 0,
+				upperValue: 2,
+				upperCallback: callback
 			}
 		]);
 	});
@@ -48,11 +56,14 @@ describe('organize-segments', () => {
 
 		expect(actual).toEqual([
 			{
-				callback: first,
-				threshold: 0
+				lowerValue: 0,
+				upperValue: 0,
+				upperCallback: first
 			}, {
-				callback: second,
-				threshold: 1
+				lowerValue: 0,
+				lowerCallback: first,
+				upperValue: 1,
+				upperCallback: second
 			}
 		]);
 	});
@@ -64,11 +75,14 @@ describe('organize-segments', () => {
 
 		expect(actual).toEqual([
 			{
-				callback: first,
-				threshold: 0
+				lowerValue: 0,
+				upperValue: 0,
+				upperCallback: first
 			}, {
-				callback: second,
-				threshold: 2
+				lowerValue: 0,
+				lowerCallback: first,
+				upperValue: 2,
+				upperCallback: second
 			}
 		]);
 	});
@@ -81,14 +95,19 @@ describe('organize-segments', () => {
 
 		expect(actual).toEqual([
 			{
-				callback: first,
-				threshold: 0
+				lowerValue: 0,
+				upperValue: 0,
+				upperCallback: first
 			}, {
-				callback: second,
-				threshold: 2
+				lowerValue: 0,
+				lowerCallback: first,
+				upperValue: 2,
+				upperCallback: second
 			}, {
-				callback: third,
-				threshold: 3
+				lowerValue: 2,
+				lowerCallback: second,
+				upperValue: 3,
+				upperCallback: third
 			}
 		]);
 	});

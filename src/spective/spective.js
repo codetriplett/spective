@@ -10,11 +10,11 @@ export default function spective (...parameters) {
 		const meter = new Meter(...parameters);
 
 		return (...parameters) => {
-			if (parameters.length < 2) {
-				return meter.update(...parameters);
+			if (!parameters.length) {
+				return meter.measure();
 			}
 			
-			return meter.schedule(...parameters);
+			return meter.update(...parameters);
 		};
 	}
 

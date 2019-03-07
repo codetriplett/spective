@@ -22,10 +22,22 @@ export function organizeSegments (...parameters) {
 		ranges.push(range);
 	}
 
-	let threshold = 0;
+	let value = 0;
+	let callback;
 
 	return ranges.map((range, i) => {
-		threshold += range;
-		return { callback: callbacks[i], threshold }
+		const segment = {
+			lowerValue: value,
+			lowerCallback: callback
+		};
+
+		value += range;
+		callback = callbacks[i];
+
+		return {
+			...segment,
+			upperValue: value,
+			upperCallback: callback
+		};
 	});
 }
