@@ -1,8 +1,8 @@
 var scene = spective({
 	offset: [0, -0.125, 4],
-	angleX: -Math.PI / 4
+	headingX: -Math.PI / 4
 }, {
-	angleY: 2 * Math.PI
+	headingY: 2 * Math.PI
 }, function () {
 	return 18000;
 });
@@ -15,7 +15,7 @@ var teapot = scene('teapot.obj', 'grid.png', {
 	var cup = scene('cylinder.obj', '#f70', {
 		scale: [0.4, 0.04, 0.4],
 		offsetX: 1.25,
-		angleY: iteration * Math.PI / 3 + 0.2
+		headingY: iteration * Math.PI / 3 + 0.2
 	}, {
 		scaleY: 0.4
 	}, 250, {

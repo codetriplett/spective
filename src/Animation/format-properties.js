@@ -10,7 +10,7 @@ export function formatProperties (input) {
 	const result = {};
 
 	[
-		'scale', 'offset', 'angle', 'position'
+		'scale', 'angle', 'offset', 'heading', 'position'
 	].forEach(key => {
 		const array = properties[key];
 
@@ -28,8 +28,9 @@ export function formatProperties (input) {
 
 	[
 		'scaleX', 'scaleY', 'scaleZ',
-		'offsetX', 'offsetY', 'offsetZ',
 		'angleX', 'angleY', 'angleZ',
+		'offsetX', 'offsetY', 'offsetZ',
+		'headingX', 'headingY', 'headingZ',
 		'positionX', 'positionY', 'positionZ'
 	].forEach(key => {
 		const value = properties[key];

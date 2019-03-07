@@ -100,7 +100,10 @@ Its placement within the scene.
 Its rotation around each axis. Rotations occur in the order Y, X then Z.
 
 ### offset
-A shift in its placement after it has been rotated. This is useful for creating orbits.
+A shift in its placement. This is useful for creating orbits.
+
+### heading
+Its rotation in the orbit created by the offset. Rotations occur in the order Y, X then Z.
 
 ## Meters
 Meters aren't necessary to create 3d graphics, they only help manage the state and timing of events in the scene.
@@ -132,5 +135,6 @@ meter(-0.25); // sets the value to 0.25 less than the total range of the meter
 meter(1.5, 2000); // add 1.5 to the value of the meter over 2 seconds
 
 // while an update is scheduled, it can be inspected at any time by passing no parameters
+// this value is also returned when setting and scheduling updates
 var value = meter();
 ```
