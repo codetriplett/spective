@@ -1,8 +1,22 @@
+import { generatePrimative } from './generate-primative';
 import { parseFile } from './parse-file';
 import { Asset } from '../Asset/Asset';
 
+const primativeRegex = /^ *-?[0-9]+(\.[0-9]+)?( +-?[0-9]+(\.[0-9]+)?){0,2} *$/;
+
 export class Geometry {
 	constructor (source, callback = () => {}) {
+		this.assets = {};
+
+		if (primativeRegex.test(source)) {
+			const dimensions = source.trim().split(/ +/g).map(value => Number(value));
+			const file = generatePrimative(...dimensions);
+
+			Object.assign(this, parseFile(file));
+			
+			return;
+		}
+
 		const xmlhttp = new XMLHttpRequest();
 		
 		xmlhttp.onload = () => {
@@ -19,8 +33,6 @@ export class Geometry {
 
 		xmlhttp.open('GET', source);
 		xmlhttp.send();
-
-		this.assets = {};
 	}
 
 	createAsset (source, callback) {

@@ -3,10 +3,12 @@ import { Instance } from '../Instance/Instance';
 import { Scene } from '../Scene/Scene';
 import { Meter } from '../Meter/Meter';
 
+const assetRegex = /(\.(bmp|gif|jpe?g|png|svg)|#[0-9a-f]{3}|#[0-9a-f]{6}) *$/;
+
 export default function spective (...parameters) {
 	let first = parameters[0];
 
-	if (/function|number/.test(typeof first)) {
+	if (/function|number/.test(typeof first) || !parameters.length) {
 		const meter = new Meter(...parameters);
 
 		return (...parameters) => {
@@ -38,17 +40,22 @@ export default function spective (...parameters) {
 	}
 
 	function creator (anchor, ...parameters) {
-		const geometrySource = parameters.shift();
+		let geometrySource;
 		let assetSource;
 
-		if (typeof parameters[0] === 'string') {
+		if (!assetRegex.test(parameters[0])) {
+			geometrySource = parameters.shift();
+		}
+
+		if (assetRegex.test(parameters[0])) {
 			assetSource = parameters.shift();
 		} else if (!parameters.length) {
 			destroyGeometry(geometrySource, anchor);
 			return;
-		} else {
-			assetSource = '#fff';
 		}
+
+		geometrySource = geometrySource || '1 1 1';
+		assetSource = assetSource || '#fff';
 
 		const geometry = createGeometry(geometrySource, render);
 

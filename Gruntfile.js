@@ -94,6 +94,7 @@ module.exports = function (grunt) {
 					'temp/Instance.js',
 					'temp/parse-color.js',
 					'temp/Asset.js',
+					'temp/generate-primative.js',
 					'temp/calculate-normals.js',
 					'temp/parse-file.js',
 					'temp/square-image.js',

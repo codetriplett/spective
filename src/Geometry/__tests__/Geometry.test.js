@@ -1,7 +1,9 @@
+import { generatePrimative } from '../generate-primative';
 import { parseFile } from '../parse-file';
 import { Asset } from '../../Asset/Asset';
 import { Geometry } from '../Geometry';
 
+jest.mock('../generate-primative', () => ({ generatePrimative: jest.fn() }));
 jest.mock('../parse-file', () => ({ parseFile: jest.fn() }));
 jest.mock('../../Asset/Asset', () => ({ Asset: jest.fn() }));
 
@@ -12,7 +14,8 @@ describe('Geometry', () => {
 	let fileError;
 
 	beforeEach(() => {
-		parseFile.mockClear().mockImplementation(() => ({ vertices: 'vertices' }));
+		generatePrimative.mockClear().mockReturnValue('primative');
+		parseFile.mockClear().mockImplementation(input => ({ vertices: input }));
 		callback.mockClear();
 		fileLoad = undefined;
 		fileError = undefined;
@@ -55,7 +58,7 @@ describe('Geometry', () => {
 
 		expect(actual).toEqual({ assets: {} });
 		fileLoad();
-		expect(actual).toEqual({ vertices: 'vertices', assets: {} });
+		expect(actual).toEqual({ vertices: 'responseText', assets: {} });
 	});
 	
 	it('should handle failed file load', () => {
@@ -80,6 +83,16 @@ describe('Geometry', () => {
 		expect(callback).not.toHaveBeenCalled();
 		fileError();
 		expect(callback).toHaveBeenCalledWith('source');
+	});
+	
+	it('should create a primative geometry', () => {
+		const actual = new Geometry('1 0 -1');
+		
+		expect(generatePrimative).toHaveBeenCalledWith(1, 0, -1);
+		expect(parseFile).toHaveBeenCalledWith('primative');
+		expect(fileLoad).toBeUndefined();
+		expect(fileError).toBeUndefined();
+		expect(actual).toEqual({ vertices: 'primative', assets: {} });
 	});
 
 	it('should create an Asset', () => {

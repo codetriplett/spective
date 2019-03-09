@@ -24,6 +24,7 @@ const measure = jest.fn();
 const update = jest.fn();
 let assets;
 let instances;
+let properties;
 
 function resetMocks (skipScene) {
 	window.addEventListener = addEventListener.mockClear();
@@ -46,6 +47,7 @@ function resetMocks (skipScene) {
 
 	assets = {};
 	instances = [];
+	properties = {};
 
 	Scene.mockClear().mockImplementation(function () {
 		this.resize = resize.mockClear();
@@ -71,10 +73,10 @@ describe('spective', () => {
 		beforeEach(() => resetMocks());
 
 		it('should create a canvas', () => {
-			const actual = spective('first', 'second');
+			const actual = spective(properties);
 
 			expect(createCanvas).toHaveBeenCalledWith();
-			expect(Instance).toHaveBeenCalledWith(true, 'first', 'second');
+			expect(Instance).toHaveBeenCalledWith(true, properties);
 			expect(Scene).toHaveBeenCalledWith('canvas', { activate });
 			expect(resize).toHaveBeenCalledWith();
 			expect(addEventListener).toHaveBeenCalledWith('resize', resize);
@@ -84,10 +86,10 @@ describe('spective', () => {
 
 		it('should use a custom canvas', () => {
 			const canvas = { getContext: () => {} };
-			const actual = spective(canvas, 'first', 'second');
+			const actual = spective(canvas, properties);
 
 			expect(createCanvas).not.toHaveBeenCalled();
-			expect(Instance).toHaveBeenCalledWith(true, 'first', 'second');
+			expect(Instance).toHaveBeenCalledWith(true, properties);
 			expect(Scene).toHaveBeenCalledWith(canvas, { activate });
 			expect(resize).toHaveBeenCalledWith();
 			expect(addEventListener).not.toHaveBeenCalled();
@@ -96,7 +98,7 @@ describe('spective', () => {
 		});
 
 		it('should update the camera', () => {
-			const scene = spective();
+			const scene = spective(properties);
 			scene({ property: 'update' });
 
 			expect(activate).toHaveBeenCalledWith({ property: 'update' });
@@ -104,7 +106,7 @@ describe('spective', () => {
 		});
 
 		it('should toggle the camera', () => {
-			const scene = spective();
+			const scene = spective(properties);
 			scene();
 
 			expect(toggle).toHaveBeenCalledWith();
@@ -116,7 +118,7 @@ describe('spective', () => {
 
 		beforeEach(() => {
 			resetMocks();
-			scene = spective();
+			scene = spective(properties);
 			resetMocks(true);
 		});
 
@@ -124,6 +126,28 @@ describe('spective', () => {
 			const actual = scene('source.obj', 'source.png', { property: 'property' });
 
 			expect(createGeometry).toHaveBeenCalledWith('source.obj', render);
+			expect(createAsset).toHaveBeenCalledWith('source.png', render);
+			expect(createInstance).toHaveBeenCalledWith(false, { property: 'property' });
+			expect(render).toHaveBeenCalledWith();
+
+			expect(actual).toEqual(expect.any(Function));
+		});
+
+		it('should create an instance without an asset source', () => {
+			const actual = scene('source.obj', { property: 'property' });
+
+			expect(createGeometry).toHaveBeenCalledWith('source.obj', render);
+			expect(createAsset).toHaveBeenCalledWith('#fff', render);
+			expect(createInstance).toHaveBeenCalledWith(false, { property: 'property' });
+			expect(render).toHaveBeenCalledWith();
+
+			expect(actual).toEqual(expect.any(Function));
+		});
+
+		it('should create an instance without a geometry source', () => {
+			const actual = scene('source.png', { property: 'property' });
+
+			expect(createGeometry).toHaveBeenCalledWith('1 1 1', render);
 			expect(createAsset).toHaveBeenCalledWith('source.png', render);
 			expect(createInstance).toHaveBeenCalledWith(false, { property: 'property' });
 			expect(render).toHaveBeenCalledWith();
@@ -248,6 +272,20 @@ describe('spective', () => {
 			const actual = spective(2, 'second');
 
 			expect(Meter).toHaveBeenCalledWith(2, 'second');
+			expect(actual).toEqual(expect.any(Function));
+		});
+
+		it('should create a meter if there is only a number', () => {
+			const actual = spective(2);
+
+			expect(Meter).toHaveBeenCalledWith(2);
+			expect(actual).toEqual(expect.any(Function));
+		});
+
+		it('should create a meter if there are no parameters', () => {
+			const actual = spective();
+
+			expect(Meter).toHaveBeenCalledWith();
 			expect(actual).toEqual(expect.any(Function));
 		});
 
