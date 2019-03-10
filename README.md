@@ -96,13 +96,13 @@ Cubes can be created without needing an OBJ file or server running. Simply pass 
 // the examples below assume you have already created a scene
 
 // create a cube that shows the same texture on each face
-scene('face.png');
+scene('face.png', {});
 
 // create a tall cube with a repeating texture in the vertical direction
-scene('1 2 1', 'face.png');
+scene('1 2 1', 'face.png', {});
 
 // create a flat plane that repeats the texture 10 times in the horizontal directions
-scene('10 0 10', 'terrain.png');
+scene('10 0 10', 'terrain.png', {});
 ```
 
 ## Properties
