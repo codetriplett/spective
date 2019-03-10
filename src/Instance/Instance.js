@@ -34,7 +34,7 @@ export class Instance extends Animation {
 
 		if (properties) {
 			matrices = buildMatrices(properties, inverted);
-			inverses = buildMatrices(properties, !inverted, inverted);
+			inverses = buildMatrices(properties, !inverted, true);
 
 			this.relativeMatrix = multiplyMatrices(matrices);
 			this.relativeInverse = multiplyMatrices(inverses);

@@ -337,9 +337,6 @@ describe('Meter', () => {
 		const clearTimeout = jest.fn();
 		const setTimeout = jest.fn();
 		const now = jest.fn();
-		const first = jest.fn();
-		const second = jest.fn();
-		const third = jest.fn();
 		let context;
 
 		beforeEach(() => {
@@ -349,9 +346,6 @@ describe('Meter', () => {
 
 			measure.mockClear();
 			resolve.mockClear();
-			first.mockClear();
-			second.mockClear();
-			third.mockClear();
 
 			context = {
 				measure,
@@ -361,14 +355,10 @@ describe('Meter', () => {
 				segments: [
 					{
 						lowerValue: 0,
-						lowerCallback: first,
-						upperValue: 2,
-						upperCallback: second
+						upperValue: 2
 					}, {
 						lowerValue: 2,
-						lowerCallback: second,
-						upperValue: 3,
-						upperCallback: third
+						upperValue: 3
 					}
 				],
 				timeout: 'timeout'

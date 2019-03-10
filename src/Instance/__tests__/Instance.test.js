@@ -76,7 +76,7 @@ describe('Instance', () => {
 
 			expect(buildMatrices.mock.calls).toEqual([
 				['properties', undefined],
-				['properties', true, undefined]
+				['properties', true, true]
 			]);
 
 			expect(multiplyMatrices.mock.calls).toEqual([

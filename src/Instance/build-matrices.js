@@ -43,7 +43,7 @@ export function buildMatrices (properties = {}, invert, reduce) {
 			[cos, sin, -sin, cos].forEach((item, i) => {
 				matrix[start + (i >= 2 ? step << 2 : 0) + (i % 2) * step] = item;
 			});
-		} else if (invert && reduce) {
+		} else if (reduce) {
 			return;
 		} else if (index === 8) {
 			value.forEach((item = 1, i) => {
@@ -58,13 +58,21 @@ export function buildMatrices (properties = {}, invert, reduce) {
 		return matrix;
 	});
 
-	if (invert && !reduce) {
-		const angles = matrices.splice(5, 3);
-		const headings = matrices.splice(1, 3);
+	if (invert) {
+		if (reduce) {
+			matrices.reverse();
+		} else {
+			const angles = matrices.splice(5, 3);
+			const headings = matrices.splice(1, 3);
 
-		matrices.reverse();
-		matrices.splice(2, 0, ...headings);
-		matrices.splice(1, 0, ...angles);
+			matrices.reverse();
+			matrices.splice(2, 0, ...headings);
+			matrices.splice(1, 0, ...angles);
+		}
+	}
+
+	if (!matrices.some(matrix => matrix)) {
+		return [identityMatrix.slice()];
 	}
 
 	return matrices.filter(matrix => matrix);
