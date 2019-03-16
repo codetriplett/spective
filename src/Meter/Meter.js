@@ -7,10 +7,14 @@ export class Meter {
 		while (typeof parameters.slice(-1)[0] === 'number') {
 			trailingNumbers.unshift(parameters.pop());
 		}
+
+		const segments = organizeSegments(...parameters);
 		
 		this.value = 0;
 		this.index = 0;
-		this.segments = organizeSegments(...parameters);
+		this.segments = segments;
+		this.range = segments.slice(-1)[0].upperValue;
+		this.reversed = false;
 
 		this.measure = this.measure.bind(this);
 		this.resolve = this.resolve.bind(this);
@@ -21,18 +25,26 @@ export class Meter {
 
 	measure () {
 		const now = Date.now();
-		const { fromValue, toValue, duration, timestamp = now } = this;
+		let { value } = this;
 
-		if (fromValue === undefined || toValue === undefined) {
-			return this.value;
+		const {
+			range,
+			reversed,
+			fromValue,
+			toValue,
+			duration,
+			timestamp = now
+		} = this;
+
+		if (fromValue !== undefined && toValue !== undefined) {
+			let progress = duration ? (Date.now() - timestamp) / duration : 1;
+			progress = Math.min(Math.max(0, progress), 1);
+
+			value = fromValue * (1 - progress) + toValue * progress;
+			this.value = value;
 		}
 
-		let progress = duration ? (Date.now() - timestamp) / duration : 1;
-		progress = Math.min(Math.max(0, progress), 1);
-
-		const value = fromValue * (1 - progress) + toValue * progress;
-
-		return this.value = value;
+		return reversed ? value - range : value;
 	}
 
 	resolve () {
@@ -44,7 +56,7 @@ export class Meter {
 			iterator,
 			fromValue,
 			toValue,
-			remainingChange,
+			remainingInput,
 			remainingDuration
 		} = this;
 		
@@ -69,73 +81,88 @@ export class Meter {
 		this.value = toValue;
 
 		if (callback && fromValue !== toValue && duration !== undefined) {
-			callback(iterator);
+			callback(iterator, toValue);
 		}
 
 		if (nextIndex !== index && nextIndex >= 0 && nextIndex < segments.length) {
 			this.index = nextIndex;
-			update(remainingChange, remainingDuration);
+			update(remainingInput, remainingDuration);
 		} else {
 			this.fromValue = undefined;
 			this.toValue = undefined;
 			this.iterator = undefined;
 			this.duration = undefined;
 			this.timestamp = undefined;
-			this.remainingChange = undefined;
+			this.remainingInput = undefined;
 			this.remainingDuration = undefined;
 		}
 	}
 
-	update (change, duration) {
-		if (isNaN(change)) {
-			return this.value;
+	update (input, duration) {
+		if (isNaN(input)) {
+			return;
 		}
 
-		const { measure, resolve, value, index, segments, timeout } = this;
-		const { lowerValue, upperValue } = segments[index];
-		const isNegative = 1 / change < 0;
-		const isAbsolute = duration === undefined;
+		this.measure();
+		clearTimeout(this.timeout);
 
-		clearTimeout(timeout);
-		measure();
-		
-		let totalValue = value + change;
+		const { resolve, value, segments, index, range } = this;
+		const { lowerValue, upperValue } = segments[index];
+		const isNegative = 1 / input < 0;
+		const isAbsolute = duration === undefined;
+		let { reversed } = this;
+		let totalValue = input;
+		let totalChange = input;
+		let iterator = 0;
 
 		if (isAbsolute) {
-			const range = segments.slice(-1)[0].upperValue;
-			totalValue = isNegative ? range + change : change;
+			totalValue += isNegative ? range : 0;
+			totalChange = totalValue - value;
+		} else {
+			totalValue += value;
 		}
-
-		const toValue = Math.min(Math.max(lowerValue, totalValue), upperValue);
-		let iterator = 0;
-		let limitedDuration;
-		let remainingChange = totalValue;
-		let remainingDuration;
 
 		if (totalValue !== value) {
 			iterator = totalValue < value ? -1 : 1;
+			reversed = totalValue < value;
+		} else if (!isAbsolute) {
+			reversed = isNegative;
 		}
+
+		const effectiveValue = Math.min(Math.max(0, totalValue), range);
+		const effectiveChange = (effectiveValue - value) || (0 * (reversed ? -1 : 1));
+		const effectivePercentage = totalChange ? effectiveChange / totalChange : 1;
+		const limitedValue = Math.min(Math.max(lowerValue, totalValue), upperValue);
+		const limitedChange = (limitedValue - value) || (0 * (reversed ? -1 : 1));
+		const limitedPercentage = totalChange ? limitedChange / totalChange : 1;
+		let limitedDuration;
+		let remainingInput;
+		let remainingDuration;
 			
-		if (!isAbsolute) {
-			limitedDuration = Math.round(duration * (toValue - value) / change);
-			remainingChange -= toValue
+		if (isAbsolute) {
+			remainingInput = totalValue;
+		} else {
+			limitedDuration = Math.round(duration * limitedPercentage);
+			remainingInput = effectiveChange ? effectiveChange - limitedChange : effectiveChange;
 			remainingDuration = duration - limitedDuration;
 		}
 
+		this.reversed = reversed;
 		this.fromValue = value;
-		this.toValue = toValue;
+		this.toValue = limitedValue;
 		this.duration = limitedDuration;
 		this.iterator = iterator;
-		this.remainingChange = remainingChange;
+		this.remainingInput = remainingInput;
 		this.remainingDuration = remainingDuration;
 		
-		if (limitedDuration === undefined) {
+		if (isAbsolute) {
 			resolve();
+			return effectiveChange;
 		} else {
 			this.timestamp = Date.now();
 			this.timeout = setTimeout(resolve, limitedDuration);
 		}
 
-		return this.value;
+		return isNegative ? -effectivePercentage : effectivePercentage;
 	}
 }

@@ -38,8 +38,8 @@ var meter = spective(
 	iterator => console.log('third', iterator)
 );
 
-meter(2, 2000);
-setTimeout(() => meter(-2, 2000), 3000);
+meter(1, 2000);
+setTimeout(() => meter(-1, 2000), 3000);
 
 setTimeout(() => console.log(meter()), 500);
 setTimeout(() => console.log(meter()), 1500);
@@ -47,6 +47,6 @@ setTimeout(() => console.log(meter()), 3500);
 setTimeout(() => console.log(meter()), 4500);
 
 setTimeout(() => {
-	meter(1.5);
+	meter(0.5);
 	console.log(meter());
 }, 6000);

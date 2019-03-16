@@ -9,7 +9,7 @@ describe('Meter', () => {
 		let segments;
 
 		beforeEach(() => {
-			segments = [{ threshold: 1 }];
+			segments = [{ upperValue: 1 }];
 
 			Meter.prototype.update = update.mockClear();
 			organizeSegments.mockClear().mockReturnValue(segments);
@@ -25,6 +25,8 @@ describe('Meter', () => {
 				value: 0,
 				index: 0,
 				segments,
+				range: 1,
+				reversed: false,
 				measure: expect.any(Function),
 				resolve: expect.any(Function),
 				update: expect.any(Function)
@@ -62,6 +64,9 @@ describe('Meter', () => {
 			window.Date.now = now.mockClear().mockReturnValue(1000);
 
 			context = {
+				value: 0,
+				range: 4,
+				reversed: false,
 				fromValue: 0.5,
 				toValue: 2.5,
 				duration: 200,
@@ -74,6 +79,14 @@ describe('Meter', () => {
 
 			expect(context.value).toBe(1.5);
 			expect(actual).toBe(1.5);
+		});
+
+		it('should measure the meter when reversed', () => {
+			context.reversed = true;
+			const actual = measure.call(context);
+
+			expect(context.value).toBe(1.5);
+			expect(actual).toBe(-2.5);
 		});
 
 		it('should measure the meter without a timestamp', () => {
@@ -115,6 +128,22 @@ describe('Meter', () => {
 			expect(context.value).toBe(0.5);
 			expect(actual).toBe(0.5);
 		});
+
+		it('should measure the meter when resolved and reversed', () => {
+			Object.assign(context, {
+				value: 2.5,
+				reversed: true,
+				duration: undefined,
+				timestamp: undefined,
+				fromValue: undefined,
+				toValue: undefined
+			});
+
+			const actual = measure.call(context);
+
+			expect(context.value).toBe(2.5);
+			expect(actual).toBe(-1.5);
+		});
 	});
 
 	describe('resolve', () => {
@@ -155,7 +184,7 @@ describe('Meter', () => {
 				toValue: 1.5,
 				iterator: 1,
 				duration: 2000,
-				remainingChange: 'remainingChange',
+				remainingInput: 'remainingInput',
 				remainingDuration: 'remainingDuration'
 			};
 		});
@@ -178,7 +207,7 @@ describe('Meter', () => {
 			resolve.call(context);
 
 			expect(first).not.toHaveBeenCalled();
-			expect(second).toHaveBeenCalledWith(1);
+			expect(second).toHaveBeenCalledWith(1, 2);
 			expect(third).not.toHaveBeenCalled();
 
 			expect(context).toMatchObject({
@@ -198,7 +227,7 @@ describe('Meter', () => {
 
 			expect(first).not.toHaveBeenCalled();
 			expect(second).not.toHaveBeenCalled();
-			expect(third).toHaveBeenCalledWith(1);
+			expect(third).toHaveBeenCalledWith(1, 3);
 
 			expect(context).toMatchObject({
 				value: 3,
@@ -253,7 +282,7 @@ describe('Meter', () => {
 
 			resolve.call(context);
 
-			expect(first).toHaveBeenCalledWith(-1);
+			expect(first).toHaveBeenCalledWith(-1, 0);
 			expect(second).not.toHaveBeenCalled();
 			expect(third).not.toHaveBeenCalled();
 
@@ -279,7 +308,7 @@ describe('Meter', () => {
 
 			resolve.call(context);
 
-			expect(zero).toHaveBeenCalledWith(-1);
+			expect(zero).toHaveBeenCalledWith(-1, 0);
 			expect(first).not.toHaveBeenCalled();
 			expect(second).not.toHaveBeenCalled();
 			expect(third).not.toHaveBeenCalled();
@@ -361,44 +390,154 @@ describe('Meter', () => {
 						upperValue: 3
 					}
 				],
+				range: 3,
+				reversed: false,
 				timeout: 'timeout'
 			};
 		});
 
 		it('should update to an absolute value', () => {
-			const actual = update.call(context, 1.25);
+			const actual = update.call(context, 1.125);
 
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(measure).toHaveBeenCalled();
 			expect(resolve).toHaveBeenCalled();
 			expect(setTimeout).not.toHaveBeenCalled();
-			expect(actual).toBe(0.5);
+			expect(actual).toBe(0.625);
 
 			expect(context).toMatchObject({
+				reversed: false,
 				fromValue: 0.5,
-				toValue: 1.25,
+				toValue: 1.125,
 				iterator: 1,
 				duration: undefined,
-				remainingChange: 1.25,
+				remainingInput: 1.125,
 				remainingDuration: undefined
 			});
 		});
 
 		it('should update to an absolute value from the end', () => {
-			const actual = update.call(context, -1.25);
+			const actual = update.call(context, -1.125);
 
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(measure).toHaveBeenCalled();
 			expect(resolve).toHaveBeenCalled();
 			expect(setTimeout).not.toHaveBeenCalled();
-			expect(actual).toBe(0.5);
+			expect(actual).toBe(1.375);
 
 			expect(context).toMatchObject({
+				reversed: false,
 				fromValue: 0.5,
-				toValue: 1.75,
+				toValue: 1.875,
 				iterator: 1,
 				duration: undefined,
-				remainingChange: 1.75,
+				remainingInput: 1.875,
+				remainingDuration: undefined
+			});
+		});
+
+		it('should update to an absolute value in another segment', () => {
+			const actual = update.call(context, 2.5);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(measure).toHaveBeenCalled();
+			expect(resolve).toHaveBeenCalled();
+			expect(setTimeout).not.toHaveBeenCalled();
+			expect(actual).toBe(2);
+
+			expect(context).toMatchObject({
+				reversed: false,
+				fromValue: 0.5,
+				toValue: 2,
+				iterator: 1,
+				duration: undefined,
+				remainingInput: 2.5,
+				remainingDuration: undefined
+			});
+		});
+
+		it('should update to an absolute value in another segment from the end', () => {
+			Object.assign(context, {
+				value: 2.5,
+				index: 1
+			});
+
+			const actual = update.call(context, 0.5);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(measure).toHaveBeenCalled();
+			expect(resolve).toHaveBeenCalled();
+			expect(setTimeout).not.toHaveBeenCalled();
+			expect(actual).toBe(-2);
+
+			expect(context).toMatchObject({
+				reversed: true,
+				fromValue: 2.5,
+				toValue: 2,
+				iterator: -1,
+				duration: undefined,
+				remainingInput: 0.5,
+				remainingDuration: undefined
+			});
+		});
+
+		it('should not set direction to negative if value has not changed', () => {
+			const actual = update.call(context, 0.5);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(measure).toHaveBeenCalled();
+			expect(resolve).toHaveBeenCalled();
+			expect(setTimeout).not.toHaveBeenCalled();
+			expect(actual).toBe(0);
+
+			expect(context).toMatchObject({
+				reversed: false,
+				fromValue: 0.5,
+				toValue: 0.5,
+				iterator: 0,
+				duration: undefined,
+				remainingInput: 0.5,
+				remainingDuration: undefined
+			});
+		});
+
+		it('should not set direction to positive if value has not changed', () => {
+			context.reversed = true;
+			const actual = update.call(context, 0.5);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(measure).toHaveBeenCalled();
+			expect(resolve).toHaveBeenCalled();
+			expect(setTimeout).not.toHaveBeenCalled();
+			expect(actual).toBe(-0);
+
+			expect(context).toMatchObject({
+				reversed: true,
+				fromValue: 0.5,
+				toValue: 0.5,
+				iterator: 0,
+				duration: undefined,
+				remainingInput: 0.5,
+				remainingDuration: undefined
+			});
+		});
+
+		it('should reverse direction if new value is lower', () => {
+			const actual = update.call(context, 0.25);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(measure).toHaveBeenCalled();
+			expect(resolve).toHaveBeenCalled();
+			expect(setTimeout).not.toHaveBeenCalled();
+			expect(actual).toBe(-0.25);
+
+			expect(context).toMatchObject({
+				reversed: true,
+				fromValue: 0.5,
+				toValue: 0.25,
+				iterator: -1,
+				duration: undefined,
+				remainingInput: 0.25,
 				remainingDuration: undefined
 			});
 		});
@@ -410,14 +549,15 @@ describe('Meter', () => {
 			expect(measure).toHaveBeenCalled();
 			expect(resolve).toHaveBeenCalled();
 			expect(setTimeout).not.toHaveBeenCalled();
-			expect(actual).toBe(0.5);
+			expect(actual).toBe(-0.5);
 
 			expect(context).toMatchObject({
+				reversed: true,
 				fromValue: 0.5,
 				toValue: 0,
 				iterator: -1,
 				duration: undefined,
-				remainingChange: 0,
+				remainingInput: 0,
 				remainingDuration: undefined
 			});
 		});
@@ -434,33 +574,35 @@ describe('Meter', () => {
 			expect(measure).toHaveBeenCalled();
 			expect(resolve).toHaveBeenCalled();
 			expect(setTimeout).not.toHaveBeenCalled();
-			expect(actual).toBe(2.5);
+			expect(actual).toBe(0.5);
 
 			expect(context).toMatchObject({
+				reversed: false,
 				fromValue: 2.5,
 				toValue: 3,
 				iterator: 1,
 				duration: undefined,
-				remainingChange: 3,
+				remainingInput: 3,
 				remainingDuration: undefined
 			});
 		});
 
 		it('should raise the value over time', () => {
-			const actual = update.call(context, 1, 2000);
+			const actual = update.call(context, 1.125, 2000);
 
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(measure).toHaveBeenCalled();
 			expect(resolve).not.toHaveBeenCalled();
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 2000);
-			expect(actual).toBe(0.5);
+			expect(actual).toBe(1);
 
 			expect(context).toMatchObject({
+				reversed: false,
 				fromValue: 0.5,
-				toValue: 1.5,
+				toValue: 1.625,
 				iterator: 1,
 				duration: 2000,
-				remainingChange: 0,
+				remainingInput: 0,
 				remainingDuration: 0,
 				timestamp: 1000,
 				timeout: 'timeout'
@@ -479,57 +621,110 @@ describe('Meter', () => {
 			expect(measure).toHaveBeenCalled();
 			expect(resolve).not.toHaveBeenCalled();
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 2000);
-			expect(actual).toBe(2.75);
+			expect(actual).toBe(-1);
 
 			expect(context).toMatchObject({
+				reversed: true,
 				fromValue: 2.75,
 				toValue: 2.25,
 				iterator: -1,
 				duration: 2000,
-				remainingChange: 0,
+				remainingInput: 0,
 				remainingDuration: 0,
 				timestamp: 1000,
 				timeout: 'timeout'
 			});
 		});
 
-		it('should update the value beyound the end over time', () => {
-			const actual = update.call(context, 2, 2000);
+		it('should update the value beyond the end over time', () => {
+			Object.assign(context, {
+				value: 2.25,
+				index: 1
+			});
+
+			const actual = update.call(context, 1, 2000);
 
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(measure).toHaveBeenCalled();
 			expect(resolve).not.toHaveBeenCalled();
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 1500);
-			expect(actual).toBe(0.5);
+			expect(actual).toBe(0.75);
 
 			expect(context).toMatchObject({
-				fromValue: 0.5,
-				toValue: 2,
+				reversed: false,
+				fromValue: 2.25,
+				toValue: 3,
 				iterator: 1,
 				duration: 1500,
-				remainingChange: 0.5,
+				remainingInput: 0,
 				remainingDuration: 500,
 				timestamp: 1000,
 				timeout: 'timeout'
 			});
 		});
 
-		it('should update the value beyound the beginning over time', () => {
+		it('should update the value beyond the beginning over time', () => {
 			const actual = update.call(context, -2, 2000);
 
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(measure).toHaveBeenCalled();
 			expect(resolve).not.toHaveBeenCalled();
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 500);
-			expect(actual).toBe(0.5);
+			expect(actual).toBe(-0.25);
 
 			expect(context).toMatchObject({
+				reversed: true,
 				fromValue: 0.5,
 				toValue: 0,
 				iterator: -1,
 				duration: 500,
-				remainingChange: -1.5,
+				remainingInput: 0,
 				remainingDuration: 1500,
+				timestamp: 1000,
+				timeout: 'timeout'
+			});
+		});
+
+		it('should set direction to negative', () => {
+			const actual = update.call(context, -0, 2000);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(measure).toHaveBeenCalled();
+			expect(resolve).not.toHaveBeenCalled();
+			expect(setTimeout).toHaveBeenCalledWith(resolve, 2000);
+			expect(actual).toBe(-1);
+
+			expect(context).toMatchObject({
+				reversed: true,
+				fromValue: 0.5,
+				toValue: 0.5,
+				iterator: 0,
+				duration: 2000,
+				remainingInput: -0,
+				remainingDuration: 0,
+				timestamp: 1000,
+				timeout: 'timeout'
+			});
+		});
+
+		it('should set direction to positive', () => {
+			context.reversed = true;
+			const actual = update.call(context, 0, 2000);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(measure).toHaveBeenCalled();
+			expect(resolve).not.toHaveBeenCalled();
+			expect(setTimeout).toHaveBeenCalledWith(resolve, 2000);
+			expect(actual).toBe(1);
+
+			expect(context).toMatchObject({
+				reversed: false,
+				fromValue: 0.5,
+				toValue: 0.5,
+				iterator: 0,
+				duration: 2000,
+				remainingInput: 0,
+				remainingDuration: 0,
 				timestamp: 1000,
 				timeout: 'timeout'
 			});

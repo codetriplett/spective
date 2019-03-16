@@ -20,9 +20,9 @@ export function buildMatrices (properties = {}, invert, reduce) {
 
 	const sequence = [
 		hasPosition ? [positionX, positionY, positionZ] : undefined,
-		headingZ, headingX, headingY,
+		headingY, headingX, headingZ,
 		hasOffset ? [offsetX, offsetY, offsetZ] : undefined,
-		angleZ, angleX, angleY,
+		angleY, angleX, angleZ,
 		hasScale ? [scaleX, scaleY, scaleZ] : undefined
 	];
 
@@ -37,8 +37,8 @@ export function buildMatrices (properties = {}, invert, reduce) {
 			const cos = Math.cos(value);
 			const sin = Math.sin(invert ? -value : value);
 			const normalizedIndex = index % 4;
-			const start = (normalizedIndex - 1) * 5;
-			const step = normalizedIndex === 3 ? -2 : 1;
+			const start = (3 - normalizedIndex) * 5;
+			const step = normalizedIndex === 1 ? -2 : 1;
 
 			[cos, sin, -sin, cos].forEach((item, i) => {
 				matrix[start + (i >= 2 ? step << 2 : 0) + (i % 2) * step] = item;
@@ -59,16 +59,7 @@ export function buildMatrices (properties = {}, invert, reduce) {
 	});
 
 	if (invert) {
-		if (reduce) {
-			matrices.reverse();
-		} else {
-			const angles = matrices.splice(5, 3);
-			const headings = matrices.splice(1, 3);
-
-			matrices.reverse();
-			matrices.splice(2, 0, ...headings);
-			matrices.splice(1, 0, ...angles);
-		}
+		matrices.reverse();
 	}
 
 	if (!matrices.some(matrix => matrix)) {
