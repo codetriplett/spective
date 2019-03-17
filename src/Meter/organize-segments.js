@@ -1,7 +1,6 @@
 export function organizeSegments (...parameters) {
-	const firstParameter = parameters[0];
 	const callbacks = [];
-	let ranges = [];
+	const ranges = [];
 	let totalRange = 0;
 	let undefinedRanges = 0;
 	let range;
@@ -23,18 +22,20 @@ export function organizeSegments (...parameters) {
 			range = parameter;
 		}
 	}
+	
+	let value = 0;
+	let callback;
 
-	if (ranges.length > 1 && typeof firstParameter === 'function') {
-		ranges[0] = 0;
-		undefinedRanges--;
-	} else if (!ranges.length) {
+	if (!ranges.length) {
 		ranges.push(range);
 		undefinedRanges = 1;
+	} else if (ranges.length > 1 && ranges[0] === undefined) {
+		ranges.shift();
+		undefinedRanges--;
+		callback = callbacks.shift();
 	}
 
 	const step = undefinedRanges ? (1 - (totalRange % 1)) / undefinedRanges : 0;
-	let value = 0;
-	let callback;
 
 	return ranges.map((range, i) => {
 		const segment = {

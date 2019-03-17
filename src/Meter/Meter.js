@@ -1,5 +1,13 @@
 import { organizeSegments } from './organize-segments';
 
+function isNegative (value) {
+	return 1 / value < 0;
+}
+
+function constrainValue (min, value, max) {
+	return Math.min(Math.max(min, value), max);
+}
+
 export class Meter {
 	constructor (...parameters) {
 		const trailingNumbers = [];
@@ -8,161 +16,143 @@ export class Meter {
 			trailingNumbers.unshift(parameters.pop());
 		}
 
-		const segments = organizeSegments(...parameters);
-		
-		this.value = 0;
+		this.segments = organizeSegments(...parameters);
 		this.index = 0;
-		this.segments = segments;
-		this.range = segments.slice(-1)[0].upperValue;
-		this.reversed = false;
+		this.value = 0;
+		this.change = 0;
 
-		this.measure = this.measure.bind(this);
 		this.resolve = this.resolve.bind(this);
-		this.update = this.update.bind(this);
 
-		this.update(...trailingNumbers);
+		if (trailingNumbers.length) {
+			this.update(...trailingNumbers);
+		}
 	}
 
 	measure () {
-		const now = Date.now();
+		const { segments, change, duration, timestamp } = this;
 		let { value } = this;
 
-		const {
-			range,
-			reversed,
-			fromValue,
-			toValue,
-			duration,
-			timestamp = now
-		} = this;
+		if (duration !== undefined && timestamp !== undefined) {
+			const elapsed = Date.now() - timestamp;
+			const remaining = 1 - constrainValue(0, elapsed / duration, 1);
 
-		if (fromValue !== undefined && toValue !== undefined) {
-			let progress = duration ? (Date.now() - timestamp) / duration : 1;
-			progress = Math.min(Math.max(0, progress), 1);
-
-			value = fromValue * (1 - progress) + toValue * progress;
-			this.value = value;
+			value -= change * (remaining || 0);
 		}
 
-		return reversed ? value - range : value;
+		if (change < 0) {
+			const { upperValue: range } = segments.slice(-1)[0];
+			value -= range;
+		}
+
+		return value;
 	}
 
 	resolve () {
-		const {
-			update,
-			index,
-			segments,
-			duration,
-			iterator,
-			fromValue,
-			toValue,
-			remainingInput,
-			remainingDuration
-		} = this;
-		
-		const {
-			lowerValue,
-			lowerCallback,
-			upperValue,
-			upperCallback
-		} = segments[index];
-		
-		let nextIndex = index + iterator;
+		const { segments, value, change, duration } = this;
+		let { index } = this;
+		const { [index]: segment, length } = segments;
+		const { lowerValue, lowerCallback, upperValue, upperCallback } = segment;
+		let iterator = isNegative(change) ? -1 : 1;
 		let callback;
 
-		if (toValue >= upperValue && iterator === 1) {
+		if (value >= upperValue && iterator === 1) {
 			callback = upperCallback;
-		} else if (toValue <= lowerValue && iterator === -1) {
+		} else if (value <= lowerValue && iterator === -1) {
 			callback = lowerCallback;
 		} else {
-			nextIndex -= iterator;
+			iterator = 0;
 		}
 
-		this.value = toValue;
+		index += iterator;
 
-		if (callback && fromValue !== toValue && duration !== undefined) {
-			callback(iterator, toValue);
+		if (callback && duration !== undefined) {
+			callback(iterator, value);
 		}
 
-		if (nextIndex !== index && nextIndex >= 0 && nextIndex < segments.length) {
-			this.index = nextIndex;
-			update(remainingInput, remainingDuration);
-		} else {
-			this.fromValue = undefined;
-			this.toValue = undefined;
-			this.iterator = undefined;
-			this.duration = undefined;
-			this.timestamp = undefined;
-			this.remainingInput = undefined;
-			this.remainingDuration = undefined;
+		if (!iterator || index < 0 || index >= length) {
+			return;
 		}
+
+		this.index = index;
+
+		return this.schedule();
+	}
+
+	schedule () {
+		const { resolve, segments, index, value, change, duration } = this;
+		const { lowerValue, upperValue } = segments[index];
+		const segmentValue = constrainValue(lowerValue, value, upperValue);
+		let segmentDuration = duration;
+
+		if (segmentValue !== lowerValue && segmentValue !== upperValue) {
+			return;
+		}
+		
+		if (segmentDuration !== undefined) {
+			const original = value - change;
+			const segmentOriginal = constrainValue(lowerValue, original, upperValue);
+			const beforeOriginal = segmentOriginal - original;
+			const afterValue = value - segmentValue;
+			const segmentChange = change - (beforeOriginal + afterValue);
+			const segmentPercentage = change ? segmentChange / change : 1;
+
+			segmentDuration = Math.round(segmentDuration * segmentPercentage);
+		}
+
+		if (!segmentDuration) {
+			return resolve();
+		}
+
+		this.timeout = setTimeout(resolve, segmentDuration);
+
+		return segmentDuration;
 	}
 
 	update (input, duration) {
 		if (isNaN(input)) {
-			return;
+			input = 0;
+			duration = duration || 0;
 		}
 
-		this.measure();
-		clearTimeout(this.timeout);
-
-		const { resolve, value, segments, index, range } = this;
-		const { lowerValue, upperValue } = segments[index];
-		const isNegative = 1 / input < 0;
+		const { segments, timeout } = this;
+		const { upperValue: range } = segments.slice(-1)[0];
 		const isAbsolute = duration === undefined;
-		let { reversed } = this;
-		let totalValue = input;
-		let totalChange = input;
-		let iterator = 0;
+		let value = this.measure();
+		let change;
+
+		const wasNegative = isNegative(value);
+		value += wasNegative ? range : 0;
 
 		if (isAbsolute) {
-			totalValue += isNegative ? range : 0;
-			totalChange = totalValue - value;
+			input += isNegative(input) ? range : 0;
+			change = input - value;
+			value = input;
 		} else {
-			totalValue += value;
+			change = input;
+			value += change;
 		}
 
-		if (totalValue !== value) {
-			iterator = totalValue < value ? -1 : 1;
-			reversed = totalValue < value;
-		} else if (!isAbsolute) {
-			reversed = isNegative;
-		}
-
-		const effectiveValue = Math.min(Math.max(0, totalValue), range);
-		const effectiveChange = (effectiveValue - value) || (0 * (reversed ? -1 : 1));
-		const effectivePercentage = totalChange ? effectiveChange / totalChange : 1;
-		const limitedValue = Math.min(Math.max(lowerValue, totalValue), upperValue);
-		const limitedChange = (limitedValue - value) || (0 * (reversed ? -1 : 1));
-		const limitedPercentage = totalChange ? limitedChange / totalChange : 1;
-		let limitedDuration;
-		let remainingInput;
-		let remainingDuration;
-			
-		if (isAbsolute) {
-			remainingInput = totalValue;
-		} else {
-			limitedDuration = Math.round(duration * limitedPercentage);
-			remainingInput = effectiveChange ? effectiveChange - limitedChange : effectiveChange;
-			remainingDuration = duration - limitedDuration;
-		}
-
-		this.reversed = reversed;
-		this.fromValue = value;
-		this.toValue = limitedValue;
-		this.duration = limitedDuration;
-		this.iterator = iterator;
-		this.remainingInput = remainingInput;
-		this.remainingDuration = remainingDuration;
+		const effectiveValue = constrainValue(0, value, range);
+		let effectiveChange = change - (value - effectiveValue);
 		
-		if (isAbsolute) {
-			resolve();
-			return effectiveChange;
-		} else {
-			this.timestamp = Date.now();
-			this.timeout = setTimeout(resolve, limitedDuration);
+		if (!effectiveChange) {
+			effectiveChange = wasNegative ? -0 : 0;
 		}
 
-		return isNegative ? -effectivePercentage : effectivePercentage;
+		this.value = effectiveValue;
+		this.change = effectiveChange;
+		this.timeout = clearTimeout(timeout);
+
+		if (!isAbsolute) {
+			const percentage = (effectiveChange / change) || 1;
+
+			this.duration = duration * percentage;
+			this.timestamp = Date.now();
+		} else {
+			this.duration = undefined;
+			this.timestamp = undefined;
+		}
+
+		return this.schedule();
 	}
 }

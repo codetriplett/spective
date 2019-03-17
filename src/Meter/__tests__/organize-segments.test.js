@@ -56,12 +56,8 @@ describe('organize-segments', () => {
 
 		expect(actual).toEqual([
 			{
-				lowerValue: 0,
-				upperValue: 0,
-				upperCallback: first
-			}, {
-				lowerValue: 0,
 				lowerCallback: first,
+				lowerValue: 0,
 				upperValue: 1,
 				upperCallback: second
 			}
@@ -75,12 +71,8 @@ describe('organize-segments', () => {
 
 		expect(actual).toEqual([
 			{
-				lowerValue: 0,
-				upperValue: 0,
-				upperCallback: first
-			}, {
-				lowerValue: 0,
 				lowerCallback: first,
+				lowerValue: 0,
 				upperValue: 2,
 				upperCallback: second
 			}
@@ -95,17 +87,13 @@ describe('organize-segments', () => {
 
 		expect(actual).toEqual([
 			{
-				lowerValue: 0,
-				upperValue: 0,
-				upperCallback: first
-			}, {
-				lowerValue: 0,
 				lowerCallback: first,
+				lowerValue: 0,
 				upperValue: 0.5,
 				upperCallback: second
 			}, {
-				lowerValue: 0.5,
 				lowerCallback: second,
+				lowerValue: 0.5,
 				upperValue: 1,
 				upperCallback: third
 			}
@@ -121,22 +109,18 @@ describe('organize-segments', () => {
 
 		expect(actual).toEqual([
 			{
-				lowerValue: 0,
-				upperValue: 0,
-				upperCallback: first
-			}, {
-				lowerValue: 0,
 				lowerCallback: first,
+				lowerValue: 0,
 				upperValue: 0.25,
 				upperCallback: second
 			}, {
-				lowerValue: 0.25,
 				lowerCallback: second,
+				lowerValue: 0.25,
 				upperValue: 0.75,
 				upperCallback: third
 			}, {
-				lowerValue: 0.75,
 				lowerCallback: third,
+				lowerValue: 0.75,
 				upperValue: 1,
 				upperCallback: fourth
 			}
@@ -155,13 +139,13 @@ describe('organize-segments', () => {
 				upperValue: 1,
 				upperCallback: first
 			}, {
-				lowerValue: 1,
 				lowerCallback: first,
+				lowerValue: 1,
 				upperValue: 2,
 				upperCallback: second
 			}, {
-				lowerValue: 2,
 				lowerCallback: second,
+				lowerValue: 2,
 				upperValue: 4,
 				upperCallback: third
 			}
