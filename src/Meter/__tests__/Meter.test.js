@@ -34,7 +34,7 @@ describe('Meter', () => {
 			new Meter('action', 2);
 
 			expect(organizeSegments).toHaveBeenCalledWith('action');
-			expect(update).toHaveBeenCalledWith(2);
+			expect(update).toHaveBeenCalledWith(2, undefined);
 		});
 
 		it('should set a value and duration', () => {
@@ -42,6 +42,17 @@ describe('Meter', () => {
 
 			expect(organizeSegments).toHaveBeenCalledWith('action');
 			expect(update).toHaveBeenCalledWith(2, 2000);
+		});
+
+		it('should set a negative value and duration', () => {
+			new Meter('action', -2, 2000);
+
+			expect(organizeSegments).toHaveBeenCalledWith('action');
+
+			expect(update.mock.calls).toEqual([
+				[-0],
+				[-2, 2000]
+			]);
 		});
 		
 		it('should set a value and duration when there are no actions', () => {

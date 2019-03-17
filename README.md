@@ -149,12 +149,13 @@ meter(-0.25); // sets the value to 0.25 less than the total range of the meter
 // meters can be set to update to a relative value over a set amount of time
 meter(1.5, 2000); // add 1.5 to the value of the meter over 2 seconds
 
-// while an update is scheduled, it can be inspected at any time by passing no parameters
-// if a negative value is returned it means the last update was in the negative direction
-// the negative value represents the position away the meter being full
+// the current value of the meter can be inspected at any time without affecting any ongoing updates
+// it will return a positive value if the last update increased the value
+// it will return a negative value representing the value from the opposite end if the last update decreased the value
 var value = meter();
 
 // meters can be created with an inital update by passing those values after the ranges and actions
+// passing a negative value with a duration here will update it from the opposite end instead of from where it currently is like it normally would
 var meter = spective(fullFunction, 0.5);
 var meter = spective(fullFunction, 0.5, 2000);
 ```

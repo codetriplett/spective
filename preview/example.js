@@ -35,10 +35,11 @@ teapot('cylinder.obj', {
 var meter = spective(
 	iterator => console.log('first', iterator),
 	iterator => console.log('second', iterator),
-	iterator => console.log('third', iterator)
+	iterator => console.log('third', iterator),
+	1,
+	2000
 );
 
-meter(1, 2000);
 setTimeout(() => meter(-1, 2000), 3000);
 
 setTimeout(() => console.log(meter()), 500);

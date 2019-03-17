@@ -24,7 +24,13 @@ export class Meter {
 		this.resolve = this.resolve.bind(this);
 
 		if (trailingNumbers.length) {
-			this.update(...trailingNumbers);
+			const [input, duration] = trailingNumbers;
+
+			if (isNegative(input) && duration !== undefined) {
+				this.update(-0);
+			}
+
+			this.update(input, duration);
 		}
 	}
 
@@ -39,7 +45,7 @@ export class Meter {
 			value -= change * (remaining || 0);
 		}
 
-		if (change < 0) {
+		if (isNegative(change)) {
 			const { upperValue: range } = segments.slice(-1)[0];
 			value -= range;
 		}
@@ -64,22 +70,15 @@ export class Meter {
 		}
 
 		index += iterator;
-		const iterate = iterator && index >= 0 && index < length;
 
-		if (iterate) {
+		if (iterator && index >= 0 && index < length) {
 			this.index = index;
-			this.timeout = undefined;
+			this.schedule();
 		}
 
 		if (callback && duration !== undefined) {
 			callback(iterator);
 		}
-
-		if (!iterate || this.timeout !== undefined) {
-			return;
-		}
-
-		this.schedule();
 	}
 
 	schedule () {
