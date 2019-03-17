@@ -147,8 +147,7 @@ meter(0.5); // sets the value to 0.5
 meter(-0.25); // sets the value to 0.25 less than the total range of the meter
 
 // meters can be set to update to a relative value over a set amount of time
-// each call returns the duration until the next action will fire
-var duration = meter(1.5, 2000); // add 1.5 to the value of the meter over 2 seconds
+meter(1.5, 2000); // add 1.5 to the value of the meter over 2 seconds
 
 // while an update is scheduled, it can be inspected at any time by passing no parameters
 // if a negative value is returned it means the last update was in the negative direction

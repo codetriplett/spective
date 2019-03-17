@@ -123,22 +123,18 @@ describe('Meter', () => {
 				schedule,
 				segments: [
 					{
-						lowerValue: 0,
-						upperValue: 0,
-						upperCallback: first
-					}, {
-						lowerValue: 0,
 						lowerCallback: first,
+						lowerValue: 0,
 						upperValue: 2,
 						upperCallback: second
 					}, {
-						lowerValue: 2,
 						lowerCallback: second,
+						lowerValue: 2,
 						upperValue: 3,
 						upperCallback: third
 					}
 				],
-				index: 1,
+				index: 0,
 				value: 1.5,
 				change: 1,
 				duration: 200
@@ -153,7 +149,7 @@ describe('Meter', () => {
 			expect(second).not.toHaveBeenCalled();
 			expect(third).not.toHaveBeenCalled();
 
-			expect(context.index).toBe(1);
+			expect(context.index).toBe(0);
 		});
 
 		it('should resolve from the end of a segment', () => {
@@ -164,7 +160,7 @@ describe('Meter', () => {
 			expect(second).not.toHaveBeenCalled();
 			expect(third).not.toHaveBeenCalled();
 
-			expect(context.index).toBe(1);
+			expect(context.index).toBe(0);
 		});
 
 		it('should resolve within a segment', () => {
@@ -174,7 +170,7 @@ describe('Meter', () => {
 			expect(second).not.toHaveBeenCalled();
 			expect(third).not.toHaveBeenCalled();
 
-			expect(context.index).toBe(1);
+			expect(context.index).toBe(0);
 		});
 
 		it('should resolve at the end of a segment', () => {
@@ -182,15 +178,26 @@ describe('Meter', () => {
 			resolve.call(context);
 
 			expect(first).not.toHaveBeenCalled();
-			expect(second).toHaveBeenCalledWith(1, 2);
+			expect(second).toHaveBeenCalledWith(1);
 			expect(third).not.toHaveBeenCalled();
 
-			expect(context.index).toBe(2);
+			expect(context.index).toBe(1);
+		});
+
+		it('should resolve past the end of a segment', () => {
+			context.value = 2.5;
+			resolve.call(context);
+
+			expect(first).not.toHaveBeenCalled();
+			expect(second).toHaveBeenCalledWith(1);
+			expect(third).not.toHaveBeenCalled();
+
+			expect(context.index).toBe(1);
 		});
 
 		it('should resolve at the end of the last segment', () => {
 			Object.assign(context, {
-				index: 2,
+				index: 1,
 				value: 3
 			});
 
@@ -198,34 +205,44 @@ describe('Meter', () => {
 
 			expect(first).not.toHaveBeenCalled();
 			expect(second).not.toHaveBeenCalled();
-			expect(third).toHaveBeenCalledWith(1, 3);
+			expect(third).toHaveBeenCalledWith(1);
 
-			expect(context.index).toBe(2);
+			expect(context.index).toBe(1);
 		});
 
 		it('should resolve at the beginning of a segment', () => {
 			Object.assign(context, {
-				value: 0,
+				index: 1,
+				value: 2,
+				change: -0.5
+			});
+
+			resolve.call(context);
+
+			expect(first).not.toHaveBeenCalled();
+			expect(second).toHaveBeenCalledWith(-1);
+			expect(third).not.toHaveBeenCalled();
+
+			expect(context.index).toBe(0);
+		});
+
+		it('should resolve past the beginning of a segment', () => {
+			Object.assign(context, {
+				index: 1,
+				value: 1.5,
 				change: -1
 			});
 
 			resolve.call(context);
 
-			expect(first).toHaveBeenCalledWith(-1, 0);
-			expect(second).not.toHaveBeenCalled();
+			expect(first).not.toHaveBeenCalled();
+			expect(second).toHaveBeenCalledWith(-1);
 			expect(third).not.toHaveBeenCalled();
 
 			expect(context.index).toBe(0);
 		});
 
 		it('should resolve at the beginning of the first segment', () => {
-			const zero = jest.fn();
-
-			Object.assign(context.segments[0], {
-				lowerCallback: zero,
-				upperValue: 1
-			});
-
 			Object.assign(context, {
 				index: 0,
 				value: 0,
@@ -234,8 +251,7 @@ describe('Meter', () => {
 
 			resolve.call(context);
 
-			expect(zero).toHaveBeenCalledWith(-1, 0);
-			expect(first).not.toHaveBeenCalled();
+			expect(first).toHaveBeenCalledWith(-1);
 			expect(second).not.toHaveBeenCalled();
 			expect(third).not.toHaveBeenCalled();
 
@@ -254,16 +270,15 @@ describe('Meter', () => {
 			window.clearTimeout = clearTimeout.mockClear();
 			window.setTimeout = setTimeout.mockClear().mockReturnValue('timeout');
 
-			resolve.mockClear().mockReturnValue('resolve');
+			resolve.mockClear();
 
 			context = {
 				resolve,
 				segments: [
-					{ lowerValue: 0, upperValue: 0 },
 					{ lowerValue: 0, upperValue: 2 },
 					{ lowerValue: 2, upperValue: 3 }
 				],
-				index: 1,
+				index: 0,
 				value: 1.75,
 				change: 0.75,
 				duration: 200
@@ -271,75 +286,64 @@ describe('Meter', () => {
 		});
 
 		it('should schedule a timed resolution', () => {
-			const actual = schedule.call(context);
+			schedule.call(context);
 
 			expect(setTimeout).not.toHaveBeenCalled();
 			expect(context.timeout).toBeUndefined();
-			expect(actual).toBeUndefined();
 		});
 
 		it('should schedule the beginning of a timed resolution', () => {
 			context.value = 2.5;
-			const actual = schedule.call(context);
+			schedule.call(context);
 
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 67);
 			expect(context.timeout).toBe('timeout');
-			expect(actual).toBe(67);
 		});
 
 		it('should schedule a timed resolution that reaches the end of a segment', () => {
 			context.value = 2;
-			const actual = schedule.call(context);
+			schedule.call(context);
 
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 200);
 			expect(context.timeout).toBe('timeout');
-			expect(actual).toBe(200);
 		});
 
-		it('should schedule a timed resolution past past the end of a segment', () => {
-			Object.assign(context, {
-				index: 0,
-				value: 1.75
-			});
+		it('should schedule a timed resolution past the end of a segment', () => {
+			context.value = 2.5;
+			schedule.call(context);
 
-			const actual = schedule.call(context);
-
-			expect(setTimeout).not.toHaveBeenCalled();
-			expect(context.timeout).toBeUndefined();
-			expect(actual).toBe('resolve');
+			expect(setTimeout).toHaveBeenCalledWith(resolve, 67);
+			expect(context.timeout).toBe('timeout');
 		});
 
 		it('should schedule the end of a timed resolution', () => {
 			Object.assign(context, {
-				index: 2,
+				index: 1,
 				value: 2.5
 			});
 
-			const actual = schedule.call(context);
+			schedule.call(context);
 
 			expect(setTimeout).not.toHaveBeenCalled();
 			expect(context.timeout).toBeUndefined();
-			expect(actual).toBeUndefined();
 		});
 
 		it('should schedule an instant resolution', () => {
 			context.duration = undefined;
-			const actual = schedule.call(context);
+			schedule.call(context);
 
 			expect(setTimeout).not.toHaveBeenCalled();
 			expect(resolve).not.toHaveBeenCalled();
 			expect(context.timeout).toBeUndefined();
-			expect(actual).toBeUndefined();
 		});
 
 		it('should schedule an instant resolution', () => {
 			context.duration = undefined;
-			const actual = schedule.call(context);
+			schedule.call(context);
 
 			expect(setTimeout).not.toHaveBeenCalled();
 			expect(resolve).not.toHaveBeenCalled();
 			expect(context.timeout).toBeUndefined();
-			expect(actual).toBeUndefined();
 		});
 		
 		it('should schedule the beginning of an instant resolution', () => {
@@ -348,11 +352,10 @@ describe('Meter', () => {
 				duration: undefined
 			});
 
-			const actual = schedule.call(context);
+			schedule.call(context);
 
 			expect(setTimeout).not.toHaveBeenCalled();
 			expect(context.timeout).toBeUndefined();
-			expect(actual).toBe('resolve');
 		});
 	});
 
@@ -370,7 +373,7 @@ describe('Meter', () => {
 			window.Date.now = now.mockClear().mockReturnValue('timestamp');
 
 			measure.mockClear().mockReturnValue(0.75);
-			schedule.mockClear().mockReturnValue('schedule');
+			schedule.mockClear();
 
 			segments = [{ upperValue: 2 }];
 
@@ -383,12 +386,11 @@ describe('Meter', () => {
 		});
 
 		it('should update to an absolute value', () => {
-			const actual = update.call(context, 1.5);
+			update.call(context, 1.5);
 
 			expect(measure).toHaveBeenCalled();
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(schedule).toHaveBeenCalled();
-			expect(actual).toBe('schedule');
 
 			expect(context).toEqual({
 				measure,
@@ -400,12 +402,11 @@ describe('Meter', () => {
 		});
 
 		it('should update to an absolute value from the end', () => {
-			const actual = update.call(context, -1.5);
+			update.call(context, -1.5);
 
 			expect(measure).toHaveBeenCalled();
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(schedule).toHaveBeenCalled();
-			expect(actual).toBe('schedule');
 
 			expect(context).toEqual({
 				measure,
@@ -419,12 +420,11 @@ describe('Meter', () => {
 		});
 
 		it('should set a relative value', () => {
-			const actual = update.call(context, 0.5, 2000);
+			update.call(context, 0.5, 2000);
 
 			expect(measure).toHaveBeenCalled();
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(schedule).toHaveBeenCalled();
-			expect(actual).toBe('schedule');
 
 			expect(context).toEqual({
 				measure,
@@ -438,12 +438,11 @@ describe('Meter', () => {
 		});
 
 		it('should set a negative relative value', () => {
-			const actual = update.call(context, -0.5, 2000);
+			update.call(context, -0.5, 2000);
 
 			expect(measure).toHaveBeenCalled();
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(schedule).toHaveBeenCalled();
-			expect(actual).toBe('schedule');
 
 			expect(context).toEqual({
 				measure,

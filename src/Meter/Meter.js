@@ -55,57 +55,56 @@ export class Meter {
 		let iterator = isNegative(change) ? -1 : 1;
 		let callback;
 
-		if (value >= upperValue && iterator === 1) {
+		if (value >= upperValue && iterator > 0) {
 			callback = upperCallback;
-		} else if (value <= lowerValue && iterator === -1) {
+		} else if (value <= lowerValue && iterator < 0) {
 			callback = lowerCallback;
 		} else {
 			iterator = 0;
 		}
 
 		index += iterator;
+		const iterate = iterator && index >= 0 && index < length;
 
-		if (callback && duration !== undefined) {
-			callback(iterator, value);
+		if (iterate) {
+			this.index = index;
+			this.timeout = undefined;
 		}
 
-		if (!iterator || index < 0 || index >= length) {
+		if (callback && duration !== undefined) {
+			callback(iterator);
+		}
+
+		if (!iterate || this.timeout !== undefined) {
 			return;
 		}
 
-		this.index = index;
-
-		return this.schedule();
+		this.schedule();
 	}
 
 	schedule () {
 		const { resolve, segments, index, value, change, duration } = this;
 		const { lowerValue, upperValue } = segments[index];
 		const segmentValue = constrainValue(lowerValue, value, upperValue);
-		let segmentDuration = duration;
 
 		if (segmentValue !== lowerValue && segmentValue !== upperValue) {
 			return;
 		}
 		
-		if (segmentDuration !== undefined) {
-			const original = value - change;
-			const segmentOriginal = constrainValue(lowerValue, original, upperValue);
-			const beforeOriginal = segmentOriginal - original;
-			const afterValue = value - segmentValue;
-			const segmentChange = change - (beforeOriginal + afterValue);
-			const segmentPercentage = change ? segmentChange / change : 1;
-
-			segmentDuration = Math.round(segmentDuration * segmentPercentage);
+		if (duration === undefined) {
+			resolve();
+			return;
 		}
-
-		if (!segmentDuration) {
-			return resolve();
-		}
+		
+		const original = value - change;
+		const segmentOriginal = constrainValue(lowerValue, original, upperValue);
+		const beforeOriginal = segmentOriginal - original;
+		const afterValue = value - segmentValue;
+		const segmentChange = change - (beforeOriginal + afterValue);
+		const segmentPercentage = change ? segmentChange / change : 1;
+		const segmentDuration = Math.round(duration * segmentPercentage);
 
 		this.timeout = setTimeout(resolve, segmentDuration);
-
-		return segmentDuration;
 	}
 
 	update (input, duration) {
@@ -134,7 +133,7 @@ export class Meter {
 
 		const effectiveValue = constrainValue(0, value, range);
 		let effectiveChange = change - (value - effectiveValue);
-		
+
 		if (!effectiveChange) {
 			effectiveChange = wasNegative ? -0 : 0;
 		}
@@ -153,6 +152,10 @@ export class Meter {
 			this.timestamp = undefined;
 		}
 
-		return this.schedule();
+		if (!effectiveChange) {
+			return;
+		}
+
+		this.schedule();
 	}
 }
