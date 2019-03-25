@@ -29,7 +29,7 @@ function extractValues (points, type, array) {
 	}));
 }
 
-export function parseFile (file) {
+export function parseFile (file, sharpness) {
 	const v = extractArray(file, 'v');
 
 	if (!v) {

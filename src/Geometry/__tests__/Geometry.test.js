@@ -14,7 +14,7 @@ describe('Geometry', () => {
 	let fileError;
 
 	beforeEach(() => {
-		generatePrimative.mockClear().mockReturnValue('primative');
+		generatePrimative.mockClear().mockReturnValue({ vertices: 'primative', assets: {} });
 		parseFile.mockClear().mockImplementation(input => ({ vertices: input }));
 		callback.mockClear();
 		fileLoad = undefined;
@@ -89,7 +89,6 @@ describe('Geometry', () => {
 		const actual = new Geometry('1 0 -1');
 		
 		expect(generatePrimative).toHaveBeenCalledWith(1, 0, -1);
-		expect(parseFile).toHaveBeenCalledWith('primative');
 		expect(fileLoad).toBeUndefined();
 		expect(fileError).toBeUndefined();
 		expect(actual).toEqual({ vertices: 'primative', assets: {} });

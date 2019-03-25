@@ -12,7 +12,7 @@ var cups = Array(6).fill(function () {});
 var teapot = scene('teapot.obj', 'grid.png', {
 	angleY: Math.PI / 3
 }, function (iteration) {
-	var cup = scene('cylinder.obj', '#f70', {
+	var cup = scene('24 1', '#f70', {
 		scale: [0.4, 0.04, 0.4],
 		offsetX: 1.25,
 		headingY: iteration * Math.PI / 3 + 0.2
@@ -27,7 +27,7 @@ var teapot = scene('teapot.obj', 'grid.png', {
 	return 1000;
 });
 
-teapot('cylinder.obj', {
+teapot('24 1', {
 	scale: [0.6, 0.04, 0.6],
 	offset: [1.25, -0.04, 0]
 });

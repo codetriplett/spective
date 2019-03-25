@@ -10,9 +10,9 @@ export class Geometry {
 
 		if (primativeRegex.test(source)) {
 			const dimensions = source.trim().split(/ +/g).map(value => Number(value));
-			const file = generatePrimative(...dimensions);
+			const primative = generatePrimative(...dimensions);
 
-			Object.assign(this, parseFile(file));
+			Object.assign(this, primative);
 			
 			return;
 		}

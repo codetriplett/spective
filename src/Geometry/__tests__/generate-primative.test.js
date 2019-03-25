@@ -1,10 +1,20 @@
+import { generateBand } from '../generate-band';
+import { parseFile } from '../parse-file';
 import { generatePrimative } from '../generate-primative';
 
+jest.mock('../generate-band', () => ({ generateBand: jest.fn() }));
+jest.mock('../parse-file', () => ({ parseFile: jest.fn() }));
+
 describe('generate-primative', () => {
+	beforeEach(() => {
+		generateBand.mockClear().mockReturnValue('band');
+		parseFile.mockClear().mockReturnValue('geometry');
+	});
+
 	it('should create a cube', () => {
 		const actual = generatePrimative(1, 2, 3);
 
-		expect(actual).toEqual([
+		expect(parseFile).toHaveBeenCalledWith([
 			'v 1 0 0',
 			'v 1 0 3',
 			'v 0 0 3',
@@ -21,53 +31,58 @@ describe('generate-primative', () => {
 			'vt 3 2',
 			'vt 0 3',
 			'vt 1 3',
-			'vn 0 -1 0',
-			'vn 0 1 0',
-			'vn 1 0 0',
-			'vn 0 0 1',
-			'vn -1 0 0',
-			'vn 0 0 -1',
-			'f 1/3/1 2/8/1 3/7/1 4/1/1',
-			'f 5/8/2 8/7/2 7/1/2 6/3/2',
-			'f 1/5/3 5/6/3 6/2/3 2/1/3',
-			'f 2/3/4 6/4/4 7/2/4 3/1/4',
-			'f 3/5/5 7/6/5 8/2/5 4/1/5',
-			'f 5/2/6 1/1/6 4/3/6 8/4/6'
-		].join('\n'));
+			'f 1/3 2/8 3/7 4/1',
+			'f 5/8 8/7 7/1 6/3',
+			'f 1/5 5/6 6/2 2/1',
+			'f 2/3 6/4 7/2 3/1',
+			'f 3/5 7/6 8/2 4/1',
+			'f 5/2 1/1 4/3 8/4'
+		].join('\n'), 1);
+
+		expect(actual).toBe('geometry');
 	});
 
-	it('should use defaults', () => {
-		const actual = generatePrimative();
+	it('should create a cylinder', () => {
+		const actual = generatePrimative(3, 2);
 
-		expect(actual).toEqual([
-			'v 0 0 0',
-			'v 0 0 0',
-			'v 0 0 0',
-			'v 0 0 0',
-			'v 0 0 0',
-			'v 0 0 0',
-			'v 0 0 0',
-			'v 0 0 0',
-			'vt 0 0',
-			'vt 0 0',
-			'vt 0 0',
-			'vt 0 0',
-			'vt 0 0',
-			'vt 0 0',
-			'vt 0 0',
-			'vt 0 0',
-			'vn 0 -1 0',
-			'vn 0 1 0',
-			'vn 1 0 0',
-			'vn 0 0 1',
-			'vn -1 0 0',
-			'vn 0 0 -1',
-			'f 1/3/1 2/8/1 3/7/1 4/1/1',
-			'f 5/8/2 8/7/2 7/1/2 6/3/2',
-			'f 1/5/3 5/6/3 6/2/3 2/1/3',
-			'f 2/3/4 6/4/4 7/2/4 3/1/4',
-			'f 3/5/5 7/6/5 8/2/5 4/1/5',
-			'f 5/2/6 1/1/6 4/3/6 8/4/6'
-		].join('\n'));
+		expect(generateBand.mock.calls).toEqual([
+			[-3, 0, 0, 0, 0],
+			[-3, 0, 0.5, 0.5, 1],
+			[3, 0, 0.5, 0],
+			[3, 2, 0.5, 2, 3],
+			[-3, 2, 0.5, 0.5],
+			[-3, 2, 0, 0, -5]
+		]);
+
+		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband\nband\nband', 0);
+		expect(actual).toBe('geometry');
+	});
+
+	it('should create a cone', () => {
+		const actual = generatePrimative(-3, 2);
+
+		expect(generateBand.mock.calls).toEqual([
+			[-3, 0, 0, 0, 0],
+			[-3, 0, 0.5, 0.5, 1],
+			[3, 0, 0.5, 0],
+			[3, 2, 0, 2, 3]
+		]);
+
+		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband', 0);
+		expect(actual).toBe('geometry');
+	});
+
+	it('should create a sphere', () => {
+		const actual = generatePrimative(2);
+
+		expect(generateBand.mock.calls).toEqual([
+			[5, -0.5, 0, 0, 0],
+			[5, -0.25000000000000006, 0.4330127018922193, 0.3333333333333333, 1],
+			[5, 0.2499999999999999, 0.43301270189221935, 0.6666666666666666, 2],
+			[5, 0.5, 0, 1, -3]
+		]);
+
+		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband', 0);
+		expect(actual).toBe('geometry');
 	});
 });
