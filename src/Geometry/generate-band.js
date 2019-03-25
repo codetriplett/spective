@@ -2,34 +2,36 @@ export function generateBand (points, height, radius, placement, index) {
 	const direct = points < 0;
 	const mirroring = placement < 0 ? -1 : 1;
 	const cap = index < 0;
+	const reset = index === undefined;
 	const top = cap && !radius;
 	const bottom = cap && radius;
 
 	points = Math.abs(points);
 	placement = Math.abs(placement);
-	index = Math.abs(index);
+	index = Math.abs(index || 0);
 
 	const step = 1 / points;
 	const arc = Math.PI * 2 * step;
+	const shift = ((reset ? 3 : index) + 1) / 2;
 	const band = [];
-	let shift = 0;
-
-	if (!radius) {
-		shift = (index ? -step : step) / 2
-	}
 
 	for (let i = 0; i <= points; i++) {
-		const angle = i * arc;
-		const x = -Math.sin(angle);
-		const z = -Math.cos(angle);
+		let angle = i * arc;
 
 		if (direct) {
-			band.push(`vt ${0.5 + x * placement * mirroring} ${0.5 + -z * placement}`);
+			const s = -Math.sin(angle);
+			const t = Math.cos(angle);
+
+			band.push(`vt ${0.5 + s * placement * mirroring} ${0.5 + t * placement}`);
 		} else {
-			band.push(`vt ${i * step + shift} ${placement}`);
+			band.push(`vt ${i * step - step * shift} ${placement}`);
+			angle -= arc * shift;
 		}
 
 		if (i < points) {
+			const x = -Math.sin(angle);
+			const z = -Math.cos(angle);
+
 			band.push(`v ${x * Math.abs(radius)} ${height} ${z * radius}`);
 		}
 	}

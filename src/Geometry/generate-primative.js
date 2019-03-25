@@ -70,8 +70,9 @@ function generateSphere (rings = 1) {
 		const height = -Math.cos(angle) * scale;
 		const radius = Math.sin(angle) * scale * inverter;
 		const placement = i * step;
+		const index = i !== 1 || dome ? i : -i;
 
-		file.push(generateBand(points, height, radius, placement, i));
+		file.push(generateBand(points, height, radius, placement, index));
 		angle += arc;
 	}
 
