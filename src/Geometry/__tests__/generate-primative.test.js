@@ -31,7 +31,7 @@ describe('generate-primative', () => {
 			'vt 3 2',
 			'vt 0 3',
 			'vt 1 3',
-			'f 1/3 2/8 3/7 4/1',
+			'f 1/7 2/1 3/3 4/8',
 			'f 5/8 8/7 7/1 6/3',
 			'f 1/5 5/6 6/2 2/1',
 			'f 2/3 6/4 7/2 3/1',
@@ -47,7 +47,7 @@ describe('generate-primative', () => {
 
 		expect(generateBand.mock.calls).toEqual([
 			[-3, 0, 0, 0, 0],
-			[-3, 0, 0.5, 0.5, 1],
+			[-3, 0, 0.5, -0.5, 1],
 			[3, 0, 0.5, 0],
 			[3, 2, 0.5, 2, 3],
 			[-3, 2, 0.5, 0.5],
@@ -63,9 +63,9 @@ describe('generate-primative', () => {
 
 		expect(generateBand.mock.calls).toEqual([
 			[-3, 0, 0, 0, 0],
-			[-3, 0, 0.5, 0.5, 1],
+			[-3, 0, 0.5, -0.5, 1],
 			[3, 0, 0.5, 0],
-			[3, 2, 0, 2, 3]
+			[3, 2, 0, 2, -3]
 		]);
 
 		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband', 0);
@@ -73,13 +73,28 @@ describe('generate-primative', () => {
 	});
 
 	it('should create a sphere', () => {
-		const actual = generatePrimative(2);
+		const actual = generatePrimative(3);
 
 		expect(generateBand.mock.calls).toEqual([
-			[5, -0.5, 0, 0, 0],
-			[5, -0.25000000000000006, 0.4330127018922193, 0.3333333333333333, 1],
-			[5, 0.2499999999999999, 0.43301270189221935, 0.6666666666666666, 2],
-			[5, 0.5, 0, 1, -3]
+			[6, -0.5, 0, 0, 0],
+			[6, -0.3535533905932738, 0.35355339059327373, 0.25, 1],
+			[6, -3.061616997868383e-17, 0.5, 0.5, 2],
+			[6, 0.35355339059327373, 0.3535533905932738, 0.75, 3],
+			[6, 0.5, 0, 1, -4]
+		]);
+
+		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband\nband', 0);
+		expect(actual).toBe('geometry');
+	});
+
+	it('should create a dome', () => {
+		const actual = generatePrimative(-2);
+
+		expect(generateBand.mock.calls).toEqual([
+			[9, -3.061616997868383e-14, -500, 0, 0],
+			[9, 249.9999999999999, -433.01270189221935, 0.3333333333333333, 1],
+			[9, 433.01270189221924, -250.00000000000017, 0.6666666666666666, 2],
+			[9, 500, 0, 1, -3]
 		]);
 
 		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband', 0);

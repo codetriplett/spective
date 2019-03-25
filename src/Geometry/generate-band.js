@@ -1,8 +1,12 @@
 export function generateBand (points, height, radius, placement, index) {
 	const direct = points < 0;
-	const end = index < 0;
+	const mirroring = placement < 0 ? -1 : 1;
+	const cap = index < 0;
+	const top = cap && !radius;
+	const bottom = cap && radius;
 
 	points = Math.abs(points);
+	placement = Math.abs(placement);
 	index = Math.abs(index);
 
 	const step = 1 / points;
@@ -10,8 +14,8 @@ export function generateBand (points, height, radius, placement, index) {
 	const band = [];
 	let shift = 0;
 
-	if (index === 0 || end) {
-		shift = (end ? -step : step) / 2
+	if (!radius) {
+		shift = (index ? -step : step) / 2
 	}
 
 	for (let i = 0; i <= points; i++) {
@@ -20,13 +24,13 @@ export function generateBand (points, height, radius, placement, index) {
 		const z = -Math.cos(angle);
 
 		if (direct) {
-			band.push(`vt ${0.5 + x * placement} ${0.5 + -z * placement}`);
+			band.push(`vt ${0.5 + x * placement * mirroring} ${0.5 + -z * placement}`);
 		} else {
 			band.push(`vt ${i * step + shift} ${placement}`);
 		}
 
 		if (i < points) {
-			band.push(`v ${x * radius} ${height} ${z * radius}`);
+			band.push(`v ${x * Math.abs(radius)} ${height} ${z * radius}`);
 		}
 	}
 
@@ -39,18 +43,18 @@ export function generateBand (points, height, radius, placement, index) {
 		const upper = value + i + 1;
 		const lower = upper - points - 1;
 
-		if (!end) {
+		if (!cap || bottom) {
 			band.push(`f ${[
 				[upper - 1, upper + index - 1].join('/'),
-				[index === 1 ? value - 1 : lower, lower + (index - 1)].join('/'),
+				[bottom ? value - 1 : lower, lower + (index - 1)].join('/'),
 				[safe ? upper : value, upper + index].join('/')
 			].join(' ')}`);
 		}
 		
-		if (index > 1) {
+		if (!cap || top) {
 			band.push(`f ${[
 				[safe ? lower + 1 : value - points, lower + index].join('/'),
-				[end ? value : (safe ? upper : value), upper + index].join('/'),
+				[top ? value : (safe ? upper : value), upper + index].join('/'),
 				[lower, lower + (index - 1)].join('/')
 			].join(' ')}`);
 		}
