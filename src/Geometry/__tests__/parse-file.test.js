@@ -51,12 +51,28 @@ describe('parse-file', () => {
 	it('should return attributes without normals', () => {
 		const actual = parseFile(buildFile(true, false));
 
+		expect(calculateNormals).toHaveBeenCalledWith(
+			[0, 1, 2, 3, 2, 1],
+			[-1, 0, 1, -2, 0, 2, -3, 0, 3, -4, 0, 4],
+			undefined
+		);
+
 		expect(actual).toEqual({
 			vertices: new Float32Array([-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -3.0, 0.0, 3.0, -4.0, 0.0, 4.0, -3.0, 0.0, 3.0, -2.0, 0.0, 2.0]),
 			coordinates: new Float32Array([0.1, 0.1, 0.2, 0.2, 0.3, 0.3, 0.4, 0.4, 0.3, 0.3, 0.2, 0.2]),
 			normals: new Float32Array([2]),
 			repeatTexture: false
 		});
+	});
+	
+	it('should pass along sharpness setting', () => {
+		parseFile(buildFile(true, false), 1);
+		
+		expect(calculateNormals).toHaveBeenCalledWith(
+			[0, 1, 2, 3, 2, 1],
+			[-1, 0, 1, -2, 0, 2, -3, 0, 3, -4, 0, 4],
+			1
+		);
 	});
 
 	it('should return attributes without coordinates or normals', () => {

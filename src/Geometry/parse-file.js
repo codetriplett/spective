@@ -70,7 +70,7 @@ export function parseFile (file, sharpness) {
 	}
 
 	if (!vn) {
-		normals = calculateNormals(faces, [].concat(...v));
+		normals = calculateNormals(faces, [].concat(...v), sharpness);
 	}
 
 	const minCoordinate = Math.min(...coordinates);

@@ -20,23 +20,41 @@ function calculateNormal (a, b, c) {
 	return normalize([xArea, yArea, zArea]);
 }
 
-function calculateAverage (normals) {
-	const length = normals.length / 3;
-	const totals = [0, 0, 0];
+function calculatePartial (points, index, percentage) {
+	const partial = [];
 
-	for (let i = 0; i < normals.length; i += 3) {
-		totals[0] += normals[i];
-		totals[1] += normals[i + 1];
-		totals[2] += normals[i + 2];
+	for (let i = 0; i < 3; i++) {
+		partial.push(points[index + i] * percentage);
 	}
 
-	return normalize(totals.map(total => total / length));
+	return partial;
 }
 
-export function calculateNormals (faces, vertices) {
+function calculateAverage (normals, weight) {
+	const length = normals.length / 3;
+	const values = [0, 0, 0];
+	let remainder = 1;
+
+	if (weight === undefined) {
+		weight = 1 / length;
+	}
+
+	for (let i = 0; i < length; i++) {
+		const percentage = i < length - 1 ? weight : remainder;
+		const partial = calculatePartial(normals, i * 3, percentage);
+
+		partial.map((value, i) => values[i] += value);
+		remainder -= weight;
+	}
+
+	return normalize(values);
+}
+
+export function calculateNormals (faces, vertices, sharpness) {
 	const indices = faces.map(index => index < 0 ? vertices.length + index : index);
 	const size = Math.max(...indices) + 1;
-	const normals = [];
+	const faceNormals = [];
+	const pointNormals = [];
 	let points = [];
 
 	for (let i = 0; i < size; i++) {
@@ -54,21 +72,31 @@ export function calculateNormals (faces, vertices) {
 		const b = vertices.slice(bStart, bStart + 3);
 		const c = vertices.slice(cStart, cStart + 3);
 		const normal = calculateNormal(a, b, c);
+		
+		faceNormals.push(normal);
 
 		points[aId] = points[aId].concat(normal);
 		points[bId] = points[bId].concat(normal);
 		points[cId] = points[cId].concat(normal);
 	}
 
-	points = points.map(calculateAverage);
+	points = points.map(array => calculateAverage(array));
 
 	for (let i = 0; i < indices.length; i += 3) {
-		const aNormal = points[indices[i]];
-		const bNormal = points[indices[i + 1]];
-		const cNormal = points[indices[i + 2]];
+		let aNormal = points[indices[i]];
+		let bNormal = points[indices[i + 1]];
+		let cNormal = points[indices[i + 2]];
 
-		normals.push(...aNormal, ...bNormal, ...cNormal);
+		if (sharpness) {
+			const faceNormal = faceNormals.shift();
+
+			aNormal = calculateAverage(faceNormal.concat(aNormal), sharpness);
+			bNormal = calculateAverage(faceNormal.concat(bNormal), sharpness);
+			cNormal = calculateAverage(faceNormal.concat(cNormal), sharpness);
+		}
+
+		pointNormals.push(...aNormal, ...bNormal, ...cNormal);
 	}
 	
-	return normals;
+	return pointNormals;
 }

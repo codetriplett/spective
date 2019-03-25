@@ -31,7 +31,7 @@ function generateCube (x = 0, y = 0, z = 0) {
 function generateRadial (points = 3, height = 0) {
 	const cone = points < 3;
 	points = Math.abs(points);
-	const sharpness = Math.floor(points % 1);
+	const sharpness = points % 1;
 	points = Math.max(Math.floor(points), 2);
 	const file = [];
 
@@ -53,7 +53,7 @@ function generateRadial (points = 3, height = 0) {
 function generateSphere (rings = 1) {
 	const dome = rings < 1;
 	rings = Math.abs(rings);
-	const sharpness = Math.floor(rings % 1);
+	const sharpness = rings % 1;
 	rings = Math.floor(rings);
 	const bands = rings + 1;
 	rings = dome ? rings * 2 + 1 : rings;
