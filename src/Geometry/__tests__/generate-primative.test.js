@@ -6,9 +6,15 @@ jest.mock('../generate-band', () => ({ generateBand: jest.fn() }));
 jest.mock('../parse-file', () => ({ parseFile: jest.fn() }));
 
 describe('generate-primative', () => {
+	const fill = jest.fn();
+	let geometry;
+
 	beforeEach(() => {
+		fill.mockClear();
+		geometry = { normals: { fill } };
+
 		generateBand.mockClear().mockReturnValue('band');
-		parseFile.mockClear().mockReturnValue('geometry');
+		parseFile.mockClear().mockReturnValue(geometry);
 	});
 
 	it('should create a cube', () => {
@@ -39,7 +45,13 @@ describe('generate-primative', () => {
 			'f 5/2 1/1 4/3 8/4'
 		].join('\n'), 1);
 
-		expect(actual).toBe('geometry');
+		expect(fill).not.toHaveBeenCalled();
+		expect(actual).toEqual(geometry);
+	});
+
+	it('should fully illuminate an inverted cube', () => {
+		generatePrimative(-1, -2, -3);
+		expect(fill).toHaveBeenCalledWith(1);
 	});
 
 	it('should create a cylinder', () => {
@@ -55,7 +67,7 @@ describe('generate-primative', () => {
 		]);
 
 		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband\nband\nband', 0);
-		expect(actual).toBe('geometry');
+		expect(actual).toEqual(geometry);
 	});
 
 	it('should create a cone', () => {
@@ -69,7 +81,7 @@ describe('generate-primative', () => {
 		]);
 
 		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband', 0);
-		expect(actual).toBe('geometry');
+		expect(actual).toEqual(geometry);
 	});
 
 	it('should create a sphere', () => {
@@ -84,7 +96,8 @@ describe('generate-primative', () => {
 		]);
 
 		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband\nband', 0);
-		expect(actual).toBe('geometry');
+		expect(fill).not.toHaveBeenCalled();
+		expect(actual).toEqual(geometry);
 	});
 
 	it('should create a dome', () => {
@@ -98,6 +111,7 @@ describe('generate-primative', () => {
 		]);
 
 		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband', 0);
-		expect(actual).toBe('geometry');
+		expect(fill).toHaveBeenCalledWith(1);
+		expect(actual).toEqual(geometry);
 	});
 });

@@ -1,8 +1,10 @@
 import { generateBand } from './generate-band';
 import { parseFile } from './parse-file';
 
-function generateCube (x = 0, y = 0, z = 0) {
-	return parseFile([
+function generateCube (...dimensions) {
+	const [x = 0, y = 0, z = 0] = dimensions;
+
+	const primative = parseFile([
 		`v ${x} 0 0`,
 		`v ${x} 0 ${z}`,
 		`v 0 0 ${z}`,
@@ -26,6 +28,12 @@ function generateCube (x = 0, y = 0, z = 0) {
 		'f 3/5 7/6 8/2 4/1',
 		'f 5/2 1/1 4/3 8/4'
 	].join('\n'), 1);
+
+	if (dimensions.filter(value => value < 0).length % 2) {
+		primative.normals.fill(1);
+	}
+
+	return primative;
 }
 
 function generateRadial (points = 3, height = 0) {
@@ -78,7 +86,13 @@ function generateSphere (rings = 1) {
 
 	file.push(generateBand(points, scale, 0, 1, -bands));
 
-	return parseFile(file.join('\n'), sharpness);
+	const primative = parseFile(file.join('\n'), sharpness);
+
+	if (dome) {
+		primative.normals.fill(1);
+	}
+
+	return primative;
 }
 
 export function generatePrimative (...parameters) {
