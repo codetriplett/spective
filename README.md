@@ -33,11 +33,11 @@ var chair = table('chair.obj', '#fff', {
 // remove an object
 table();
 
-// remove an asset
+// remove all objects that use a specific image or color and a specific geometry
 scene('table.obj', 'wood.jpg'); // in entire scene
 table('chair.obj', '#fff'); // only ones linked to a specific object
 
-// remove a geometry
+// remove all objects that use a specific geometry
 scene('chair.obj'); // in entire scene
 table('chair.obj'); // only ones linked to a specific object
 
@@ -58,9 +58,8 @@ scene({
 	angleY: 1.2
 }, 1500);
 
-// animate a shift in the current properties over a set amount of time in milliseconds and repeat
-// the function you provide runs before each animation and returns the duration
-// the loop ends if a duration is returned that is not greater than zero
+// adjust properties over a set amount of time continuously
+// the loop ends as soon as no time is returned by the input function
 scene({
 	angleY: 1
 }, function (iteration) {
@@ -69,15 +68,15 @@ scene({
 
 // the above animations can be chained together
 scene({
-	angle: 0.5
+	angleY: 0.5 // instantly set an angle
 }, {
-	angleY: 1.2
+	angleY: 1.2 // animate to another angle
 }, 1500, {
-	positionX: 1
+	positionX: 1 // then animate to a new position
 }, 500, {
-	angleY: 1
+	angleY: 1 // then animate a shift in its angle 3 times, getting slower each time
 }, function (iteration) {
-	return (3 - iteration) * 1000;	
+	return ((iteration + 1) % 4) * 1000;	
 });
 ```
 
@@ -90,19 +89,38 @@ Wavefront OBJ files are used to load in the geometries for all the objects in th
 ### Server
 OBJ files can't be loaded into code that runs from a standalone file. If you want to experiment with OBJ files and you have Node.js installed, you can download the prototype zip folder here, https://github.com/codetriplett/spective/raw/master/dist/prototype.zip. Extract the folder, open a terminal at its location and run "node index.js" to start the server. Look at the preview folder of this project for an example of how to use the server, https://github.com/codetriplett/spective/tree/master/preview.
 
-### Cubes
-Cubes can be created without needing an OBJ file or server running. Simply pass a space delimited string of lengths to define the dimensions of the cube. An image will repeat on a surface of the cube of it has a length greater than 1.
+### Primatives
+Primatives can be created without needing an OBJ file and server running. Simply pass a space delimited string of between 1 and 3 numbers to define the properties.
 ```js
-// the examples below assume you have already created a scene
+var scene = spective({});
 
-// create a cube that shows the same texture on each face
-scene('face.png', {});
-
-// create a tall cube with a repeating texture in the vertical direction
-scene('1 2 1', 'face.png', {});
+// create a cube
+// the numbers define the lengths in the x, y and z directions
+// the image will repeat for lengths greater than 1
+scene('1 2 3', 'image.png', {});
 
 // create a flat plane that repeats the texture 10 times in the horizontal directions
-scene('10 0 10', 'terrain.png', {});
+scene('10 0 10', 'image.png', {});
+
+// if no geometry is defined, it will default to a cube with all equal lengths ('1 1 1')
+scene('#fff', {});
+
+// create a cylinder or cone
+// the first number defines the number of points at its base
+// the second number defines the height
+// the image will wrap around the circumference and will repeat vertically if the height is greater than 1
+scene('16 1', 'image.jpg', {}); // create a cylinder
+scene('16.9', 'image.jpg', {}); // create a cylinder with sharp edges
+scene('-16 1', 'image.jpg', {}); // create a cone
+scene('-16.9', 'image.jpg', {}); // create a cone with sharp edges
+
+// create a sphere or skybox
+// the number defines the number of rings between its poles
+scene('16', 'image.jpg', {}); // create a sphere
+scnee('16.9', 'image.jpg', {}); // create a sphere with sharp edges
+scene('-16', 'image.jpg', {}); // create a skybox hemisphere
+
+// the higher the decimal after the first value for cylinders, cones and spheres, the sharper the edges will be
 ```
 
 ## Properties
@@ -137,7 +155,7 @@ var meter = spective(emptyFunction, fullFunction);
 // the direction is passed to each function as either 1 or -1
 var meter = spective(emptyFunction, intermediateFunction, fullFunction);
 
-// custom ranges can be provided, the rest will be filled in so the total range reaches the next whole number
+// custom ranges can be provided, the rest will be filled in equally so the total range reaches the next whole number
 var meter = spective(2, fullFunction);
 var meter = spective(emptyFunction, 2, fullFunction);
 

@@ -70,6 +70,11 @@ describe('generate-primative', () => {
 		expect(actual).toEqual(geometry);
 	});
 
+	it('should fully illuminate an inverted cylinder', () => {
+		generatePrimative(3, -2);
+		expect(fill).toHaveBeenCalledWith(1);
+	});
+
 	it('should create a cone', () => {
 		const actual = generatePrimative(-3, 2);
 
@@ -77,22 +82,27 @@ describe('generate-primative', () => {
 			[-3, 0, 0, 0, 0],
 			[-3, 0, 0.5, -0.5, 1],
 			[3, 0, 0.5, 0],
-			[3, 2, 0, 2, -3]
+			[3, 2, 0, 2, -3, 1]
 		]);
 
 		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband', 0);
 		expect(actual).toEqual(geometry);
 	});
 
+	it('should fully illuminate an inverted cone', () => {
+		generatePrimative(-3, -2);
+		expect(fill).toHaveBeenCalledWith(1);
+	});
+
 	it('should create a sphere', () => {
 		const actual = generatePrimative(3);
 
 		expect(generateBand.mock.calls).toEqual([
-			[6, -0.5, 0, 0, 0],
-			[6, -0.3535533905932738, 0.35355339059327373, 0.25, -1],
-			[6, -3.061616997868383e-17, 0.5, 0.5, 2],
-			[6, 0.35355339059327373, 0.3535533905932738, 0.75, 3],
-			[6, 0.5, 0, 1, -4]
+			[6, -0.5, 0, 0, 0, 0],
+			[6, -0.3535533905932738, 0.35355339059327373, 0.25, -1, 1],
+			[6, -3.061616997868383e-17, 0.5, 0.5, 2, 2],
+			[6, 0.35355339059327373, 0.3535533905932738, 0.75, 3, 3],
+			[6, 0.5, 0, 1, -4, 4]
 		]);
 
 		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband\nband', 0);
@@ -104,10 +114,10 @@ describe('generate-primative', () => {
 		const actual = generatePrimative(-2);
 
 		expect(generateBand.mock.calls).toEqual([
-			[9, -3.061616997868383e-14, -500, 0, 0],
-			[9, 249.9999999999999, -433.01270189221935, 0.3333333333333333, 1],
-			[9, 433.01270189221924, -250.00000000000017, 0.6666666666666666, 2],
-			[9, 500, 0, 1, -3]
+			[9, -3.061616997868383e-14, -500, 0, 0, 0],
+			[9, 249.9999999999999, -433.01270189221935, 0.3333333333333333, 1, 1],
+			[9, 433.01270189221924, -250.00000000000017, 0.6666666666666666, 2, 2],
+			[9, 500, 0, 1, -3, 3]
 		]);
 
 		expect(parseFile).toHaveBeenCalledWith('band\nband\nband\nband', 0);

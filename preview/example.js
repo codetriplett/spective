@@ -32,6 +32,8 @@ teapot('24 1', {
 	offset: [1.25, -0.04, 0]
 });
 
+scene('-24', 'grid.png', { angleZ: Math.PI });
+
 var meter = spective(
 	iterator => console.log('first', iterator),
 	iterator => console.log('second', iterator),

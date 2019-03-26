@@ -48,14 +48,20 @@ function generateRadial (points = 3, height = 0) {
 	file.push(generateBand(points, 0, 0.5, 0));
 
 	if (cone) {
-		file.push(generateBand(points, height, 0, height, -3));
+		file.push(generateBand(points, height, 0, height, -3, 1));
 	} else {
 		file.push(generateBand(points, height, 0.5, height, 3));
 		file.push(generateBand(-points, height, 0.5, 0.5));
 		file.push(generateBand(-points, height, 0, 0, -5));
 	}
 
-	return parseFile(file.join('\n'), sharpness);
+	const primative = parseFile(file.join('\n'), sharpness);
+
+	if (height < 0) {
+		primative.normals.fill(1);
+	}
+
+	return primative;
 }
 
 function generateSphere (rings = 1) {
@@ -80,11 +86,11 @@ function generateSphere (rings = 1) {
 		const placement = i * step;
 		const index = i !== 1 || dome ? i : -i;
 
-		file.push(generateBand(points, height, radius, placement, index));
+		file.push(generateBand(points, height, radius, placement, index, i));
 		angle += arc;
 	}
 
-	file.push(generateBand(points, scale, 0, 1, -bands));
+	file.push(generateBand(points, scale, 0, 1, -bands, bands));
 
 	const primative = parseFile(file.join('\n'), sharpness);
 

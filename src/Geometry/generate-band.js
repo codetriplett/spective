@@ -1,8 +1,7 @@
-export function generateBand (points, height, radius, placement, index) {
+export function generateBand (points, height, radius, placement, index = 0, twist = 0) {
 	const direct = points < 0;
 	const mirroring = placement < 0 ? -1 : 1;
 	const cap = index < 0;
-	const reset = index === undefined;
 	const top = cap && !radius;
 	const bottom = cap && radius;
 
@@ -12,7 +11,7 @@ export function generateBand (points, height, radius, placement, index) {
 
 	const step = 1 / points;
 	const arc = Math.PI * 2 * step;
-	const shift = ((reset ? 3 : index) + 1) / 2;
+	const shift = twist / 2;
 	const band = [];
 
 	for (let i = 0; i <= points; i++) {
