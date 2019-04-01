@@ -20,7 +20,6 @@ const createAsset = jest.fn();
 const destroyAsset = jest.fn();
 const createInstance = jest.fn();
 const destroyInstance = jest.fn();
-const measure = jest.fn();
 const update = jest.fn();
 let assets;
 let instances;
@@ -37,7 +36,6 @@ function resetMocks (skipScene) {
 	});
 
 	Meter.mockClear().mockImplementation(function () {
-		this.measure = measure.mockClear().mockReturnValue('measure');
 		this.update = update.mockClear().mockReturnValue('update');
 	});
 
@@ -275,13 +273,6 @@ describe('spective', () => {
 			expect(actual).toEqual(expect.any(Function));
 		});
 
-		it('should create a meter if there is only a number', () => {
-			const actual = spective(2);
-
-			expect(Meter).toHaveBeenCalledWith(2);
-			expect(actual).toEqual(expect.any(Function));
-		});
-
 		it('should create a meter if there are no parameters', () => {
 			const actual = spective();
 
@@ -289,27 +280,11 @@ describe('spective', () => {
 			expect(actual).toEqual(expect.any(Function));
 		});
 
-		it('should measure the meter if no parameters are passed to it', () => {
-			const meter = spective(2, 'second');
-			const actual = meter();
+		it('should update a meter', () => {
+			const meter = spective();
+			const actual = meter(0.5);
 
-			expect(measure).toHaveBeenCalledWith();
-			expect(actual).toBe('measure');
-		});
-
-		it('should update the meter if only one parameter is passed to it', () => {
-			const meter = spective(2, 'second');
-			const actual = meter(1);
-
-			expect(update).toHaveBeenCalledWith(1);
-			expect(actual).toBe('update');
-		});
-
-		it('should update the meter if two parameters are passed to it', () => {
-			const meter = spective(2, 'second');
-			const actual = meter(1, 1000);
-
-			expect(update).toHaveBeenCalledWith(1, 1000);
+			expect(update).toHaveBeenCalledWith(0.5);
 			expect(actual).toBe('update');
 		});
 	});

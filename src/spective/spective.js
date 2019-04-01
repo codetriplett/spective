@@ -10,14 +10,7 @@ export default function spective (...parameters) {
 
 	if (/function|number/.test(typeof first) || !parameters.length) {
 		const meter = new Meter(...parameters);
-
-		return (...parameters) => {
-			if (!parameters.length) {
-				return meter.measure();
-			}
-			
-			return meter.update(...parameters);
-		};
+		return change => meter.update(change);
 	}
 
 	let canvas = first;

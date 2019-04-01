@@ -1,468 +1,364 @@
-import { organizeSegments } from '../organize-segments';
+import { organizeActions } from '../organize-actions';
 import { Meter } from '../Meter';
 
-jest.mock('../organize-segments', () => ({ organizeSegments: jest.fn() }));
+jest.mock('../organize-actions', () => ({ organizeActions: jest.fn() }));
 
 describe('Meter', () => {
 	describe('constructor', () => {
-		const update = jest.fn();
-		let segments;
+		let iterate = jest.fn();
 
 		beforeEach(() => {
-			segments = [{ upperValue: 1 }];
+			iterate.mockClear().mockReturnValue('next');
 
-			Meter.prototype.update = update.mockClear();
-			organizeSegments.mockClear().mockReturnValue(segments);
+			organizeActions.mockClear().mockReturnValue([
+				'schedule',
+				'previous',
+				iterate
+			]);
 		});
 
 		it('should initialize', () => {
-			const actual = new Meter('action');
+			const actual = new Meter('parameters');
 
-			expect(organizeSegments).toHaveBeenCalledWith('action');
-			expect(update).not.toHaveBeenCalled();
-			
+			expect(organizeActions).toHaveBeenCalledWith('parameters');
+			expect(iterate).toHaveBeenCalledWith(0, 'previous');
+
 			expect(actual).toEqual({
 				resolve: expect.any(Function),
-				segments,
-				index: 0,
+				schedule: 'schedule',
+				iterate,
+				previous: 'previous',
+				next: 'next',
 				value: 0,
 				change: 0
 			});
 		});
-
-		it('should set a value', () => {
-			new Meter('action', 2);
-
-			expect(organizeSegments).toHaveBeenCalledWith('action');
-			expect(update).toHaveBeenCalledWith(2, undefined);
-		});
-
-		it('should set a value and duration', () => {
-			new Meter('action', 2, 2000);
-
-			expect(organizeSegments).toHaveBeenCalledWith('action');
-			expect(update).toHaveBeenCalledWith(2, 2000);
-		});
-
-		it('should set a negative value and duration', () => {
-			new Meter('action', -2, 2000);
-
-			expect(organizeSegments).toHaveBeenCalledWith('action');
-
-			expect(update.mock.calls).toEqual([
-				[-0],
-				[-2, 2000]
-			]);
-		});
-		
-		it('should set a value and duration when there are no actions', () => {
-			new Meter(2, 2000);
-
-			expect(organizeSegments).toHaveBeenCalledWith();
-			expect(update).toHaveBeenCalledWith(2, 2000);
-		});
 	});
 
-	describe('measure', () => {
-		const measure = Meter.prototype.measure;
+	describe('complete', () => {
+		const complete = Meter.prototype.complete;
 		const now = jest.fn();
+		const clearTimeout = jest.fn();
 		let context;
 
 		beforeEach(() => {
 			window.Date.now = now.mockClear().mockReturnValue(1000);
+			window.clearTimeout = clearTimeout.mockClear();
 
 			context = {
-				segments: [{ upperValue: 1 }],
 				value: 0.5,
-				change: 0.375,
-				duration: 300,
-				timestamp: 900
+				change: 0.4,
+				duration: 200,
+				timestamp: 900,
+				timeout: 'timeout'
 			};
 		});
 
-		it('should measure a timed meter', () => {
-			const actual = measure.call(context);
-			expect(actual).toBe(0.25);
+		it('should complete a filling update in progress', () => {
+			const actual = complete.call(context);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(actual).toBe(0.2);
+
+			expect(context).toEqual({
+				value: 0.3,
+				change: 0
+			});
 		});
 
-		it('should measure a timed meter when reversed', () => {
-			context.change = -0.375;
-			const actual = measure.call(context);
+		it('should complete a draining update', () => {
+			context.change = -0.4;
+			const actual = complete.call(context);
 
-			expect(actual).toBe(-0.25);
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(actual).toBe(-0.19999999999999996);
+
+			expect(context).toEqual({
+				value: 0.7,
+				change: -0
+			});
 		});
 
-		it('should measure an instant meter', () => {
+		it('should complete a filling update at end', () => {
+			context.value = 1.1;
+			const actual = complete.call(context, true);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(actual).toBe(0.10000000000000009);
+
+			expect(context).toEqual({
+				value: 1,
+				change: 0
+			});
+		});
+		
+		it('should complete a draining update at begining', () => {
 			Object.assign(context, {
-				duration: undefined,
-				timestamp: undefined
+				value: -0.1,
+				change: -0.4
 			});
 
-			const actual = measure.call(context);
+			const actual = complete.call(context, true);
 
-			expect(actual).toBe(0.5);
-		});
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(actual).toBe(-0.1);
 
-		it('should measure an instant meter when reversed', () => {
-			Object.assign(context, {
-				change: -0.375,
-				duration: undefined,
-				timestamp: undefined
+			expect(context).toEqual({
+				value: 0,
+				change: -0
 			});
-
-			const actual = measure.call(context);
-
-			expect(actual).toBe(-0.5);
 		});
 	});
 
 	describe('resolve', () => {
 		const resolve = Meter.prototype.resolve;
-		const schedule = jest.fn();
-		const first = jest.fn();
-		const second = jest.fn();
-		const third = jest.fn();
+		const complete = jest.fn();
+		const update = jest.fn();
+		const iterate = jest.fn();
 		let context;
 
 		beforeEach(() => {
-			schedule.mockClear();
-			first.mockClear();
-			second.mockClear();
-			third.mockClear();
+			complete.mockClear().mockReturnValue(0.5);
+			update.mockClear();
+			iterate.mockClear().mockReturnValue('item');
 
 			context = {
-				schedule,
-				segments: [
-					{
-						lowerCallback: first,
-						lowerValue: 0,
-						upperValue: 2,
-						upperCallback: second
-					}, {
-						lowerCallback: second,
-						lowerValue: 2,
-						upperValue: 3,
-						upperCallback: third
-					}
-				],
-				index: 0,
-				value: 1.5,
-				change: 1,
-				duration: 200
+				complete,
+				update,
+				iterate,
+				previous: 'previous',
+				next: 'next',
+				value: 1,
+				continuous: false
 			};
 		});
 
-		it('should resolve from the beginning of a segment', () => {
-			context.change = 1.5;
+		it('should resolve a filling update', () => {
 			resolve.call(context);
 
-			expect(first).not.toHaveBeenCalled();
-			expect(second).not.toHaveBeenCalled();
-			expect(third).not.toHaveBeenCalled();
+			expect(complete).toHaveBeenCalledWith(true);
+			expect(iterate).toHaveBeenCalledWith(0.5, 'next');
+			expect(update).toHaveBeenCalledWith(0.5);
 
-			expect(context.index).toBe(0);
-		});
-
-		it('should resolve from the end of a segment', () => {
-			context.change = -0.5;
-			resolve.call(context);
-
-			expect(first).not.toHaveBeenCalled();
-			expect(second).not.toHaveBeenCalled();
-			expect(third).not.toHaveBeenCalled();
-
-			expect(context.index).toBe(0);
-		});
-
-		it('should resolve within a segment', () => {
-			resolve.call(context);
-
-			expect(first).not.toHaveBeenCalled();
-			expect(second).not.toHaveBeenCalled();
-			expect(third).not.toHaveBeenCalled();
-
-			expect(context.index).toBe(0);
-		});
-
-		it('should resolve at the end of a segment', () => {
-			context.value = 2;
-			resolve.call(context);
-
-			expect(first).not.toHaveBeenCalled();
-			expect(second).toHaveBeenCalledWith(1);
-			expect(third).not.toHaveBeenCalled();
-
-			expect(context.index).toBe(1);
-		});
-
-		it('should resolve past the end of a segment', () => {
-			context.value = 2.5;
-			resolve.call(context);
-
-			expect(first).not.toHaveBeenCalled();
-			expect(second).toHaveBeenCalledWith(1);
-			expect(third).not.toHaveBeenCalled();
-
-			expect(context.index).toBe(1);
-		});
-
-		it('should resolve at the end of the last segment', () => {
-			Object.assign(context, {
-				index: 1,
-				value: 3
+			expect(context).toMatchObject({
+				previous: 'next',
+				next: 'item'
 			});
+		});
 
+		it('should resolve a draining update', () => {
+			complete.mockReturnValue(-0.5);
+			context.value = 0;
 			resolve.call(context);
 
-			expect(first).not.toHaveBeenCalled();
-			expect(second).not.toHaveBeenCalled();
-			expect(third).toHaveBeenCalledWith(1);
+			expect(complete).toHaveBeenCalledWith(true);
+			expect(iterate).toHaveBeenCalledWith(-0.5, 'previous');
+			expect(update).toHaveBeenCalledWith(-0.5);
 
-			expect(context.index).toBe(1);
+			expect(context).toMatchObject({
+				previous: 'item',
+				next: 'previous'
+			});
 		});
 
-		it('should resolve at the beginning of a segment', () => {
-			Object.assign(context, {
-				index: 1,
-				value: 2,
-				change: -0.5
-			});
-
+		it('should resolve an update without calling the iterator', () => {
+			complete.mockReturnValue(0);
+			context.value = 0.5;
 			resolve.call(context);
 
-			expect(first).not.toHaveBeenCalled();
-			expect(second).toHaveBeenCalledWith(-1);
-			expect(third).not.toHaveBeenCalled();
+			expect(complete).toHaveBeenCalledWith(true);
+			expect(iterate).not.toHaveBeenCalled();
+			expect(update).not.toHaveBeenCalled();
 
-			expect(context.index).toBe(0);
-		});
-
-		it('should resolve past the beginning of a segment', () => {
-			Object.assign(context, {
-				index: 1,
-				value: 1.5,
-				change: -1
+			expect(context).toMatchObject({
+				previous: 'previous',
+				next: 'next',
 			});
-
-			resolve.call(context);
-
-			expect(first).not.toHaveBeenCalled();
-			expect(second).toHaveBeenCalledWith(-1);
-			expect(third).not.toHaveBeenCalled();
-
-			expect(context.index).toBe(0);
-		});
-
-		it('should resolve at the beginning of the first segment', () => {
-			Object.assign(context, {
-				index: 0,
-				value: 0,
-				change: -1
-			});
-
-			resolve.call(context);
-
-			expect(first).toHaveBeenCalledWith(-1);
-			expect(second).not.toHaveBeenCalled();
-			expect(third).not.toHaveBeenCalled();
-
-			expect(context.index).toBe(0);
-		});
-	});
-
-	describe('schedule', () => {
-		const schedule = Meter.prototype.schedule;
-		const resolve = jest.fn();
-		const clearTimeout = jest.fn();
-		const setTimeout = jest.fn();
-		let context;
-
-		beforeEach(() => {
-			window.clearTimeout = clearTimeout.mockClear();
-			window.setTimeout = setTimeout.mockClear().mockReturnValue('timeout');
-
-			resolve.mockClear();
-
-			context = {
-				resolve,
-				segments: [
-					{ lowerValue: 0, upperValue: 2 },
-					{ lowerValue: 2, upperValue: 3 }
-				],
-				index: 0,
-				value: 1.75,
-				change: 0.75,
-				duration: 200
-			};
-		});
-
-		it('should schedule a timed resolution', () => {
-			schedule.call(context);
-
-			expect(setTimeout).not.toHaveBeenCalled();
-			expect(context.timeout).toBeUndefined();
-		});
-
-		it('should schedule the beginning of a timed resolution', () => {
-			context.value = 2.5;
-			schedule.call(context);
-
-			expect(setTimeout).toHaveBeenCalledWith(resolve, 67);
-			expect(context.timeout).toBe('timeout');
-		});
-
-		it('should schedule a timed resolution that reaches the end of a segment', () => {
-			context.value = 2;
-			schedule.call(context);
-
-			expect(setTimeout).toHaveBeenCalledWith(resolve, 200);
-			expect(context.timeout).toBe('timeout');
-		});
-
-		it('should schedule a timed resolution past the end of a segment', () => {
-			context.value = 2.5;
-			schedule.call(context);
-
-			expect(setTimeout).toHaveBeenCalledWith(resolve, 67);
-			expect(context.timeout).toBe('timeout');
-		});
-
-		it('should schedule the end of a timed resolution', () => {
-			Object.assign(context, {
-				index: 1,
-				value: 2.5
-			});
-
-			schedule.call(context);
-
-			expect(setTimeout).not.toHaveBeenCalled();
-			expect(context.timeout).toBeUndefined();
-		});
-
-		it('should schedule an instant resolution', () => {
-			context.duration = undefined;
-			schedule.call(context);
-
-			expect(setTimeout).not.toHaveBeenCalled();
-			expect(resolve).not.toHaveBeenCalled();
-			expect(context.timeout).toBeUndefined();
-		});
-
-		it('should schedule an instant resolution', () => {
-			context.duration = undefined;
-			schedule.call(context);
-
-			expect(setTimeout).not.toHaveBeenCalled();
-			expect(resolve).not.toHaveBeenCalled();
-			expect(context.timeout).toBeUndefined();
 		});
 		
-		it('should schedule the beginning of an instant resolution', () => {
-			Object.assign(context, {
-				value: 2.5,
-				duration: undefined
+		it('should resolve an update without iterating', () => {
+			iterate.mockReturnValue();
+			resolve.call(context);
+
+			expect(update).not.toHaveBeenCalled();
+
+			expect(context).toMatchObject({
+				previous: 'previous',
+				next: 'next'
 			});
+		});
 
-			schedule.call(context);
+		it('should resolve an update without another update', () => {
+			complete.mockReturnValue(0);
+			resolve.call(context);
 
-			expect(setTimeout).not.toHaveBeenCalled();
-			expect(context.timeout).toBeUndefined();
+			expect(update).not.toHaveBeenCalled();
+
+			expect(context).toMatchObject({
+				previous: 'next',
+				next: 'item'
+			});
+		});
+
+		it('should resolve a continuous update', () => {
+			complete.mockReturnValue(0);
+			context.continuous = true;
+			resolve.call(context);
+
+			expect(update).toHaveBeenCalledWith(0);
+
+			expect(context).toMatchObject({
+				previous: 'next',
+				next: 'item'
+			});
 		});
 	});
 
 	describe('update', () => {
 		const update = Meter.prototype.update;
-		const measure = jest.fn();
-		const schedule = jest.fn();
-		const clearTimeout = jest.fn();
 		const now = jest.fn();
-		let segments;
+		const setTimeout = jest.fn();
+		const complete = jest.fn();
+		const resolve = jest.fn();
+		const schedule = jest.fn();
 		let context;
 
 		beforeEach(() => {
-			window.clearTimeout = clearTimeout.mockClear();
-			window.Date.now = now.mockClear().mockReturnValue('timestamp');
-
-			measure.mockClear().mockReturnValue(0.75);
-			schedule.mockClear();
-
-			segments = [{ upperValue: 2 }];
+			window.Date.now = now.mockClear().mockReturnValue(1000);
+			window.setTimeout = setTimeout.mockClear().mockReturnValue('timeout');
+			complete.mockClear().mockReturnValue(0.5);
+			resolve.mockClear();
+			schedule.mockClear().mockReturnValue('duration');
 
 			context = {
-				measure,
+				complete,
+				resolve,
 				schedule,
-				segments,
-				timeout: 'timeout'
+				value: 0.25,
+				next: 'next',
+				previous: 'previous'
 			};
 		});
 
-		it('should update to an absolute value', () => {
-			update.call(context, 1.5);
+		it('should update the meter in the positive direction', () => {
+			const actual = update.call(context, 1);
 
-			expect(measure).toHaveBeenCalled();
-			expect(clearTimeout).toHaveBeenCalledWith('timeout');
-			expect(schedule).toHaveBeenCalled();
+			expect(complete).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(0.75, 'next');
+			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
+			expect(actual).toBe(1.25);
 
-			expect(context).toEqual({
-				measure,
-				schedule,
-				segments,
-				value: 1.5,
-				change: 0.75
-			});
-		});
-
-		it('should update to an absolute value from the end', () => {
-			update.call(context, -1.5);
-
-			expect(measure).toHaveBeenCalled();
-			expect(clearTimeout).toHaveBeenCalledWith('timeout');
-			expect(schedule).toHaveBeenCalled();
-
-			expect(context).toEqual({
-				measure,
-				schedule,
-				segments,
-				value: 0.5,
-				change: -0.25,
-				duration: undefined,
-				timestamp: undefined
-			});
-		});
-
-		it('should set a relative value', () => {
-			update.call(context, 0.5, 2000);
-
-			expect(measure).toHaveBeenCalled();
-			expect(clearTimeout).toHaveBeenCalledWith('timeout');
-			expect(schedule).toHaveBeenCalled();
-
-			expect(context).toEqual({
-				measure,
-				schedule,
-				segments,
+			expect(context).toMatchObject({
 				value: 1.25,
-				change: 0.5,
-				duration: 2000,
-				timestamp: 'timestamp'
+				change: 0.75,
+				duration: 'duration',
+				timestamp: 1000,
+				timeout: 'timeout',
+				continuous: false
 			});
 		});
 
-		it('should set a negative relative value', () => {
-			update.call(context, -0.5, 2000);
+		it('should update the meter in the negative direction', () => {
+			const actual = update.call(context, -1);
 
-			expect(measure).toHaveBeenCalled();
-			expect(clearTimeout).toHaveBeenCalledWith('timeout');
-			expect(schedule).toHaveBeenCalled();
+			expect(complete).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(-0.25, 'previous');
+			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
+			expect(actual).toBe(-0.75);
 
-			expect(context).toEqual({
-				measure,
-				schedule,
-				segments,
+			expect(context).toMatchObject({
+				value: -0.75,
+				change: -0.25,
+				duration: 'duration',
+				timestamp: 1000,
+				timeout: 'timeout',
+				continuous: false
+			});
+		});
+
+		it('should maintain a positive update', () => {
+			const actual = update.call(context, 0);
+
+			expect(complete).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(0.75, 'next');
+			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
+			expect(actual).toBe(1.25);
+
+			expect(context).toMatchObject({
+				value: 1.25,
+				change: 0.75,
+				duration: 'duration',
+				timestamp: 1000,
+				timeout: 'timeout',
+				continuous: true
+			});
+		});
+
+		it('should maintain a negative update', () => {
+			complete.mockReturnValue(-0);
+			const actual = update.call(context, 0);
+
+			expect(complete).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(-0.25, 'previous');
+			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
+			expect(actual).toBe(-0.75);
+
+			expect(context).toMatchObject({
+				value: -0.75,
+				change: -0.25,
+				duration: 'duration',
+				timestamp: 1000,
+				timeout: 'timeout',
+				continuous: true
+			});
+		});
+
+		it('should reverse a positive update', () => {
+			const actual = update.call(context, -0);
+
+			expect(complete).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(-0.25, 'previous');
+			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
+			expect(actual).toBe(-0.75);
+
+			expect(context).toMatchObject({
+				value: -0.75,
+				change: -0.25,
+				duration: 'duration',
+				timestamp: 1000,
+				timeout: 'timeout',
+				continuous: true
+			});
+		});
+
+		it('should not update when there is no change', () => {
+			const actual = update.call(context);
+
+			expect(complete).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(0, 'next');
+			expect(setTimeout).not.toHaveBeenCalled();
+			expect(actual).toBe(0.25);
+
+			expect(context).toMatchObject({
 				value: 0.25,
-				change: -0.5,
-				duration: 2000,
-				timestamp: 'timestamp'
+				next: 'next',
+				previous: 'previous'
+			});
+		});
+
+		it('should not update when there is no duration', () => {
+			schedule.mockReturnValue();
+			const actual = update.call(context, 1);
+
+			expect(complete).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(0.75, 'next');
+			expect(setTimeout).not.toHaveBeenCalled();
+			expect(actual).toBe(0.25);
+
+			expect(context).toMatchObject({
+				value: 0.25,
+				next: 'next',
+				previous: 'previous'
 			});
 		});
 	});

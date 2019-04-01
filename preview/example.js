@@ -35,21 +35,23 @@ teapot('24 1', {
 scene('-24', 'grid.png', { angleZ: Math.PI });
 
 var meter = spective(
-	iterator => console.log('first', iterator),
-	iterator => console.log('second', iterator),
-	iterator => console.log('third', iterator),
-	1,
-	2000
+	(change, item) => {
+		console.log(!change ? 'stop' : item);
+		return Math.abs(change) * 1000;
+	},
+	'',
+	(change, item) => {
+		item = 1 / change < 0 ? item.slice(1) : item + item.length;
+
+		if (item !== '' && item.length < 5) {
+			return item;
+		}
+	}
 );
 
-setTimeout(() => meter(-1, 2000), 3000);
+meter(2);
 
-setTimeout(() => console.log(meter()), 500);
-setTimeout(() => console.log(meter()), 1500);
-setTimeout(() => console.log(meter()), 3500);
-setTimeout(() => console.log(meter()), 4500);
-
-setTimeout(() => {
-	meter(0.5);
-	console.log(meter());
-}, 6000);
+setTimeout(() => meter(-0), 2500);
+// setTimeout(() => meter(0), 3000);
+// setTimeout(() => meter(-0), 6000);
+// setTimeout(() => meter(2), 4000);

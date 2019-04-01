@@ -110,9 +110,9 @@ scene('#fff', {});
 // the second number defines the height
 // the image will wrap around the circumference and will repeat vertically if the height is greater than 1
 scene('16 1', 'image.jpg', {}); // create a cylinder
-scene('16.9', 'image.jpg', {}); // create a cylinder with sharp edges
+scene('16.9 1', 'image.jpg', {}); // create a cylinder with sharp edges
 scene('-16 1', 'image.jpg', {}); // create a cone
-scene('-16.9', 'image.jpg', {}); // create a cone with sharp edges
+scene('-16.9 1', 'image.jpg', {}); // create a cone with sharp edges
 
 // create a sphere or skybox
 // the number defines the number of rings between its poles
