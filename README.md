@@ -142,38 +142,33 @@ A shift in its placement. This is useful for creating orbits.
 Its rotation in the orbit created by the offset. Rotations occur in the order Y, X then Z.
 
 ## Meters
-Meters aren't necessary to create 3d graphics, they only help manage the state and timing of events in the scene.
+Meters aren't necessary to create 3d graphics, they only help manage the state and timing of events in the scene. They allow timed updates between 0 and 1 with functions that allow you to define the speed of each update and how to update the meter when the end is reached. The functions share the same context so properties can be shared between them.
 
 ```js
-// create a meter that calls a function when it is full
-var meter = spective(fullFunction);
+// create a meter
+// each property is optional
+var meter = spective(function (change, item) {
+	// this is called when the meter about to update
+	// change: the amount of the update that will occur before it ends or 0 or 1 is reached
+	// item: the item at the end of the meter that the update is heading towards
 
-// create a meter that also calls a function when it is empty
-var meter = spective(emptyFunction, fullFunction);
+	// if a number is returned, it will be set as the duration for this update
+	// otherwise, the update will not happen
+	return 1000;
+}, initialItem, function (change, item) {
+	// this is called when the meter is initialized or when it reaches 0 or 1
+	// change: the amount of the update that remains (negative if the update is draining)
+	// item: the item at the end of the meter that was reached
 
-// intermediate functions can also be provided and are called when they are passed in either direction
-// the direction is passed to each function as either 1 or -1
-var meter = spective(emptyFunction, intermediateFunction, fullFunction);
+	// if an item is returned, it will be set as the new item for this direction
+	// the previous item and location in meter will be set to the opposite end
+	return newItem;
+});
 
-// custom ranges can be provided, the rest will be filled in equally so the total range reaches the next whole number
-var meter = spective(2, fullFunction);
-var meter = spective(emptyFunction, 2, fullFunction);
+meter(0.5); // fill meter by a set amount
+meter(-0.5); // drain meter by a set amount
+meter(0); // continuously update meter in the direction of the last update
+meter(-0); // continuously update meter in the opposite direction of the last update
+meter(); // end previous update
 
-// meters can be updated instantly by passing the absolute value
-// this is set without triggering any functions along the way
-meter(0.5); // sets the value to 0.5
-meter(-0.25); // sets the value to 0.25 less than the total range of the meter
-
-// meters can be set to update to a relative value over a set amount of time
-meter(1.5, 2000); // add 1.5 to the value of the meter over 2 seconds
-
-// the current value of the meter can be inspected at any time without affecting any ongoing updates
-// it will return a positive value if the last update increased the value
-// it will return a negative value representing the value from the opposite end if the last update decreased the value
-var value = meter();
-
-// meters can be created with an inital update by passing those values after the ranges and actions
-// passing a negative value with a duration here will update it from the opposite end instead of from where it currently is like it normally would
-var meter = spective(fullFunction, 0.5);
-var meter = spective(fullFunction, 0.5, 2000);
 ```

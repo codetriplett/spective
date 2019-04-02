@@ -27,7 +27,7 @@ export class Meter {
 		let completion = constrainValue(value);
 
 		if (!resolved && duration) {
-			const percentage = (Date.now() - timestamp) / duration;
+			const percentage = 1 - (Date.now() - timestamp) / duration;
 			completion -= change * constrainValue(percentage);
 		}
 
@@ -36,9 +36,8 @@ export class Meter {
 		this.duration = undefined;
 		this.timestamp = undefined;
 		this.timeout = clearTimeout(timeout);
-		this.continuous = undefined;
 
-		return value - completion;
+		return (value - completion) || this.change;
 	}
 
 	resolve () {
@@ -50,6 +49,7 @@ export class Meter {
 			const item = iterate(remainder, reversed ? previous : next);
 
 			if (item === undefined) {
+				this.continuous = undefined;
 				return;
 			} else if (reversed) {
 				this.value = 1;
@@ -62,16 +62,17 @@ export class Meter {
 			}
 		}
 
-		if (remainder || continuous) {
+		if (continuous) {
+			this.update(0, true);
+		} else if (remainder) {
 			this.update(remainder);
 		}
 	}
 
-	update (change) {
+	update (change, continuous) {
 		const remainder = this.complete();
 		const reversed = isNegative(remainder);
 		let reverse = isNegative(change);
-		let continuous = false;
 
 		const { resolve, schedule, value, next, previous } = this;
 

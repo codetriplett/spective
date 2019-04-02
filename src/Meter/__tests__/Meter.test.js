@@ -48,7 +48,7 @@ describe('Meter', () => {
 			context = {
 				value: 0.5,
 				change: 0.4,
-				duration: 200,
+				duration: 400,
 				timestamp: 900,
 				timeout: 'timeout'
 			};
@@ -58,10 +58,10 @@ describe('Meter', () => {
 			const actual = complete.call(context);
 
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
-			expect(actual).toBe(0.2);
+			expect(actual).toBe(0.30000000000000004);
 
 			expect(context).toEqual({
-				value: 0.3,
+				value: 0.19999999999999996,
 				change: 0
 			});
 		});
@@ -71,10 +71,10 @@ describe('Meter', () => {
 			const actual = complete.call(context);
 
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
-			expect(actual).toBe(-0.19999999999999996);
+			expect(actual).toBe(-0.30000000000000004);
 
 			expect(context).toEqual({
-				value: 0.7,
+				value: 0.8,
 				change: -0
 			});
 		});
@@ -128,8 +128,7 @@ describe('Meter', () => {
 				iterate,
 				previous: 'previous',
 				next: 'next',
-				value: 1,
-				continuous: false
+				value: 1
 			};
 		});
 
@@ -201,11 +200,10 @@ describe('Meter', () => {
 		});
 
 		it('should resolve a continuous update', () => {
-			complete.mockReturnValue(0);
 			context.continuous = true;
 			resolve.call(context);
 
-			expect(update).toHaveBeenCalledWith(0);
+			expect(update).toHaveBeenCalledWith(0, true);
 
 			expect(context).toMatchObject({
 				previous: 'next',
@@ -254,7 +252,7 @@ describe('Meter', () => {
 				duration: 'duration',
 				timestamp: 1000,
 				timeout: 'timeout',
-				continuous: false
+				continuous: undefined
 			});
 		});
 
@@ -272,7 +270,7 @@ describe('Meter', () => {
 				duration: 'duration',
 				timestamp: 1000,
 				timeout: 'timeout',
-				continuous: false
+				continuous: undefined
 			});
 		});
 
@@ -324,6 +322,43 @@ describe('Meter', () => {
 			expect(context).toMatchObject({
 				value: -0.75,
 				change: -0.25,
+				duration: 'duration',
+				timestamp: 1000,
+				timeout: 'timeout',
+				continuous: true
+			});
+		});
+
+		it('should reverse a negative update', () => {
+			complete.mockReturnValue(-0);
+			const actual = update.call(context, -0);
+
+			expect(complete).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(0.75, 'next');
+			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
+			expect(actual).toBe(1.25);
+
+			expect(context).toMatchObject({
+				value: 1.25,
+				change: 0.75,
+				duration: 'duration',
+				timestamp: 1000,
+				timeout: 'timeout',
+				continuous: true
+			});
+		});
+
+		it('should continuously update across iterations', () => {
+			const actual = update.call(context, 0.5, true);
+
+			expect(complete).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(0.5, 'next');
+			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
+			expect(actual).toBe(0.75);
+
+			expect(context).toMatchObject({
+				value: 0.75,
+				change: 0.5,
 				duration: 'duration',
 				timestamp: 1000,
 				timeout: 'timeout',

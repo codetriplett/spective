@@ -1,7 +1,7 @@
 function extractAction (parameters, fallback, state) {
 	const actionable = typeof parameters[0] === 'function';
 
-	if (actionable === !state) {
+	if (actionable === !state || !parameters.length) {
 		return fallback;
 	}
 

@@ -35,23 +35,36 @@ teapot('24 1', {
 scene('-24', 'grid.png', { angleZ: Math.PI });
 
 var meter = spective(
-	(change, item) => {
-		console.log(!change ? 'stop' : item);
+	function (change) {
 		return Math.abs(change) * 1000;
 	},
 	'',
-	(change, item) => {
+	function (change, item) {
+		if (item) console.log(item);
+
 		item = 1 / change < 0 ? item.slice(1) : item + item.length;
 
-		if (item !== '' && item.length < 5) {
+		if (item !== '' && item.length < 6) {
 			return item;
 		}
 	}
 );
 
-meter(2);
+[
+	['fill by 4 (0 01 012)', 4], 3500,
+	['reverse (012 12)', -0], 2000,
+	['interrupt and fill by 1 (12)', 1], 1000,
+	['continue (122 1223)', 0], 2000,
+	['stop']
+].reduce(function (delay, options) {
+	if (options > 0) {
+		return delay + options;
+	}
 
-setTimeout(() => meter(-0), 2500);
-// setTimeout(() => meter(0), 3000);
-// setTimeout(() => meter(-0), 6000);
-// setTimeout(() => meter(2), 4000);
+	setTimeout(function () {
+		console.log(options[0]);
+		meter(options[1]);
+	}, delay);
+
+	return delay;
+}, 0);

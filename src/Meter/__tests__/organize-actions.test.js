@@ -26,7 +26,7 @@ describe('organize-actions', () => {
 	});
 
 	it('should use default item', () => {
-		const actual = organizeActions(schedule, iterate)[1];
+		const actual = organizeActions(schedule)[1];
 		expect(actual).toBe(0);
 	});
 
