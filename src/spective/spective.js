@@ -2,15 +2,22 @@ import { createCanvas } from './create-canvas';
 import { Instance } from '../Instance/Instance';
 import { Scene } from '../Scene/Scene';
 import { Meter } from '../Meter/Meter';
+import { Button } from '../Button/Button';
 
 const assetRegex = /(\.(bmp|gif|jpe?g|png|svg)|#[0-9a-f]{3}|#[0-9a-f]{6}) *$/;
 
 export default function spective (...parameters) {
-	let first = parameters[0];
+	const first = parameters[0];
+	const firstType = typeof first;
 
-	if (/function|number/.test(typeof first) || !parameters.length) {
+	if (first === undefined) {
+		return;
+	} else if (firstType === 'function') {
 		const meter = new Meter(...parameters);
 		return change => meter.update(change);
+	} else if (firstType === 'string') {
+		new Button(...parameters);
+		return;
 	}
 
 	let canvas = first;

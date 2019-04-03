@@ -68,3 +68,22 @@ var meter = spective(
 
 	return delay;
 }, 0);
+
+spective('space', function (stage) {
+	return 200;
+}, function (stage) {
+	switch (stage) {
+		case 1:
+			console.log('hold');
+			return;
+		case -1:
+			console.log('release');
+			return;
+		case 2:
+			console.log('slip');
+			return;
+		case -2:
+			console.log('tap');
+			return;
+	}
+});

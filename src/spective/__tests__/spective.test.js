@@ -2,12 +2,14 @@ import { createCanvas } from '../create-canvas';
 import { Instance } from '../../Instance/Instance';
 import { Scene } from '../../Scene/Scene';
 import { Meter } from '../../Meter/Meter';
+import { Button } from '../../Button/Button';
 import spective from '../spective';
 
 jest.mock('../create-canvas', () => ({ createCanvas: jest.fn() }));
 jest.mock('../../Instance/Instance', () => ({ Instance: jest.fn() }));
 jest.mock('../../Scene/Scene', () => ({ Scene: jest.fn() }));
 jest.mock('../../Meter/Meter', () => ({ Meter: jest.fn() }));
+jest.mock('../../Button/Button', () => ({ Button: jest.fn() }));
 
 const addEventListener = jest.fn();
 const activate = jest.fn();
@@ -38,6 +40,8 @@ function resetMocks (skipScene) {
 	Meter.mockClear().mockImplementation(function () {
 		this.update = update.mockClear().mockReturnValue('update');
 	});
+
+	Button.mockClear();
 
 	if (skipScene === true) {
 		return;
@@ -258,7 +262,7 @@ describe('spective', () => {
 	describe('Meter', () => {
 		beforeEach(() => resetMocks());
 
-		it('should create a meter if parameters start with a function', () => {
+		it('should create a meter', () => {
 			const action = () => {};
 			const actual = spective(action, 'second');
 
@@ -266,26 +270,24 @@ describe('spective', () => {
 			expect(actual).toEqual(expect.any(Function));
 		});
 
-		it('should create a meter if parameters start with a number', () => {
-			const actual = spective(2, 'second');
-
-			expect(Meter).toHaveBeenCalledWith(2, 'second');
-			expect(actual).toEqual(expect.any(Function));
-		});
-
-		it('should create a meter if there are no parameters', () => {
-			const actual = spective();
-
-			expect(Meter).toHaveBeenCalledWith();
-			expect(actual).toEqual(expect.any(Function));
-		});
-
 		it('should update a meter', () => {
-			const meter = spective();
+			const action = () => {};
+			const meter = spective(action);
 			const actual = meter(0.5);
 
 			expect(update).toHaveBeenCalledWith(0.5);
 			expect(actual).toBe('update');
+		});
+	});
+
+	describe('Button', () => {
+		beforeEach(() => resetMocks());
+
+		it('should create a button', () => {
+			const actual = spective('key', 'second');
+
+			expect(Button).toHaveBeenCalledWith('key', 'second');
+			expect(actual).toBeUndefined();
 		});
 	});
 });

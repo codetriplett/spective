@@ -119,8 +119,6 @@ scene('-16.9 1', 'image.jpg', {}); // create a cone with sharp edges
 scene('16', 'image.jpg', {}); // create a sphere
 scnee('16.9', 'image.jpg', {}); // create a sphere with sharp edges
 scene('-16', 'image.jpg', {}); // create a skybox hemisphere
-
-// the higher the decimal after the first value for cylinders, cones and spheres, the sharper the edges will be
 ```
 
 ## Properties
@@ -142,11 +140,13 @@ A shift in its placement. This is useful for creating orbits.
 Its rotation in the orbit created by the offset. Rotations occur in the order Y, X then Z.
 
 ## Meters
-Meters aren't necessary to create 3d graphics, they only help manage the state and timing of events in the scene. They allow timed updates between 0 and 1 with functions that allow you to define the speed of each update and how to update the meter when the end is reached. The functions share the same context so properties can be shared between them.
+Meters help manage the state and timing of events in the scene. They allow timed updates between 0 and 1 with functions that allow you to define the speed of each update and how to update the meter when the end is reached. The functions share the same context so properties can be shared between them.
 
 ```js
 // create a meter
-// each property is optional
+// only the first function is required
+// the initial item will default to 0
+// the last function will default to increment the item if it is a number or an array
 var meter = spective(function (change, item) {
 	// this is called when the meter about to update
 	// change: the amount of the update that will occur before it ends or 0 or 1 is reached
@@ -170,5 +170,39 @@ meter(-0.5); // drain meter by a set amount
 meter(0); // continuously update meter in the direction of the last update
 meter(-0); // continuously update meter in the opposite direction of the last update
 meter(); // end previous update
+```
 
+## Buttons
+Buttons make it easy to interact with the scene using your keyboard.
+
+```js
+// the first value defines the key (e.g. 'space', 'a', 'A', '1', etc)
+spective('space', function (stage) {
+	// called whenever the key is held or released
+	// stage: represents the number of events that have fired (including this one) without a resolution and is negative if the key is down
+
+	// if a number is returned, the resolution function will be called after that amount of time
+	// the delayed resolution will be interrupted if this function fires again
+	return 200;
+}, function (stage) {
+	// called when the first function returned a delay and that time has passed
+	// stage: the same as the one passed to the first function
+});
+
+// an example
+spective('space', function (stage) {
+	switch (stage) {
+		case 1:
+			// key is down either due to a hold or a tap
+			return 200;
+		case -1:
+			// key is released after a hold
+			return;
+		case -2:
+			// key is tapped
+			return;
+	}
+}, function () {
+	// key is held
+});
 ```
