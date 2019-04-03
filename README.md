@@ -50,7 +50,7 @@ scene();
 ```js
 // set new properties instantly
 scene({
-	angle: 0.5
+	angleY: 0.5
 });
 
 // animate to new properties over a set amount of time in milliseconds
@@ -178,14 +178,13 @@ Buttons make it easy to interact with the scene using your keyboard.
 ```js
 // the first value defines the key (e.g. 'space', 'a', 'A', '1', etc)
 spective('space', function (stage) {
-	// called whenever the key is held or released
+	// called whenever the state of the key has changed
 	// stage: represents the number of events that have fired (including this one) without a resolution and is negative if the key is down
 
-	// if a number is returned, the resolution function will be called after that amount of time
-	// the delayed resolution will be interrupted if this function fires again
+	// if a number is returned, the function below will be called after that many milliseconds unless it is interrupted
 	return 200;
 }, function (stage) {
-	// called when the first function returned a delay and that time has passed
+	// called when the first function returned a delay and that time has passed without interruption
 	// stage: the same as the one passed to the first function
 });
 
