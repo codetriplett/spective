@@ -153,6 +153,25 @@ export class Scene {
 			gl.uniformMatrix4fv(sceneLocation, false, camera.relativeMatrix);
 
 			Object.values(geometries).forEach(geometry => {
+				const { vertices, assets } = geometry;
+
+				if (vertices) {
+					Object.values(assets).forEach(asset => {
+						const { image, instances } = asset;
+
+						if (image) {
+							instances.forEach(instance => {
+								if (instance.timestamp) {
+									instance.animate(loopTimestamp);
+									resolved = resolved && !instance.timestamp;
+								}
+							});
+						}
+					});
+				}
+			});
+
+			Object.values(geometries).forEach(geometry => {
 				const {
 					vertices,
 					normals,
@@ -178,11 +197,6 @@ export class Scene {
 							asset.imageTexture = setSampler(imageLocation, 0, repeatTexture, image, imageTexture);
 
 							instances.forEach(instance => {
-								if (instance.timestamp) {
-									instance.animate(loopTimestamp);
-									resolved = resolved && !instance.timestamp;
-								}
-
 								const {
 									absoluteMatrix,
 									absoluteInverse,
