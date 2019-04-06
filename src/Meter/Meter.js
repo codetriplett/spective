@@ -22,31 +22,48 @@ export class Meter {
 		this.change = 0;
 	}
 
-	complete (resolved) {
-		const { value, change, duration, timestamp, timeout } = this;
-		let completion = constrainValue(value);
+	measure () {
+		const { change, duration, timestamp } = this;
+		let value = constrainValue(this.value);
 
-		if (!resolved && duration) {
+		if (duration) {
 			const percentage = 1 - (Date.now() - timestamp) / duration;
-			completion -= change * constrainValue(percentage);
+			value -= change * constrainValue(percentage);
 		}
+
+		return value;
+	}
+
+	complete () {
+		const { value, timeout } = this;
+		const completion = this.measure();
+
+		clearTimeout(timeout);
 
 		this.value = completion;
 		this.change *= 0;
 		this.duration = undefined;
 		this.timestamp = undefined;
-		this.timeout = clearTimeout(timeout);
+		this.timeout = undefined;
 
 		return (value - completion) || this.change;
 	}
 
 	resolve () {
-		const remainder = this.complete(true);
+		this.duration = undefined;
+
+		const remainder = this.complete();
 		const { iterate, value, previous, next, continuous } = this;
 
 		if (value % 1 === 0) {
 			const reversed = isNegative(remainder);
-			const item = iterate(remainder, reversed ? previous : next);
+			const items = [next, previous];
+
+			if (reversed) {
+				items.reverse();
+			}
+
+			const item = iterate(remainder, ...items);
 
 			if (item === undefined) {
 				this.continuous = undefined;
@@ -63,20 +80,21 @@ export class Meter {
 		}
 
 		if (continuous) {
-			this.update(0, true);
+			this.update(0);
 		} else if (remainder) {
 			this.update(remainder);
 		}
 	}
 
-	update (change, continuous) {
-		const remainder = this.complete();
-		const reversed = isNegative(remainder);
+	update (change) {
+		const { resolve, schedule, next, previous, timeout } = this;
+		const value = this.measure();
+		const reversed = isNegative(this.change);
 		let reverse = isNegative(change);
-
-		const { resolve, schedule, value, next, previous } = this;
+		let continuous;
 
 		if (typeof change !== 'number') {
+			this.complete();
 			change = reversed ? -0 : 0;
 		} else if (!change) {
 			change = (reversed ? -1 : 1) * (reverse ? -1 : 1);
@@ -84,16 +102,22 @@ export class Meter {
 		}
 
 		const destination = value + change;
+		const items = [next, previous];
 
 		reverse = isNegative(change);
 		change = (constrainValue(destination) - value) || (reverse ? -0 : 0);
 
-		const item = reverse ? previous : next;
-		const duration = schedule(change, item);
+		if (reverse) {
+			items.reverse();
+		}
+
+		const duration = schedule(change, ...items);
 
 		if (destination === value || duration === undefined) {
 			return value;
 		}
+
+		clearTimeout(timeout);
 
 		this.value = destination;
 		this.change = change;
