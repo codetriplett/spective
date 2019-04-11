@@ -22,6 +22,7 @@ const createAsset = jest.fn();
 const destroyAsset = jest.fn();
 const createInstance = jest.fn();
 const destroyInstance = jest.fn();
+const populate = jest.fn();
 const update = jest.fn();
 let assets;
 let instances;
@@ -38,6 +39,7 @@ function resetMocks (skipScene) {
 	});
 
 	Meter.mockClear().mockImplementation(function () {
+		this.populate = populate.mockClear();
 		this.update = update.mockClear().mockReturnValue('update');
 	});
 
@@ -268,6 +270,15 @@ describe('spective', () => {
 
 			expect(Meter).toHaveBeenCalledWith(action, 'second');
 			expect(actual).toEqual(expect.any(Function));
+		});
+
+		it('should populate a meter', () => {
+			const action = () => {};
+			const meter = spective(action);
+			const actual = meter(['item'], 2);
+
+			expect(populate).toHaveBeenCalledWith(['item'], 2);
+			expect(actual).toBeUndefined();
 		});
 
 		it('should update a meter', () => {

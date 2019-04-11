@@ -38,23 +38,40 @@ var meter = spective(
 	function (change) {
 		return Math.abs(change) * 1000;
 	},
-	'',
-	function (change, item) {
-		if (item) console.log(item);
-
-		item = 1 / change < 0 ? item.slice(1) : item + item.length;
-
-		if (item !== '' && item.length < 6) {
-			return item;
-		}
+	function (main, side) {
+		var item = main.startsWith('correct ') || !side ? main : side;
+		console.log(item);
+		return item;
+	},
+	function (item) {
+		return item + '.';
 	}
 );
 
+meter([
+	'incorrect',
+	'correct (0)',
+	'correct (1)',
+	'correct (2)',
+	[
+		'correct (3)',
+		[
+			'incorrect'
+		],
+		8
+	],
+	'incorrect',
+	'correct (4)',
+	'correct (5)',
+	'correct (6)'
+]);
+
 [
-	['fill by 4 (0 01 012)', 4], 3500,
-	['reverse (012 12)', -0], 2000,
-	['interrupt and fill by 1 (12)', 1], 1000,
-	['continue (122 1223)', 0], 2000,
+	['fill by 4 (1 2 3)', 4], 3500,
+	['reverse (1 0)', -0], 2000,
+	['interrupt and fill by 1 (2)', 1], 1000,
+	['continue (3 5 6)', 0], 3000,
+	['reverse (4)', -0], 1000,
 	['stop']
 ].reduce(function (delay, options) {
 	if (options > 0) {

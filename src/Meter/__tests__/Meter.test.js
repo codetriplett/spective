@@ -1,36 +1,339 @@
-import { organizeActions } from '../organize-actions';
+import { formatItem } from '../format-item';
 import { Meter } from '../Meter';
 
-jest.mock('../organize-actions', () => ({ organizeActions: jest.fn() }));
+jest.mock('../format-item', () => ({ formatItem: jest.fn() }));
 
 describe('Meter', () => {
 	describe('constructor', () => {
-		let iterate = jest.fn();
+		const populate = jest.fn();
+		const schedule = jest.fn();
+		const iterate = jest.fn();
+		const transform = jest.fn();
 
 		beforeEach(() => {
-			iterate.mockClear().mockReturnValue('next');
+			populate.mockClear();
+			transform.mockClear().mockReturnValue('transform');
 
-			organizeActions.mockClear().mockReturnValue([
-				'schedule',
-				'previous',
-				iterate
-			]);
+			schedule.mockClear().mockImplementation(function () {
+				this.value = 'iterate';
+				return 'schedule';
+			});
+
+			iterate.mockClear().mockImplementation(function () {
+				return this.value;
+			});
 		});
 
 		it('should initialize', () => {
-			const actual = new Meter('parameters');
-
-			expect(organizeActions).toHaveBeenCalledWith('parameters');
-			expect(iterate).toHaveBeenCalledWith(0, 'previous');
+			const actual = new Meter(schedule, iterate, transform);
 
 			expect(actual).toEqual({
 				resolve: expect.any(Function),
-				schedule: 'schedule',
-				iterate,
-				previous: 'previous',
-				next: 'next',
+				schedule: expect.any(Function),
+				iterate: expect.any(Function),
+				transform,
+				items: [{ item: 0, next: 1 }, { previous: 0, item: 1 }],
+				previous: { item: 0, next: 1 },
+				next: { previous: 0, item: 1 },
 				value: 0,
 				change: 0
+			});
+
+			expect(actual.schedule()).toBe('schedule');
+			expect(actual.iterate()).toBe('iterate');
+		});
+
+		it('should initialize with default transform function', () => {
+			const actual = new Meter(schedule, iterate);
+			expect(actual.transform('item')).toBe('item');
+		});
+
+		it('should initialize with default iterate and transform functions', () => {
+			const actual = new Meter(schedule);
+			
+			expect(actual.iterate('item')).toBe('item');
+			expect(actual.transform('item')).toBe('item');
+		});
+	});
+
+	describe('flatten', () => {
+		const flatten = Meter.prototype.flatten;
+		const transform = jest.fn();
+		let context;
+
+		beforeEach(() => {
+			formatItem.mockClear().mockImplementation((item, branches) => {
+				return [].concat({ item }, ...branches.reduce((array, branch) => {
+					return array.concat(Array.isArray(branch) ? branch : []);
+				}, []))
+			});
+
+			transform.mockClear().mockImplementation(value => {
+				return value !== undefined ? `${value}Item` : undefined;
+			});
+
+			context = { transform };
+			context.flatten = flatten.bind(context);
+		});
+
+		it('should flatten basic array', () => {
+			const actual = flatten.call(context, ['first', 'second']);
+
+			expect(transform.mock.calls).toEqual([
+				['first', undefined],
+				['second', 'firstItem']
+			]);
+
+			expect(formatItem.mock.calls).toEqual([
+				['firstItem', [], 0],
+				['secondItem', [], 1]
+			]);
+
+			expect(actual).toEqual([
+				{ item: 'firstItem', next: 1 },
+				{ previous: 0, item: 'secondItem' }
+			]);
+		});
+		
+		it('should flatten with branches', () => {
+			const actual = flatten.call(context, [
+				'first',
+				['alpha', 'beta'],
+				2,
+				['other'],
+				'second'
+			]);
+
+			expect(transform.mock.calls).toEqual([
+				['first', undefined],
+				['alpha', 'firstItem'],
+				['beta', 'alphaItem'],
+				['other', 'firstItem'],
+				['second', 'firstItem']
+			]);
+
+			expect(formatItem.mock.calls).toEqual([
+				['alphaItem', [], 1],
+				['betaItem', [], 2],
+				['otherItem', [], 3],
+				['firstItem', [
+					[
+						{ item: 'alphaItem', next: 2 },
+						{ previous: 1, item: 'betaItem' }
+					],
+					2,
+					[{ item: 'otherItem' }]
+				], 0],
+				['secondItem', [], 4]
+			]);
+
+			expect(actual).toEqual([
+				{ item: 'firstItem', next: 4 },
+				{ item: 'alphaItem', next: 2 },
+				{ previous: 1, item: 'betaItem' },
+				{ item: 'otherItem' },
+				{ previous: 0, item: 'secondItem' }
+			]);
+		});
+
+		it('should ignore undefined items', () => {
+			const actual = flatten.call(context, ['first', undefined, 'second']);
+
+			expect(transform.mock.calls).toEqual([
+				['first', undefined],
+				[undefined, 'firstItem'],
+				['second', 'firstItem']
+			]);
+
+			expect(formatItem.mock.calls).toEqual([
+				['firstItem', [], 0],
+				['secondItem', [], 1]
+			]);
+
+			expect(actual).toEqual([
+				{ item: 'firstItem', next: 1 },
+				{ previous: 0, item: 'secondItem' }
+			]);
+		});
+
+		it('should ignore branches that occur before any item', () => {
+			const actual = flatten.call(context, [
+				['alpha', 'beta'],
+				'first'
+			]);
+
+			expect(transform.mock.calls).toEqual([
+				['alpha', undefined],
+				['beta', 'alphaItem'],
+				['first', undefined]
+			]);
+
+			expect(formatItem.mock.calls).toEqual([
+				['alphaItem', [], 0],
+				['betaItem', [], 1],
+				['firstItem', [], 0]
+			]);
+
+			expect(actual).toEqual([
+				{ item: 'firstItem' }
+			]);
+		});
+	});
+
+	describe('fetch', () => {
+		const fetch = Meter.prototype.fetch;
+		let context;
+
+		beforeEach(() => {
+			const items = [
+				{
+					item: 'first',
+					next: 3,
+					branches: [1, 2]
+				},
+				{
+					previous: 0,
+					item: 'alpha',
+					next: 2
+				},
+				{
+					previous: 1,
+					item: 'beta'
+				},
+				{
+					previous: 0,
+					item: 'second',
+					next: 5,
+					branches: [4]
+				},
+				{
+					previous: 3,
+					item: 'other'
+				},
+				{
+					previous: 3,
+					item: 'third'
+				}
+			];
+
+			context = {
+				items,
+				previous: items[3],
+				next: items[3]
+			};
+		});
+
+		it('should fetch an item', () => {
+			const actual = fetch.call(context, 3);
+			expect(actual.item).toEqual('second');
+		});
+
+		it('should fetch forward items', () => {
+			const actual = fetch.call(context, false);
+
+			expect(context.next.branches).toEqual([4]);
+
+			expect(actual).toMatchObject([
+				{ item: 'third' },
+				{ item: 'other' }
+			]);
+		});
+
+		it('should fetch backward items', () => {
+			const actual = fetch.call(context, true);
+
+			expect(context.previous.branches).toEqual([4]);
+
+			expect(actual).toMatchObject([
+				{ item: 'first' },
+				{ item: 'other' }
+			]);
+		});
+
+		it('should fetch forward items of last item', () => {
+			context.next = context.items[5];
+			const actual = fetch.call(context, false);
+
+			expect(context.next.branches).toBeUndefined();
+			expect(actual).toHaveLength(0);
+		});
+
+		it('should fetch backward items of first item', () => {
+			context.previous = context.items[0];
+			const actual = fetch.call(context, true);
+			
+			expect(context.previous.branches).toEqual([1, 2]);
+
+			expect(actual).toMatchObject([
+				{ item: 'alpha' },
+				{ item: 'beta' }
+			]);
+		});
+	});
+
+	describe('populate', () => {
+		const populate = Meter.prototype.populate;
+		const flatten = jest.fn();
+		const fetch = jest.fn();
+		let context;
+
+		beforeEach(() => {
+			flatten.mockClear().mockReturnValue('items');
+
+			fetch.mockClear().mockImplementation(index => {
+				const item = `item${index}`;
+				return typeof index === 'boolean' ? [item] : item;
+			});
+
+			context = {
+				flatten,
+				fetch
+			};
+		});
+
+		it('should populate the meter', () => {
+			populate.call(context, ['first', 'second']);
+
+			expect(flatten).toHaveBeenCalledWith(['first', 'second']);
+
+			expect(fetch.mock.calls).toEqual([
+				[0],
+				[false]
+			]);
+
+			expect(context).toMatchObject({
+				items: 'items',
+				previous: 'item0',
+				next: 'itemfalse',
+			});
+		});
+
+		it('should populate the meter and set a position', () => {
+			populate.call(context, ['first', 'second'], 2);
+
+			expect(flatten).toHaveBeenCalledWith(['first', 'second']);
+
+			expect(fetch.mock.calls).toEqual([
+				[2],
+				[false]
+			]);
+
+			expect(context).toMatchObject({
+				items: 'items',
+				previous: 'item2',
+				next: 'itemfalse',
+			});
+		});
+
+		it('should not populate the meter when an array is not provided', () => {
+			populate.call(context, 'item');
+
+			expect(flatten).not.toHaveBeenCalled();
+			expect(fetch).not.toHaveBeenCalled();
+
+			expect(context).toEqual({
+				flatten,
+				fetch
 			});
 		});
 	});
@@ -144,22 +447,35 @@ describe('Meter', () => {
 
 	describe('resolve', () => {
 		const resolve = Meter.prototype.resolve;
+		const fetch = jest.fn();
 		const complete = jest.fn();
 		const update = jest.fn();
 		const iterate = jest.fn();
+		let previous;
+		let next;
+		let item;
+		let other;
 		let context;
 
 		beforeEach(() => {
+			previous = { previous: 0, item: 'previous' };
+			next = { item: 'next', next: 0 };
+			item = { item: 'item' };
+			other = { item: 'other' };
+
+			fetch.mockClear().mockReturnValue([item, other]);
 			complete.mockClear().mockReturnValue(0.5);
 			update.mockClear();
 			iterate.mockClear().mockReturnValue('item');
 
 			context = {
+				fetch,
 				complete,
 				update,
 				iterate,
-				previous: 'previous',
-				next: 'next',
+				items: [item],
+				previous,
+				next,
 				value: 1,
 				duration: 200
 			};
@@ -169,12 +485,12 @@ describe('Meter', () => {
 			resolve.call(context);
 
 			expect(complete).toHaveBeenCalledWith();
-			expect(iterate).toHaveBeenCalledWith(0.5, 'next', 'previous');
+			expect(iterate).toHaveBeenCalledWith('item', 'other');
 			expect(update).toHaveBeenCalledWith(0.5);
 
 			expect(context).toMatchObject({
-				previous: 'next',
-				next: 'item',
+				previous: next,
+				next: item,
 				duration: undefined
 			});
 		});
@@ -185,12 +501,29 @@ describe('Meter', () => {
 			resolve.call(context);
 
 			expect(complete).toHaveBeenCalledWith();
-			expect(iterate).toHaveBeenCalledWith(-0.5, 'previous', 'next');
+			expect(iterate).toHaveBeenCalledWith('item', 'other');
 			expect(update).toHaveBeenCalledWith(-0.5);
 
 			expect(context).toMatchObject({
-				previous: 'item',
-				next: 'previous',
+				previous: item,
+				next: previous,
+				duration: undefined
+			});
+		});
+
+		it('should resolve a draining update that diverts', () => {
+			complete.mockReturnValue(-0.5);
+			iterate.mockReturnValue('other');
+			context.value = 0;
+			resolve.call(context);
+
+			expect(complete).toHaveBeenCalledWith();
+			expect(iterate).toHaveBeenCalledWith('item', 'other');
+			expect(update).toHaveBeenCalledWith(0.5);
+
+			expect(context).toMatchObject({
+				previous,
+				next: other,
 				duration: undefined
 			});
 		});
@@ -205,8 +538,8 @@ describe('Meter', () => {
 			expect(update).not.toHaveBeenCalled();
 
 			expect(context).toMatchObject({
-				previous: 'previous',
-				next: 'next',
+				previous,
+				next
 			});
 		});
 		
@@ -217,8 +550,8 @@ describe('Meter', () => {
 			expect(update).not.toHaveBeenCalled();
 
 			expect(context).toMatchObject({
-				previous: 'previous',
-				next: 'next'
+				previous,
+				next
 			});
 		});
 
@@ -229,8 +562,8 @@ describe('Meter', () => {
 			expect(update).not.toHaveBeenCalled();
 
 			expect(context).toMatchObject({
-				previous: 'next',
-				next: 'item'
+				previous: next,
+				next: item
 			});
 		});
 
@@ -241,8 +574,8 @@ describe('Meter', () => {
 			expect(update).toHaveBeenCalledWith(0);
 
 			expect(context).toMatchObject({
-				previous: 'next',
-				next: 'item'
+				previous: next,
+				next: item
 			});
 		});
 	});

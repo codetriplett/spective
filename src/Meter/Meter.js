@@ -1,4 +1,4 @@
-import { organizeActions } from './organize-actions';
+import { formatItem } from './format-item';
 
 function isNegative (value) {
 	return 1 / value < 0;
@@ -11,15 +11,125 @@ function constrainValue (value) {
 export class Meter {
 	constructor (...parameters) {
 		const { resolve } = this;
-		const [schedule, item, iterate] = organizeActions(...parameters);
+		const schedule = parameters.shift();
+		const actions = [];
+		const state = {};
 
+		for (let i = 0; i < 2; i++) {
+			if (typeof parameters[0] === 'function') {
+				actions.push(parameters.shift());
+			} else {
+				actions.push(function (item) { return item; });
+			}
+		}
+
+		const [iterate, transform] = actions;
+		const previous = { item: 0, next: 1 };
+		const next = { previous: 0, item: 1 };
+		
 		this.resolve = resolve.bind(this);
-		this.schedule = schedule;
-		this.iterate = iterate;
-		this.previous = item;
-		this.next = iterate(0, item);
+		this.schedule = schedule.bind(state);
+		this.iterate = iterate.bind(state);
+		this.transform = transform;
+		this.items = [previous, next];
+		this.previous = previous;
+		this.next = next;
 		this.value = 0;
 		this.change = 0;
+	}
+
+	flatten (objects, index = 0, state = {}, tether) {
+		const self = this;
+		const length = objects.length;
+		let location = index;
+		const items = [];
+		let branches = [];
+		let item;
+		let previous;
+
+		state = JSON.parse(JSON.stringify(state));
+
+		[...objects, undefined].forEach((object, i) => {
+			if (i < length) {
+				if (Array.isArray(object)) {
+					object = self.flatten(object, location, state, item);
+				} else if (typeof object !== 'number') {
+					tether = item === undefined ? tether : item;
+					object = self.transform.call(state, object, tether);
+				}
+
+				if (Array.isArray(object) || typeof object === 'number') {
+					branches.push(object);
+					location += Array.isArray(object) ? object.length : 0;
+
+					return;
+				} else if (object === undefined) {
+					return;
+				}
+			}
+
+			if (item !== undefined) {
+				item = formatItem(item, branches, index);
+				items.push(...item);
+				
+				if (previous !== undefined) {
+					item[0].previous = previous;
+				}
+
+				if (i < length) {
+					item[0].next = location;
+				}
+				
+				previous = index;
+				index = location;
+			}
+
+			item = object;
+			branches = [];
+			location += 1;
+		});
+
+		return items;
+	}
+
+	fetch (index) {
+		const { items, previous, next } = this;
+
+		if (typeof index === 'number') {
+			return items[index];
+		} else if (typeof index !== 'boolean') {
+			return;
+		}
+
+		const collection = [];
+		const item = index ? previous : next;
+		const { [index ? 'previous' : 'next']: main } = item;
+		let { branches: indices = [] } = item;
+
+		if (main !== undefined) {
+			indices = [main, ...indices];
+		}
+
+		indices.forEach(index => {
+			const item = items[index];
+
+			if (item !== undefined) {
+				collection.push(item);
+			}
+		});
+
+		return collection;
+	}
+
+	populate (objects, index = 0) {
+		if (!Array.isArray(objects)) {
+			return;
+		}
+
+		this.items = this.flatten(objects);
+		this.previous = this.fetch(index);
+		this.next = this.previous;
+		this.next = this.fetch(false)[0];
 	}
 
 	measure () {
@@ -52,36 +162,38 @@ export class Meter {
 	resolve () {
 		this.duration = undefined;
 
-		const remainder = this.complete();
-		const { iterate, value, previous, next, continuous } = this;
+		let remainder = this.complete();
+		const { iterate, value, items, previous, next, continuous } = this;
+		const reversed = isNegative(remainder);
+		
+		remainder = continuous ? 0 : remainder;
 
 		if (value % 1 === 0) {
-			const reversed = isNegative(remainder);
-			const items = [next, previous];
-
-			if (reversed) {
-				items.reverse();
-			}
-
-			const item = iterate(remainder, ...items);
+			const branches = this.fetch(reversed);
+			const objects = branches.map(branch => branch.item);
+			const expected = items[reversed ? previous.previous : next.next];
+			const object = iterate(...objects);
+			const index = objects.indexOf(object);
+			const item = index !== -1 ? branches[index] : object;
+			const diverted = item !== expected && expected !== undefined;
 
 			if (item === undefined) {
 				this.continuous = undefined;
 				return;
-			} else if (reversed) {
+			} else if (reversed && !diverted) {
 				this.value = 1;
 				this.next = previous;
 				this.previous = item;
 			} else {
+				remainder *= reversed ? -1 : 1;
+
 				this.value = 0;
-				this.previous = next;
+				this.previous = reversed ? previous : next;
 				this.next = item;
 			}
 		}
 
-		if (continuous) {
-			this.update(0);
-		} else if (remainder) {
+		if (remainder || continuous) {
 			this.update(remainder);
 		}
 	}

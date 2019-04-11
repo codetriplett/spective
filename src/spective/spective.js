@@ -14,7 +14,15 @@ export default function spective (...parameters) {
 		return;
 	} else if (firstType === 'function') {
 		const meter = new Meter(...parameters);
-		return change => meter.update(change);
+
+		return (...parameters) => {
+			if (Array.isArray(parameters[0])) {
+				meter.populate(...parameters);
+				return;
+			}
+			
+			return meter.update(...parameters);
+		};
 	} else if (firstType === 'string') {
 		new Button(...parameters);
 		return;

@@ -104,7 +104,7 @@ module.exports = function (grunt) {
 					'temp/fragment-code.js',
 					'temp/Scene.js',
 					'temp/create-canvas.js',
-					'temp/organize-actions.js',
+					'temp/format-item.js',
 					'temp/Meter.js',
 					'temp/Button.js',
 					'temp/spective.js'
