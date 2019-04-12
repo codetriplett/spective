@@ -96,16 +96,97 @@ export class Meter {
 		}
 	}
 
-	survey (reversed) {
-		const { previous, next } = this;
-		const item = reversed ? previous : next;
-		const { [reversed ? 'previous' : 'next']: main, branches = [] } = item;
+	measure () {
+		const { change, duration, timestamp } = this;
+		let value = constrainValue(this.value);
 
-		if (main === undefined) {
-			return branches;
+		if (duration) {
+			const percentage = 1 - (Date.now() - timestamp) / duration;
+			value -= change * constrainValue(percentage);
 		}
 
-		return [main, ...branches];
+		return value;
+	}
+
+	complete () {
+		const { value, timeout } = this;
+		const completion = this.measure();
+
+		clearTimeout(timeout);
+
+		this.value = completion;
+		this.change *= 0;
+		this.duration = undefined;
+		this.timestamp = undefined;
+		this.timeout = undefined;
+
+		return (value - completion) || this.change;
+	}
+
+	gather (reversed) {
+		const key = reversed ? 'previous' : 'next';
+		const other = reversed ? 'next' : 'previous';
+		const { [key]: item, [other]: opposite } = this;
+		const { [key]: main, [other]: alternate } = item;
+		let branches = (item.branches || []).slice();
+
+		branches = branches.filter(branch => branch !== opposite);
+
+		if (alternate !== opposite && alternate !== undefined) {
+			branches.unshift(alternate);
+		}
+
+		if (main) {
+			branches.unshift(main);
+		}
+
+		return branches;
+	}
+
+	resolve () {
+		this.duration = undefined;
+
+		let remainder = this.complete();
+		const { iterate, value, previous, next, continuous } = this;
+		let reversed = isNegative(remainder);
+
+		if (value % 1 === 0) {
+			const end = reversed ? previous : next;
+			const branches = this.gather(reversed);
+			const objects = branches.map(branch => branch.item);
+			const object = iterate(...objects);
+			const index = objects.indexOf(object);
+			let item = branches[index];
+
+			if (object === undefined) {
+				this.continuous = undefined;
+				return;
+			} else if (index === -1) {
+				item = { previous: end, item: object };
+			}
+		
+			remainder = Math.abs(remainder);
+
+			if (item === end.previous) {
+				remainder *= -1;
+
+				this.value = 1;
+				this.change = -0;
+				this.previous = item;
+				this.next = !reversed ? next : previous;
+			} else {
+				this.value = 0;
+				this.change = 0;
+				this.previous = end;
+				this.next = item;
+			}
+		}
+
+		if (continuous) {
+			this.update(0);
+		} else if (remainder) {
+			this.update(remainder);
+		}
 	}
 
 	populate (objects, index = 0) {
@@ -139,94 +220,8 @@ export class Meter {
 		this.previous = item;
 		this.next = item;
 
-		const previous = item.previous;
-		const next = this.survey()[0];
-
-		if (next) {
-			this.next = next;
-			this.value = 0;
-			this.change = 0;
-
-			this.schedule(0, item.item);
-			this.iterate(next.item);
-		} else if (previous) {
-			this.previous = previous;
-			this.value = 1;
-			this.change = -0;
-
-			this.schedule(0, item.item);
-			this.iterate(previous.item);
-		}
-	}
-
-	measure () {
-		const { change, duration, timestamp } = this;
-		let value = constrainValue(this.value);
-
-		if (duration) {
-			const percentage = 1 - (Date.now() - timestamp) / duration;
-			value -= change * constrainValue(percentage);
-		}
-
-		return value;
-	}
-
-	complete () {
-		const { value, timeout } = this;
-		const completion = this.measure();
-
-		clearTimeout(timeout);
-
-		this.value = completion;
-		this.change *= 0;
-		this.duration = undefined;
-		this.timestamp = undefined;
-		this.timeout = undefined;
-
-		return (value - completion) || this.change;
-	}
-
-	resolve () {
-		this.duration = undefined;
-
-		let remainder = this.complete();
-		const { iterate, value, previous, next, continuous } = this;
-		const reversed = isNegative(remainder);
-		
-		remainder = continuous ? 0 : remainder;
-
-		if (value % 1 === 0) {
-			const branches = this.survey(reversed);
-			const objects = branches.map(branch => branch.item);
-			const object = iterate(...objects);
-			const index = objects.indexOf(object);
-			let item = branches[index];
-			const expected = reversed ? previous.previous : next.next;
-			const diverted = item !== expected && expected !== undefined;
-
-			if (object === undefined) {
-				this.continuous = undefined;
-				return;
-			} else if (index === -1) {
-				item = { previous: reversed ? previous : next, item: object };
-			}
-
-			if (reversed && !diverted) {
-				this.value = 1;
-				this.next = previous;
-				this.previous = item;
-			} else {
-				remainder *= reversed ? -1 : 1;
-
-				this.value = 0;
-				this.previous = reversed ? previous : next;
-				this.next = item;
-			}
-		}
-
-		if (remainder || continuous) {
-			this.update(remainder);
-		}
+		this.schedule(0, item.item);
+		this.resolve();
 	}
 
 	update (change) {
@@ -249,9 +244,9 @@ export class Meter {
 		reverse = isNegative(change);
 		change = (constrainValue(destination) - value) || (reverse ? -0 : 0);
 
-		const { item, branches = [] } = reverse ? previous : next;
-		const main = reverse ? previous.previous : next.next;
-		const count = branches.length + (main !== undefined ? 1 : 0);
+		const { item } = reverse ? previous : next;
+		const branches = this.gather(reverse);
+		const count = branches.length;
 		const duration = schedule(change, item, count);
 
 		if (destination === value || duration === undefined) {

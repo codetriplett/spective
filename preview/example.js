@@ -73,8 +73,9 @@ meter([
 	['fill by 4 (0 1 2 3)', 4], 3500,
 	['reverse (2 1 0)', -0], 2000,
 	['interrupt and fill by 1 (1 2)', 1], 1000,
-	['continue (2 3 5 13 14)', 0], 4000,
-	['reverse (13 5 4)', -0], 2000,
+	['continue (2 3 5 4)', 0], 3000,
+	['reverse (5 15 16)', -0], 2000,
+	['interrupt and drain by 2 (15 5 4)', -2], 2000,
 	['stop (4)']
 ].reduce(function (delay, options) {
 	if (options > 0) {
