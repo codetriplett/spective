@@ -7,12 +7,11 @@ import { Button } from '../Button/Button';
 const assetRegex = /(\.(bmp|gif|jpe?g|png|svg)|#[0-9a-f]{3}|#[0-9a-f]{6}) *$/;
 
 export default function spective (...parameters) {
-	const first = parameters[0];
-	const firstType = typeof first;
+	const [first, second] = parameters;
 
 	if (first === undefined) {
 		return;
-	} else if (firstType === 'function') {
+	} else if (typeof first === 'function') {
 		const meter = new Meter(...parameters);
 
 		return (...parameters) => {
@@ -23,8 +22,11 @@ export default function spective (...parameters) {
 			
 			return meter.update(...parameters);
 		};
-	} else if (firstType === 'string') {
-		new Button(...parameters);
+	} else if (typeof first === 'string') {
+		if (typeof second === 'function') {
+			new Button(...parameters);
+		}
+
 		return;
 	}
 

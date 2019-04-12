@@ -3,9 +3,8 @@ import { Button } from '../Button';
 describe('./Button', () => {
 	describe('constructor', () => {
 		const addEventListener = jest.fn();
-		const schedule = jest.fn();
-		const instant = jest.fn();
-		const eventual = jest.fn();
+		const resolve = jest.fn();
+		const action = jest.fn();
 		let listeners;
 
 		beforeEach(() => {
@@ -15,154 +14,220 @@ describe('./Button', () => {
 				listeners[type] = callback;
 			});
 
-			Button.prototype.schedule = schedule.mockClear();
+			Button.prototype.resolve = resolve.mockClear();
 
-			instant.mockClear().mockReturnValue('instant');
-			eventual.mockClear().mockReturnValue('eventual');
+			action.mockClear().mockReturnValue('action');
 		});
 
 		it('should initialize', () => {
-			const actual = new Button('key', instant, eventual);
+			const actual = new Button('key', action, action);
 			
 			expect(actual).toEqual({
 				resolve: expect.any(Function),
-				instant: expect.any(Function),
-				eventual: expect.any(Function),
+				actions: [expect.any(Function), expect.any(Function)],
+				index: 0,
 				stage: 0
 			});
 		});
 
 		it('should listen for keydown event', () => {
-			new Button('key', instant, eventual);
+			new Button('key', action);
 			listeners['keydown']({ key: 'key' });
 			
-			expect(schedule).toHaveBeenCalledWith(true);
+			expect(resolve).toHaveBeenCalledWith(true);
 		});
 
 		it('should listen for keyup event', () => {
-			new Button('key', instant, eventual);
+			new Button('key', action);
 			listeners['keyup']({ key: 'key' });
 			
-			expect(schedule).toHaveBeenCalledWith(false);
+			expect(resolve).toHaveBeenCalledWith(false);
 		});
 
 		it('should map space key', () => {
-			new Button('space', instant, eventual);
+			new Button('space', action);
 			listeners['keydown']({ key: ' ' });
 			
-			expect(schedule).toHaveBeenCalledWith(true);
+			expect(resolve).toHaveBeenCalledWith(true);
 		});
 
 		it('should map delete key', () => {
-			new Button('delete', instant, eventual);
+			new Button('delete', action);
 			listeners['keydown']({ key: 'Delete' });
 			
-			expect(schedule).toHaveBeenCalledWith(true);
+			expect(resolve).toHaveBeenCalledWith(true);
 		});
 	});
 
 	describe('resolve', () => {
 		const resolve = Button.prototype.resolve;
-		const eventual = jest.fn();
-		let context;
-
-		beforeEach(() => {
-			eventual.mockClear();
-
-			context = {
-				eventual,
-				stage: 1
-			};
-		});
-
-		it('should resolve', () => {
-			resolve.call(context);
-
-			expect(eventual).toHaveBeenCalledWith(1);
-			expect(context.stage).toBe(0);
-		});
-	});
-
-	describe('schedule', () => {
-		const schedule = Button.prototype.schedule;
 		const clearTimeout = jest.fn();
 		const setTimeout = jest.fn();
-		const instant = jest.fn();
+		const first = jest.fn();
+		const second = jest.fn();
 		let context;
 
 		beforeEach(() => {
 			window.clearTimeout = clearTimeout.mockClear();
-			window.setTimeout = setTimeout.mockClear().mockReturnValue('timeout');
-			instant.mockClear().mockReturnValue(200);
+			window.setTimeout = setTimeout.mockClear().mockReturnValue('delay');
+			first.mockClear().mockReturnValue(200);
+			second.mockClear().mockReturnValue();
 
 			context = {
 				resolve: 'resolve',
-				instant,
-				timeout: 'timeout',
-				stage: 0
+				actions: [first, second],
+				index: 0,
+				stage: 0,
+				timeout: 'timeout'
 			};
 		});
 
-		it('should schedule a down event', () => {
-			schedule.call(context, true);
+		it('should resolve a down event', () => {
+			resolve.call(context, true);
 
-			expect(instant).toHaveBeenCalledWith(1);
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(first).toHaveBeenCalledWith(1, 0);
+			expect(second).not.toHaveBeenCalled();
 			expect(setTimeout).toHaveBeenCalledWith('resolve', 200);
 
 			expect(context).toMatchObject({
+				index: 1,
 				stage: 1,
-				timeout: 'timeout'
+				timeout: 'delay'
 			});
 		});
 
-		it('should schedule an up event', () => {
-			schedule.call(context, false);
+		it('should resolve an up event', () => {
+			resolve.call(context, false);
 
-			expect(instant).toHaveBeenCalledWith(-1);
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(first).toHaveBeenCalledWith(-1, 0);
+			expect(second).not.toHaveBeenCalled();
 			expect(setTimeout).toHaveBeenCalledWith('resolve', 200);
 
 			expect(context).toMatchObject({
+				index: 1,
 				stage: -1,
+				timeout: 'delay'
+			});
+		});
+
+		it('should interrupt a delay', () => {
+			Object.assign(context, {
+				index: 1,
+				stage: 1
+			});
+
+			resolve.call(context, false);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(first).toHaveBeenCalledWith(-2, 0);
+			expect(second).not.toHaveBeenCalled();
+			expect(setTimeout).toHaveBeenCalledWith('resolve', 200);
+
+			expect(context).toMatchObject({
+				index: 1,
+				stage: -2,
+				timeout: 'delay'
+			});
+		});
+
+		it('should resolve a delay', () => {
+			Object.assign(context, {
+				index: 1,
+				stage: 1
+			});
+
+			resolve.call(context);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(first).not.toHaveBeenCalled();
+			expect(second).toHaveBeenCalledWith(1, 0);
+			expect(setTimeout).not.toHaveBeenCalled();
+
+			expect(context).toMatchObject({
+				index: 0,
+				stage: 0,
 				timeout: 'timeout'
 			});
 		});
-		
-		it('should not schedule an event without a duration', () => {
-			instant.mockReturnValue();
-			schedule.call(context, false);
 
+		it('should resolve a delay that initiates another', () => {
+			Object.assign(context, {
+				index: 1,
+				stage: 1
+			});
+
+			second.mockReturnValue(300);
+			resolve.call(context);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(first).not.toHaveBeenCalled();
+			expect(second).toHaveBeenCalledWith(1, 0);
+			expect(setTimeout).toHaveBeenCalledWith('resolve', 300);
+
+			expect(context).toMatchObject({
+				index: 2,
+				stage: 1,
+				timeout: 'delay'
+			});
+		});
+
+		it('should resolve a delay on the previous function', () => {
+			Object.assign(context, {
+				index: 2,
+				stage: 1
+			});
+
+			resolve.call(context);
+
+			expect(clearTimeout).toHaveBeenCalledWith('timeout');
+			expect(first).not.toHaveBeenCalled();
+			expect(second).toHaveBeenCalledWith(1, 1);
 			expect(setTimeout).not.toHaveBeenCalled();
-			expect(context.stage).toBe(0);
+
+			expect(context).toMatchObject({
+				index: 0,
+				stage: 0
+			});
 		});
 
-		it('should schedule another down event', () => {
-			context.stage = -1;
-			schedule.call(context, true);
+		it('should not resolve a duplicate down event', () => {
+			Object.assign(context, {
+				index: 1,
+				stage: 1
+			});
 
-			expect(instant).toHaveBeenCalledWith(2);
+			resolve.call(context, true);
+
+			expect(clearTimeout).not.toHaveBeenCalled();
+			expect(first).not.toHaveBeenCalled();
+			expect(second).not.toHaveBeenCalled();
+			expect(setTimeout).not.toHaveBeenCalled();
+
+			expect(context).toMatchObject({
+				index: 1,
+				stage: 1
+			});
 		});
 
-		it('should schedule an up event', () => {
-			context.stage = 1;
-			schedule.call(context, false);
+		it('should not resolve a duplicate up event', () => {
+			Object.assign(context, {
+				index: 1,
+				stage: -1
+			});
 
-			expect(instant).toHaveBeenCalledWith(-2);
-		});
+			resolve.call(context, false);
 
-		it('should not schedule a duplicate down event', () => {
-			context.stage = 1;
-			schedule.call(context, true);
+			expect(clearTimeout).not.toHaveBeenCalled();
+			expect(first).not.toHaveBeenCalled();
+			expect(second).not.toHaveBeenCalled();
+			expect(setTimeout).not.toHaveBeenCalled();
 
-			expect(instant).not.toHaveBeenCalled();
-		});
-
-		it('should not schedule a duplicate up event', () => {
-			context.stage = -1;
-			schedule.call(context, false);
-
-			expect(instant).not.toHaveBeenCalled();
+			expect(context).toMatchObject({
+				index: 1,
+				stage: -1
+			});
 		});
 	});
 });

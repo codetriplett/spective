@@ -35,13 +35,17 @@ teapot('24 1', {
 scene('-24', 'grid.png', { angleZ: Math.PI });
 
 var meter = spective(
-	function (change) {
+	function (change, item, count) {
+		this.count = (this.count || 0) + 1;
+		console.log(item, count);
 		return Math.abs(change) * 1000;
 	},
 	function (main, side) {
-		var item = main.startsWith('correct ') || !side ? main : side;
-		console.log(item);
-		return item;
+		if (!main) {
+			return 'custom #' + this.count;
+		}
+
+		return main.startsWith('correct ') || !side ? main : side;
 	},
 	function (item) {
 		return item + '.';
@@ -62,17 +66,16 @@ meter([
 	],
 	'incorrect',
 	'correct (4)',
-	'correct (5)',
-	'correct (6)'
+	'correct (5)'
 ]);
 
 [
-	['fill by 4 (1 2 3)', 4], 3500,
-	['reverse (1 0)', -0], 2000,
-	['interrupt and fill by 1 (2)', 1], 1000,
-	['continue (3 5 6)', 0], 3000,
-	['reverse (4)', -0], 1000,
-	['stop']
+	['fill by 4 (0 1 2 3)', 4], 3500,
+	['reverse (2 1 0)', -0], 2000,
+	['interrupt and fill by 1 (1 2)', 1], 1000,
+	['continue (2 3 5 12 13)', 0], 4000,
+	['reverse (12 5 4)', -0], 2000,
+	['stop (4)']
 ].reduce(function (delay, options) {
 	if (options > 0) {
 		return delay + options;
@@ -86,9 +89,7 @@ meter([
 	return delay;
 }, 0);
 
-spective('space', function () {
-	return 200;
-}, function (stage) {
+spective('space', function (stage, iteration) {
 	switch (stage) {
 		case 2:
 			console.log('slip');
@@ -98,7 +99,9 @@ spective('space', function () {
 			return;
 	}
 
-	if(stage > 0) {
+	if (!iteration) {
+		return 200;
+	} else if (stage > 0) {
 		console.log('hold');
 	} else {
 		console.log('release');

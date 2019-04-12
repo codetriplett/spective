@@ -146,24 +146,47 @@ Meters help manage the state and timing of events in the scene. They allow timed
 // create a meter
 // only the first function is required
 // the initial item will default to 0
-// the last function will default to increment the item if it is a number or an array
-var meter = spective(function (change, item) {
+var meter = spective(function (change, item, branches) {
 	// this is called when the meter about to update
 	// change: the amount of the update that will occur before it ends or 0 or 1 is reached
 	// item: the item at the end of the meter that the update is heading towards
+	// branches: the number of other items that branch out from the upcoming item
 
 	// if a number is returned, it will be set as the duration for this update
-	// otherwise, the update will not happen
+	// otherwise, the meter will not update
 	return 1000;
-}, initialItem, function (change, item) {
-	// this is called when the meter is initialized or when it reaches 0 or 1
-	// change: the amount of the update that remains (negative if the update is draining)
-	// item: the item at the end of the meter that was reached
+}, function (item, branch) {
+	// this is called whenever the meter reaches 0 or 1 and is used to update the items at each end
+	// item: the next item beyond the one that was reached
+	// branch: an alternative item that can be chosen (more than one can be provided)
 
 	// if an item is returned, it will be set as the new item for this direction
-	// the previous item and location in meter will be set to the opposite end
+	// the location in the meter and previous item will be set to the opposite end
+	// if the item doesn't match one of the options provided, it will create a custom path
 	return newItem;
+}, function (item, previous) {
+	// called for each item in the array that populates the meter
+	// item: the item from the array
+	// previous: the item that was transformed before this one
+
+	// if an item is returned, it will be passed to the function above this one when it is reached
+	// if nothing is returned, it will be removed
+	return item;
 });
+
+meter([
+	'first',
+	'second',
+	[ // first branch of second item
+		'alternate',
+		'other'
+	], [ // second branch of second item
+		'alternate',
+		6 // links to sixth item ('fourth' along main path in this case)
+	]
+	'third', // the next item after 'second' in the main path
+	'fourth'
+], 3); // sets the initial item to use in the meter (defaults to 0)
 
 meter(0.5); // fill meter by a set amount
 meter(-0.5); // drain meter by a set amount
@@ -177,31 +200,34 @@ Buttons make it easy to interact with the scene using your keyboard.
 
 ```js
 // the first value defines the key (e.g. 'space', 'a', 'A', '1', etc)
-spective('space', function (stage) {
+spective('space', function (stage, iteration) {
 	// called whenever the state of the key has changed
-	// stage: represents the number of events that have fired (including this one) without a resolution and is negative if the key is down
+	// stage: represents the number of times the stage has changed without being resolved (negative if key is currently up)
+	// iteration: the number of times this function has been called before
 
-	// if a number is returned, the function below will be called after that many milliseconds unless it is interrupted
+	// if a number is returned, this function will be called again after that amount of time (in milliseconds)
+	// if two or more functions are provided, it will call the next one in line instead of calling this one again
 	return 200;
-}, function (stage) {
-	// called when the first function returned a delay and that time has passed without interruption
-	// stage: the same as the one passed to the first function
 });
 
 // an example
-spective('space', function (stage) {
+spective('space', function (stage, iteration) {
 	switch (stage) {
-		case 1:
-			// key is down either due to a hold or a tap
-			return 200;
-		case -1:
-			// key is released after a hold
+		case 2:
+			// key is quickly released and then held again (slip)
 			return;
 		case -2:
-			// key is tapped
+			// key is quickly held and then released again (tap)
 			return;
 	}
-}, function () {
-	// key is held
+
+	if (!iteration) {
+		// delay the resolution of the action
+		return 200;
+	} else if (stage > 0) {
+		// key is held
+	} else {
+		// key is released
+	}
 });
 ```

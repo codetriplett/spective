@@ -1,11 +1,18 @@
 export class Button {
-	constructor (name, instant, eventual) {
-		const schedule = this.schedule.bind(this);
+	constructor (name, ...parameters) {
+		const resolve = this.resolve.bind(this);
+		const actions = [];
 		const state = {};
 
-		this.resolve = this.resolve.bind(this);
-		this.instant = instant.bind(state);
-		this.eventual = eventual.bind(state);
+		parameters.forEach(parameter => {
+			if (typeof parameter === 'function') {
+				actions.push(parameter.bind(state));
+			}
+		});
+
+		this.resolve = resolve;
+		this.actions = actions;
+		this.index = 0;
 		this.stage = 0;
 
 		if (name.toLowerCase() === 'space') {
@@ -19,41 +26,41 @@ export class Button {
 		window.addEventListener('keydown', ({ repeat, key }) => {
 			if (!repeat) {
 				if (key === name) {
-					schedule(true);
+					resolve(true);
 				}
 			}
 		});
 		
 		window.addEventListener('keyup', ({ key }) => {
 			if (key === name) {
-				schedule(false);
+				resolve(false);
 			}
 		});
 	}
 
-	resolve () {
-		this.eventual(this.stage);
-		this.stage = 0;
-	}
+	resolve (down) {
+		const { resolve, actions, timeout } = this;
+		let { index, stage } = this;
 
-	schedule (down) {
-		let { stage } = this;
-
-		if (down && stage > 0 || !down && stage < 0) {
+		if (down === true && stage > 0 || down === false && stage < 0) {
 			return;
+		} else if (down !== undefined) {
+			index = index - (index ? 1 : 0);
+			stage = -stage + (down ? 1 : -1);
 		}
-
-		stage = -stage + (down ? 1 : -1);
-
-		const { resolve, instant, timeout } = this;
-		const delay = instant(stage);
 		
 		clearTimeout(timeout);
 
+		const maxiumum = actions.length - 1;
+		const iteration = Math.max(0, index - maxiumum);
+		const delay = actions[Math.min(index, maxiumum)](stage, iteration);
+
 		if (delay >= 0) {
+			this.index = index + 1;
 			this.stage = stage;
 			this.timeout = setTimeout(resolve, delay);
 		} else {
+			this.index = 0;
 			this.stage = 0;
 		}
 	}

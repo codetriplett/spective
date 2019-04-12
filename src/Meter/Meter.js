@@ -24,14 +24,16 @@ export class Meter {
 		}
 
 		const [iterate, transform] = actions;
-		const previous = { item: 0, next: 1 };
-		const next = { previous: 0, item: 1 };
+		const previous = { item: 0 };
+		const next = { item: 1 };
+
+		previous.next = next;
+		next.previous = previous;
 		
 		this.resolve = resolve.bind(this);
 		this.schedule = schedule.bind(state);
 		this.iterate = iterate.bind(state);
 		this.transform = transform;
-		this.items = [previous, next];
 		this.previous = previous;
 		this.next = next;
 		this.value = 0;
@@ -92,33 +94,16 @@ export class Meter {
 		return items;
 	}
 
-	fetch (index) {
-		const { items, previous, next } = this;
+	survey (reversed) {
+		const { previous, next } = this;
+		const item = reversed ? previous : next;
+		const { [reversed ? 'previous' : 'next']: main, branches = [] } = item;
 
-		if (typeof index === 'number') {
-			return items[index];
-		} else if (typeof index !== 'boolean') {
-			return;
+		if (main === undefined) {
+			return branches;
 		}
 
-		const collection = [];
-		const item = index ? previous : next;
-		const { [index ? 'previous' : 'next']: main } = item;
-		let { branches: indices = [] } = item;
-
-		if (main !== undefined) {
-			indices = [main, ...indices];
-		}
-
-		indices.forEach(index => {
-			const item = items[index];
-
-			if (item !== undefined) {
-				collection.push(item);
-			}
-		});
-
-		return collection;
+		return [main, ...branches];
 	}
 
 	populate (objects, index = 0) {
@@ -126,10 +111,37 @@ export class Meter {
 			return;
 		}
 
-		this.items = this.flatten(objects);
-		this.previous = this.fetch(index);
-		this.next = this.previous;
-		this.next = this.fetch(false)[0];
+		const items = this.flatten(objects);
+		const length = items.length;
+
+		items.forEach(item => {
+			const { previous, next, branches } = item;
+
+			Object.assign(item, {
+				previous: items[previous],
+				next: items[next]
+			});
+
+			if (branches) {
+				item.branches = branches.map(branch => items[branch]);
+			}
+		});
+
+		index = Math.min(Math.max(0, index), length);
+
+		const item = items[index];
+
+		this.previous = item;
+		this.next = item;
+
+		const previous = this.survey(true)[0];
+		const next = this.survey()[0];
+
+		if (next) {
+			this.next = next;
+		} else if (previous) {
+			this.previous = previous;
+		}
 	}
 
 	measure () {
@@ -163,24 +175,28 @@ export class Meter {
 		this.duration = undefined;
 
 		let remainder = this.complete();
-		const { iterate, value, items, previous, next, continuous } = this;
+		const { iterate, value, previous, next, continuous } = this;
 		const reversed = isNegative(remainder);
 		
 		remainder = continuous ? 0 : remainder;
 
 		if (value % 1 === 0) {
-			const branches = this.fetch(reversed);
+			const branches = this.survey(reversed);
 			const objects = branches.map(branch => branch.item);
-			const expected = items[reversed ? previous.previous : next.next];
 			const object = iterate(...objects);
 			const index = objects.indexOf(object);
-			const item = index !== -1 ? branches[index] : object;
+			let item = branches[index];
+			const expected = reversed ? previous.previous : next.next;
 			const diverted = item !== expected && expected !== undefined;
 
-			if (item === undefined) {
+			if (object === undefined) {
 				this.continuous = undefined;
 				return;
-			} else if (reversed && !diverted) {
+			} else if (index === -1) {
+				item = { previous: reversed ? previous : next, item: object };
+			}
+
+			if (reversed && !diverted) {
 				this.value = 1;
 				this.next = previous;
 				this.previous = item;
@@ -214,16 +230,14 @@ export class Meter {
 		}
 
 		const destination = value + change;
-		const items = [next, previous];
 
 		reverse = isNegative(change);
 		change = (constrainValue(destination) - value) || (reverse ? -0 : 0);
 
-		if (reverse) {
-			items.reverse();
-		}
-
-		const duration = schedule(change, ...items);
+		const { item, branches = [] } = reverse ? previous : next;
+		const main = reverse ? previous.previous : next.next;
+		const count = branches.length + (main !== undefined ? 1 : 0);
+		const duration = schedule(change, item, count);
 
 		if (destination === value || duration === undefined) {
 			return value;

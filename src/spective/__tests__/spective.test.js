@@ -295,9 +295,17 @@ describe('spective', () => {
 		beforeEach(() => resetMocks());
 
 		it('should create a button', () => {
-			const actual = spective('key', 'second');
+			const action = () => {};
+			const actual = spective('key', action);
 
-			expect(Button).toHaveBeenCalledWith('key', 'second');
+			expect(Button).toHaveBeenCalledWith('key', action);
+			expect(actual).toBeUndefined();
+		});
+
+		it('should not create a button if there are no actions', () => {
+			const actual = spective('key');
+
+			expect(Button).not.toHaveBeenCalled();
 			expect(actual).toBeUndefined();
 		});
 	});

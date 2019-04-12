@@ -26,15 +26,19 @@ describe('Meter', () => {
 
 		it('should initialize', () => {
 			const actual = new Meter(schedule, iterate, transform);
+			const previous = { item: 0 };
+			const next = { item: 1 };
+
+			previous.next = next;
+			next.previous = previous;
 
 			expect(actual).toEqual({
 				resolve: expect.any(Function),
 				schedule: expect.any(Function),
 				iterate: expect.any(Function),
 				transform,
-				items: [{ item: 0, next: 1 }, { previous: 0, item: 1 }],
-				previous: { item: 0, next: 1 },
-				next: { previous: 0, item: 1 },
+				previous,
+				next,
 				value: 0,
 				change: 0
 			});
@@ -180,114 +184,110 @@ describe('Meter', () => {
 		});
 	});
 
-	describe('fetch', () => {
-		const fetch = Meter.prototype.fetch;
+	describe('survey', () => {
+		const survey = Meter.prototype.survey;
+		let first;
+		let second;
+		let alpha;
+		let beta;
+		let third;
 		let context;
 
 		beforeEach(() => {
-			const items = [
-				{
-					item: 'first',
-					next: 3,
-					branches: [1, 2]
+			first = { item: 'first' };
+			second = { item: 'second' };
+			alpha = { item: 'alpha' };
+			beta = { item: 'beta' };
+			third = { item: 'third' };
+
+			const item = {
+				previous: {
+					...first,
+					next: second
 				},
-				{
-					previous: 0,
-					item: 'alpha',
-					next: 2
+				...second,
+				next: {
+					previous: second,
+					...third
 				},
-				{
-					previous: 1,
-					item: 'beta'
-				},
-				{
-					previous: 0,
-					item: 'second',
-					next: 5,
-					branches: [4]
-				},
-				{
-					previous: 3,
-					item: 'other'
-				},
-				{
-					previous: 3,
-					item: 'third'
-				}
-			];
+				branches: [alpha, beta]
+			};
 
 			context = {
-				items,
-				previous: items[3],
-				next: items[3]
+				previous: item,
+				next: item
 			};
 		});
 
-		it('should fetch an item', () => {
-			const actual = fetch.call(context, 3);
-			expect(actual.item).toEqual('second');
+		it('should survey forward items', () => {
+			const actual = survey.call(context, false);
+			expect(actual).toMatchObject([third, alpha, beta]);
 		});
 
-		it('should fetch forward items', () => {
-			const actual = fetch.call(context, false);
-
-			expect(context.next.branches).toEqual([4]);
-
-			expect(actual).toMatchObject([
-				{ item: 'third' },
-				{ item: 'other' }
-			]);
+		it('should survey backward items', () => {
+			const actual = survey.call(context, true);
+			expect(actual).toMatchObject([first, alpha, beta]);
 		});
 
-		it('should fetch backward items', () => {
-			const actual = fetch.call(context, true);
+		it('should survey forward items of last item', () => {
+			context.next = context.next.next;
+			const actual = survey.call(context, false);
 
-			expect(context.previous.branches).toEqual([4]);
-
-			expect(actual).toMatchObject([
-				{ item: 'first' },
-				{ item: 'other' }
-			]);
-		});
-
-		it('should fetch forward items of last item', () => {
-			context.next = context.items[5];
-			const actual = fetch.call(context, false);
-
-			expect(context.next.branches).toBeUndefined();
 			expect(actual).toHaveLength(0);
 		});
 
-		it('should fetch backward items of first item', () => {
-			context.previous = context.items[0];
-			const actual = fetch.call(context, true);
+		it('should survey backward items of first item', () => {
+			context.previous = context.previous.previous;
+			const actual = survey.call(context, true);
 			
-			expect(context.previous.branches).toEqual([1, 2]);
-
-			expect(actual).toMatchObject([
-				{ item: 'alpha' },
-				{ item: 'beta' }
-			]);
+			expect(actual).toHaveLength(0);
 		});
 	});
 
 	describe('populate', () => {
 		const populate = Meter.prototype.populate;
 		const flatten = jest.fn();
-		const fetch = jest.fn();
+		const survey = jest.fn();
+		let first;
+		let alpha;
+		let beta;
+		let second;
 		let context;
 
 		beforeEach(() => {
-			flatten.mockClear().mockReturnValue('items');
+			first = { item: 'first' };
+			alpha = { item: 'alpha' };
+			beta = { item: 'beta' };
+			second = { item: 'second' };
 
-			fetch.mockClear().mockImplementation(index => {
-				const item = `item${index}`;
-				return typeof index === 'boolean' ? [item] : item;
+			flatten.mockClear().mockReturnValue([
+				{
+					...first,
+					next: 3,
+					branches: [1, 2]
+				},
+				{
+					previous: 0,
+					...alpha,
+					next: 2
+				},
+				{
+					previous: 1,
+					...beta
+				},
+				{
+					previous: 0,
+					...second
+				}
+			]);
+
+			survey.mockClear().mockImplementation(function (reversed) {
+				return [`${reversed ? 'previous' : 'next'}Item`];
 			});
 
 			context = {
 				flatten,
-				fetch
+				survey
 			};
 		});
 
@@ -296,32 +296,66 @@ describe('Meter', () => {
 
 			expect(flatten).toHaveBeenCalledWith(['first', 'second']);
 
-			expect(fetch.mock.calls).toEqual([
-				[0],
-				[false]
+			expect(survey.mock.calls).toEqual([
+				[true],
+				[]
 			]);
 
 			expect(context).toMatchObject({
-				items: 'items',
-				previous: 'item0',
-				next: 'itemfalse',
+				previous: {
+					...first,
+					next: {
+						previous: first,
+						...second
+					},
+					branches: [
+						{
+							previous: first,
+							...alpha,
+							next: beta
+						}, {
+							previous: alpha,
+							...beta
+						}
+					]
+				},
+				next: 'nextItem',
 			});
 		});
 
 		it('should populate the meter and set a position', () => {
-			populate.call(context, ['first', 'second'], 2);
+			survey.mockClear().mockImplementation(function (reversed) {
+				return reversed ? ['previousItem'] : [];
+			});
+
+			populate.call(context, ['first', 'second'], 3);
 
 			expect(flatten).toHaveBeenCalledWith(['first', 'second']);
 
-			expect(fetch.mock.calls).toEqual([
-				[2],
-				[false]
+			expect(survey.mock.calls).toEqual([
+				[true],
+				[]
 			]);
 
 			expect(context).toMatchObject({
-				items: 'items',
-				previous: 'item2',
-				next: 'itemfalse',
+				previous: 'previousItem',
+				next: {
+					previous: {
+						...first,
+						next: second,
+						branches: [
+							{
+								previous: first,
+								...alpha,
+								next: beta
+							}, {
+								previous: alpha,
+								...beta
+							}
+						]
+					},
+					...second
+				}
 			});
 		});
 
@@ -329,11 +363,11 @@ describe('Meter', () => {
 			populate.call(context, 'item');
 
 			expect(flatten).not.toHaveBeenCalled();
-			expect(fetch).not.toHaveBeenCalled();
+			expect(survey).not.toHaveBeenCalled();
 
 			expect(context).toEqual({
 				flatten,
-				fetch
+				survey
 			});
 		});
 	});
@@ -447,7 +481,7 @@ describe('Meter', () => {
 
 	describe('resolve', () => {
 		const resolve = Meter.prototype.resolve;
-		const fetch = jest.fn();
+		const survey = jest.fn();
 		const complete = jest.fn();
 		const update = jest.fn();
 		const iterate = jest.fn();
@@ -463,17 +497,19 @@ describe('Meter', () => {
 			item = { item: 'item' };
 			other = { item: 'other' };
 
-			fetch.mockClear().mockReturnValue([item, other]);
+			previous.previous = item;
+			next.next = item;
+
+			survey.mockClear().mockReturnValue([item, other]);
 			complete.mockClear().mockReturnValue(0.5);
 			update.mockClear();
 			iterate.mockClear().mockReturnValue('item');
 
 			context = {
-				fetch,
+				survey,
 				complete,
 				update,
 				iterate,
-				items: [item],
 				previous,
 				next,
 				value: 1,
@@ -606,8 +642,8 @@ describe('Meter', () => {
 				resolve,
 				schedule,
 				change: 0.5,
-				next: 'next',
-				previous: 'previous',
+				previous: { item: 'previous' },
+				next: { item: 'next', branches: ['alpha', 'beta'] },
 				timeout: 'timeout'
 			};
 		});
@@ -616,7 +652,7 @@ describe('Meter', () => {
 			const actual = update.call(context, 1);
 
 			expect(measure).toHaveBeenCalled();
-			expect(schedule).toHaveBeenCalledWith(0.75, 'next', 'previous');
+			expect(schedule).toHaveBeenCalledWith(0.75, 'next', 2);
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
 			expect(actual).toBe(1.25);
@@ -635,7 +671,7 @@ describe('Meter', () => {
 			const actual = update.call(context, -1);
 
 			expect(measure).toHaveBeenCalled();
-			expect(schedule).toHaveBeenCalledWith(-0.25, 'previous', 'next');
+			expect(schedule).toHaveBeenCalledWith(-0.25, 'previous', 0);
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
 			expect(actual).toBe(-0.75);
@@ -654,7 +690,7 @@ describe('Meter', () => {
 			const actual = update.call(context, 0);
 
 			expect(measure).toHaveBeenCalled();
-			expect(schedule).toHaveBeenCalledWith(0.75, 'next', 'previous');
+			expect(schedule).toHaveBeenCalledWith(0.75, 'next', 2);
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
 			expect(actual).toBe(1.25);
@@ -674,7 +710,7 @@ describe('Meter', () => {
 			const actual = update.call(context, 0);
 
 			expect(measure).toHaveBeenCalled();
-			expect(schedule).toHaveBeenCalledWith(-0.25, 'previous', 'next');
+			expect(schedule).toHaveBeenCalledWith(-0.25, 'previous', 0);
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
 			expect(actual).toBe(-0.75);
@@ -693,7 +729,7 @@ describe('Meter', () => {
 			const actual = update.call(context, -0);
 
 			expect(measure).toHaveBeenCalled();
-			expect(schedule).toHaveBeenCalledWith(-0.25, 'previous', 'next');
+			expect(schedule).toHaveBeenCalledWith(-0.25, 'previous', 0);
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
 			expect(actual).toBe(-0.75);
@@ -713,7 +749,7 @@ describe('Meter', () => {
 			const actual = update.call(context, -0);
 
 			expect(measure).toHaveBeenCalled();
-			expect(schedule).toHaveBeenCalledWith(0.75, 'next', 'previous');
+			expect(schedule).toHaveBeenCalledWith(0.75, 'next', 2);
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
 			expect(setTimeout).toHaveBeenCalledWith(resolve, 'duration');
 			expect(actual).toBe(1.25);
@@ -733,7 +769,7 @@ describe('Meter', () => {
 
 			expect(measure).toHaveBeenCalled();
 			expect(complete).toHaveBeenCalled();
-			expect(schedule).toHaveBeenCalledWith(0, 'next', 'previous');
+			expect(schedule).toHaveBeenCalledWith(0, 'next', 2);
 			expect(clearTimeout).not.toHaveBeenCalled();
 			expect(setTimeout).not.toHaveBeenCalled();
 			expect(actual).toBe(0.25);
@@ -746,7 +782,7 @@ describe('Meter', () => {
 			const actual = update.call(context, 1);
 
 			expect(measure).toHaveBeenCalled();
-			expect(schedule).toHaveBeenCalledWith(0.75, 'next', 'previous');
+			expect(schedule).toHaveBeenCalledWith(0.75, 'next', 2);
 			expect(setTimeout).not.toHaveBeenCalled();
 			expect(actual).toBe(0.25);
 
