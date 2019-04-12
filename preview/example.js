@@ -53,7 +53,7 @@ var meter = spective(
 );
 
 meter([
-	'incorrect',
+	'initialized',
 	'correct (0)',
 	'correct (1)',
 	'correct (2)',
@@ -73,8 +73,8 @@ meter([
 	['fill by 4 (0 1 2 3)', 4], 3500,
 	['reverse (2 1 0)', -0], 2000,
 	['interrupt and fill by 1 (1 2)', 1], 1000,
-	['continue (2 3 5 12 13)', 0], 4000,
-	['reverse (12 5 4)', -0], 2000,
+	['continue (2 3 5 13 14)', 0], 4000,
+	['reverse (13 5 4)', -0], 2000,
 	['stop (4)']
 ].reduce(function (delay, options) {
 	if (options > 0) {

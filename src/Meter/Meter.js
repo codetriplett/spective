@@ -91,7 +91,9 @@ export class Meter {
 			location += 1;
 		});
 
-		return items;
+		if (items.length) {
+			return items;
+		}
 	}
 
 	survey (reversed) {
@@ -112,7 +114,10 @@ export class Meter {
 		}
 
 		const items = this.flatten(objects);
-		const length = items.length;
+
+		if (!items || items.length < 2) {
+			return;
+		}
 
 		items.forEach(item => {
 			const { previous, next, branches } = item;
@@ -127,20 +132,30 @@ export class Meter {
 			}
 		});
 
-		index = Math.min(Math.max(0, index), length);
+		index = Math.min(Math.max(0, index), items.length - 1);
 
 		const item = items[index];
 
 		this.previous = item;
 		this.next = item;
 
-		const previous = this.survey(true)[0];
+		const previous = item.previous;
 		const next = this.survey()[0];
 
 		if (next) {
 			this.next = next;
+			this.value = 0;
+			this.change = 0;
+
+			this.schedule(0, item.item);
+			this.iterate(next.item);
 		} else if (previous) {
 			this.previous = previous;
+			this.value = 1;
+			this.change = -0;
+
+			this.schedule(0, item.item);
+			this.iterate(previous.item);
 		}
 	}
 

@@ -160,6 +160,16 @@ describe('Meter', () => {
 			]);
 		});
 
+		it('should return undefined if there are no items', () => {
+			const actual = flatten.call(context, [undefined]);
+			expect(actual).toBeUndefined();
+		});
+
+		it('should ignore empty path', () => {
+			const actual = flatten.call(context, ['first', [undefined]]);
+			expect(actual).toEqual([{ item: 'firstItem' }]);
+		});
+
 		it('should ignore branches that occur before any item', () => {
 			const actual = flatten.call(context, [
 				['alpha', 'beta'],
@@ -248,6 +258,8 @@ describe('Meter', () => {
 		const populate = Meter.prototype.populate;
 		const flatten = jest.fn();
 		const survey = jest.fn();
+		const schedule = jest.fn();
+		const iterate = jest.fn();
 		let first;
 		let alpha;
 		let beta;
@@ -282,12 +294,19 @@ describe('Meter', () => {
 			]);
 
 			survey.mockClear().mockImplementation(function (reversed) {
-				return [`${reversed ? 'previous' : 'next'}Item`];
+				return reversed ? [] : [{ item: 'nextItem' }];
 			});
+
+			schedule.mockClear();
+			iterate.mockClear();
 
 			context = {
 				flatten,
-				survey
+				survey,
+				schedule,
+				iterate,
+				value: 0.5,
+				change: 0.25
 			};
 		});
 
@@ -295,13 +314,13 @@ describe('Meter', () => {
 			populate.call(context, ['first', 'second']);
 
 			expect(flatten).toHaveBeenCalledWith(['first', 'second']);
-
-			expect(survey.mock.calls).toEqual([
-				[true],
-				[]
-			]);
+			expect(survey).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(0, 'first');
+			expect(iterate).toHaveBeenCalledWith('nextItem');
 
 			expect(context).toMatchObject({
+				value: 0,
+				change: 0,
 				previous: {
 					...first,
 					next: {
@@ -319,26 +338,26 @@ describe('Meter', () => {
 						}
 					]
 				},
-				next: 'nextItem',
+				next: { item: 'nextItem' },
 			});
 		});
 
 		it('should populate the meter and set a position', () => {
-			survey.mockClear().mockImplementation(function (reversed) {
-				return reversed ? ['previousItem'] : [];
+			survey.mockImplementation(function (reversed) {
+				return reversed ? [{ item: 'previousItem' }] : [];
 			});
 
 			populate.call(context, ['first', 'second'], 3);
 
 			expect(flatten).toHaveBeenCalledWith(['first', 'second']);
-
-			expect(survey.mock.calls).toEqual([
-				[true],
-				[]
-			]);
+			expect(survey).toHaveBeenCalledWith();
+			expect(schedule).toHaveBeenCalledWith(0, 'second');
+			expect(iterate).toHaveBeenCalledWith('first');
 
 			expect(context).toMatchObject({
-				previous: 'previousItem',
+				value: 1,
+				change: -0,
+				previous: { item: 'first' },
 				next: {
 					previous: {
 						...first,
@@ -367,7 +386,26 @@ describe('Meter', () => {
 
 			expect(context).toEqual({
 				flatten,
-				survey
+				survey,
+				schedule,
+				iterate,
+				value: 0.5,
+				change: 0.25
+			});
+		});
+
+		it('should not populate the meter when there are not enough items', () => {
+			flatten.mockReturnValue([{ item: 'only' }]);
+			survey.mockReturnValue([]);
+			populate.call(context, ['only']);
+
+			expect(context).toEqual({
+				flatten,
+				survey,
+				schedule,
+				iterate,
+				value: 0.5,
+				change: 0.25
 			});
 		});
 	});
