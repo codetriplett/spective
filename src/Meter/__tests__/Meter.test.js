@@ -71,34 +71,35 @@ describe('Meter', () => {
 				return 'transform';
 			});
 
-			previous = { object: 'previous', branches: [], state: {} };
+			previous = { object: 'previous', branches: [], state: {}, depth: 0 };
 			context = { transform };
 		});
 
 		it('should create initial item', () => {
-			const actual = create.call(context, 'object');
+			const actual = create.call(context, 'object', undefined, false);
 
-			expect(transform).toHaveBeenCalledWith('object', undefined);
+			expect(transform).toHaveBeenCalledWith('object', undefined, 0);
 
 			expect(actual).toEqual({
 				object: 'transform',
 				branches: [],
-				state: { object: 'object' }
+				state: { object: 'object' },
+				depth: 0
 			});
 		});
 
 		it('should create following item', () => {
-			const actual = create.call(context, 'object', previous);
+			const actual = create.call(context, 'object', previous, true);
 
-			expect(transform).toHaveBeenCalledWith('object', 'previous');
+			expect(transform).toHaveBeenCalledWith('object', 'previous', 0);
 			expect(previous.next).toEqual(actual);
 			expect(actual.previous).toEqual(previous);
 		});
 
 		it('should create diverted item', () => {
-			const actual = create.call(context, 'object', previous, true);
+			const actual = create.call(context, 'object', previous, false);
 
-			expect(transform).toHaveBeenCalledWith('object', 'previous');
+			expect(transform).toHaveBeenCalledWith('object', 'previous', 1);
 			expect(previous.next).toBeUndefined();
 			expect(actual.previous).toEqual(previous);
 		});
@@ -107,12 +108,13 @@ describe('Meter', () => {
 			transform.mockReturnValue();
 			const actual = create.call(context, 'object', previous, true);
 
-			expect(transform).toHaveBeenCalledWith('object', 'previous');
+			expect(transform).toHaveBeenCalledWith('object', 'previous', 0);
 
 			expect(actual).toEqual({
 				object: 'object',
 				branches: [],
 				state: {},
+				depth: 0,
 				previous
 			});
 		});
@@ -133,21 +135,17 @@ describe('Meter', () => {
 		beforeEach(() => {
 			create.mockClear().mockImplementation(object => ({ object, branches: [] }));
 
-			first = { object: undefined };
-			second = { object: 'second' };
-			alpha = { object: 'alpha' };
-			beta = { object: 'beta' };
-			other = { object: 'other' };
-			third = { object: 'third' };
-			fourth = { object: 'fourth' };
+			first = { object: undefined, branches: [] };
+			second = { object: 'second', branches: [] };
+			alpha = { object: 'alpha', branches: [] };
+			beta = { object: 'beta', branches: [] };
+			other = { object: 'other', branches: [] };
+			third = { object: 'third', branches: [] };
+			fourth = { object: 'fourth', branches: [] };
 
-			Object.assign(first, { branches: [] });
-			Object.assign(second, { branches: [alpha, other] });
-			Object.assign(alpha, { branches: [] });
 			Object.assign(beta, { branches: [5] });
 			Object.assign(other, { branches: [-2] });
 			Object.assign(third, { branches: [3] });
-			Object.assign(fourth, { branches: [] });
 
 			context = { create };
 			context.flatten = flatten.bind(context);
@@ -165,13 +163,13 @@ describe('Meter', () => {
 			]);
 
 			expect(create.mock.calls).toEqual([
-				[undefined, { branches: [] }, true],
-				['second', first, false],
-				['alpha', second, true],
-				['beta', alpha, false],
-				['other', second, true],
-				['third', second, false],
-				['fourth', third, false]
+				[undefined, { branches: [] }, false],
+				['second', first, true],
+				['alpha', second, false],
+				['beta', alpha, true],
+				['other', second, false],
+				['third', second, true],
+				['fourth', third, true]
 			]);
 
 			expect(actual).toEqual([

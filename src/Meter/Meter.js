@@ -43,42 +43,48 @@ export class Meter {
 		this.populate(...parameters);
 	}
 
-	create (object, previous, diversion) {
+	create (object, previous = { branches: [] }, follows) {
 		const { transform } = this;
 		const state = {};
-		const result = transform.call(state, object, (previous || {}).object);
+		const item = { branches: [], state };
+		let { depth = -1 } = previous;
 
-		object = result !== undefined ? result : object;
-
-		const item = { object, branches: [], state };
-
-		if (previous) {
+		if (follows || depth !== -1) {
 			item.previous = previous;
-
-			if (!diversion) {
-				previous.next = item;
-			}
 		}
+
+		if (follows) {
+			previous.next = item;
+		} else {
+			previous.branches.push(item);
+			depth += 1;
+		}
+
+		const result = transform.call(state, object, previous.object, depth);
+
+		Object.assign(item, {
+			object: result !== undefined ? result : object,
+			depth
+		});
 
 		return item;
 	}
 
-	flatten (objects, item = { branches: [] }) {
+	flatten (objects, item = { branches: [] }, depth = 0) {
 		const self = this;
 		const items = [];
 
 		objects.forEach(object => {
 			if (Array.isArray(object)) {
-				const branch = self.flatten(object, item);
+				const branch = self.flatten(object, item, depth + 1);
 
 				if (Array.isArray(branch)) {
 					items.push(...branch);
-					item.branches.push(branch[0]);
 				}
 			} else if (typeof object === 'number') {
 				item.branches.push(object);
 			} else {
-				item = self.create(object, item, !items.length);
+				item = self.create(object, item, !!items.length);
 				items.push(item);
 			}
 		});

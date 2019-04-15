@@ -11,13 +11,13 @@ describe('link-items', () => {
 	let items;
 
 	beforeEach(() => {
-		first = { item: 'first' };
-		second = { item: 'second' };
-		alpha = { item: 'alpha' };
-		beta = { item: 'beta' };
-		other = { item: 'other' };
-		third = { item: 'third' };
-		fourth = { item: 'fourth' };
+		first = { object: 'first' };
+		second = { object: 'second' };
+		alpha = { object: 'alpha' };
+		beta = { object: 'beta' };
+		other = { object: 'other' };
+		third = { object: 'third' };
+		fourth = { object: 'fourth' };
 		items = [first, second, alpha, beta, other, third, fourth];
 
 		Object.assign(first, { next: second, branches: [] });

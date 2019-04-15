@@ -10,13 +10,13 @@ describe('gather-branches', () => {
 	let fourth;
 
 	beforeEach(() => {
-		first = { item: 'first' };
-		second = { item: 'second' };
-		alpha = { item: 'alpha' };
-		beta = { item: 'beta' };
-		other = { item: 'other' };
-		third = { item: 'third' };
-		fourth = { item: 'fourth' };
+		first = { object: 'first' };
+		second = { object: 'second' };
+		alpha = { object: 'alpha' };
+		beta = { object: 'beta' };
+		other = { object: 'other' };
+		third = { object: 'third' };
+		fourth = { object: 'fourth' };
 
 		Object.assign(first, { next: second });
 		Object.assign(second, { previous: first, next: third, branches: [alpha, other] });
@@ -54,6 +54,14 @@ describe('gather-branches', () => {
 			[first, second],
 			[third, second],
 			[other, second]
+		]);
+	});
+
+	it('should gather branches in backward direction on branch', () => {
+		const branches = gatherBranches(alpha, beta);
+
+		expect(branches).toEqual([
+			[second, alpha]
 		]);
 	});
 

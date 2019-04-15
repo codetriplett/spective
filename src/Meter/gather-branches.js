@@ -1,3 +1,8 @@
+function isConnected (first, second) {
+	const { previous, next } = first;
+	return previous === second || next === second;
+}
+
 export function gatherBranches (item, opposite) {
 	const { previous, next } = item;
 	const reversed = opposite.previous === item;
@@ -7,7 +12,7 @@ export function gatherBranches (item, opposite) {
 	branches = [...main, ...branches].reduce((branches, branch) => {
 		if (branch === undefined || branch === opposite) {
 			return branches;
-		} else if (branch.previous === item || branch.next === item) {
+		} else if (isConnected(branch, item) || isConnected(item, branch)) {
 			return [...branches, [branch, item]];
 		}
 
