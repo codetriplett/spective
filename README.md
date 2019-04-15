@@ -147,7 +147,7 @@ Meters help manage the state and timing of events in the scene. They allow timed
 // only the first function is required
 // the initial item will default to 0
 var meter = spective(function (change, item, branches) {
-	// this is called when the meter about to update
+	// this is called when the meter is about to update
 	// change: the amount of the update that will occur before it ends or 0 or 1 is reached
 	// item: the item at the end of the meter that the update is heading towards
 	// branches: the number of other items that branch out from the upcoming item
@@ -155,25 +155,23 @@ var meter = spective(function (change, item, branches) {
 	// if a number is returned, it will be set as the duration for this update
 	// otherwise, the meter will not update
 	return 1000;
-}, function (item, branch) {
-	// this is called whenever the meter reaches 0 or 1 and is used to update the items at each end
-	// item: the next item beyond the one that was reached
-	// branch: an alternative item that can be chosen (more than one can be provided)
+}, function (branch, branch, ...etc) {
+	// this is called whenever the meter reaches 0 or 1
+	// branch: all of the options available that connect to the current item
 
-	// if an item is returned, it will be set as the new item for this direction
-	// the location in the meter and previous item will be set to the opposite end
-	// if the item doesn't match one of the options provided, it will create a custom path
+	// if an item is returned, it will be set as the new destination
+	// the current item will be set on the opposite end
 	return newItem;
 }, function (item, previous) {
-	// called for each item in the array that populates the meter
+	// called for each item in the array when populating the meter
 	// item: the item from the array
 	// previous: the item that was transformed before this one
 
-	// if an item is returned, it will be passed to the function above this one when it is reached
-	// if nothing is returned, it will be removed
+	// if an item is returned, it will be used in place of the input item
 	return item;
 });
 
+// an array and index can be passed after the functions above to populate it immediately or here to update it
 meter([
 	'first',
 	'second',
@@ -182,7 +180,8 @@ meter([
 		'other'
 	], [ // second branch of second item
 		'alternate',
-		6 // links to sixth item ('fourth' along main path in this case)
+		7 // links to seventh item ('fourth' in this case)
+		// this means it will look at the branches of 'fourth' once 'alternate' is reached
 	]
 	'third', // the next item after 'second' in the main path
 	'fourth'

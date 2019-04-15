@@ -47,35 +47,32 @@ var meter = spective(
 
 		return main.startsWith('correct ') || !side ? main : side;
 	},
-	function (item) {
+	function (item = 'initialized') {
 		return item + '.';
-	}
-);
-
-meter([
-	'initialized',
-	'correct (0)',
-	'correct (1)',
-	'correct (2)',
-	[
-		'correct (3)',
+	}, [
+		'correct (0)',
+		'correct (1)',
+		'correct (2)',
 		[
-			'incorrect'
+			'correct (3)',
+			[
+				'incorrect'
+			],
+			8
 		],
-		8
-	],
-	'incorrect',
-	'correct (4)',
-	'correct (5)'
-]);
+		'incorrect',
+		'correct (4)',
+		'correct (5)'
+	]
+);
 
 [
 	['fill by 4 (0 1 2 3)', 4], 3500,
 	['reverse (2 1 0)', -0], 2000,
 	['interrupt and fill by 1 (1 2)', 1], 1000,
-	['continue (2 3 5 4)', 0], 3000,
-	['reverse (5 15 16)', -0], 2000,
-	['interrupt and drain by 2 (15 5 4)', -2], 2000,
+	['continue (2 3 4)', 0], 2000,
+	['reverse (5 13 14)', -0], 2000,
+	['interrupt and drain by 2 (13 5 4)', -2], 2000,
 	['stop (4)']
 ].reduce(function (delay, options) {
 	if (options > 0) {

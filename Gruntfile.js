@@ -106,6 +106,8 @@ module.exports = function (grunt) {
 					'temp/create-canvas.js',
 					'temp/format-item.js',
 					'temp/Meter.js',
+					'temp/link-items.js',
+					'temp/gather-branches.js',
 					'temp/Button.js',
 					'temp/spective.js'
 				],
