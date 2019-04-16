@@ -91,7 +91,7 @@ describe('./Button', () => {
 			expect(setTimeout).toHaveBeenCalledWith('resolve', 200);
 
 			expect(context).toMatchObject({
-				index: 1,
+				index: 0,
 				stage: 1,
 				timeout: 'delay'
 			});
@@ -106,18 +106,14 @@ describe('./Button', () => {
 			expect(setTimeout).toHaveBeenCalledWith('resolve', 200);
 
 			expect(context).toMatchObject({
-				index: 1,
+				index: 0,
 				stage: -1,
 				timeout: 'delay'
 			});
 		});
 
 		it('should interrupt a delay', () => {
-			Object.assign(context, {
-				index: 1,
-				stage: 1
-			});
-
+			context.stage = 1;
 			resolve.call(context, false);
 
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
@@ -126,18 +122,14 @@ describe('./Button', () => {
 			expect(setTimeout).toHaveBeenCalledWith('resolve', 200);
 
 			expect(context).toMatchObject({
-				index: 1,
+				index: 0,
 				stage: -2,
 				timeout: 'delay'
 			});
 		});
 
 		it('should resolve a delay', () => {
-			Object.assign(context, {
-				index: 1,
-				stage: 1
-			});
-
+			context.stage = 1;
 			resolve.call(context);
 
 			expect(clearTimeout).toHaveBeenCalledWith('timeout');
@@ -153,11 +145,7 @@ describe('./Button', () => {
 		});
 
 		it('should resolve a delay that initiates another', () => {
-			Object.assign(context, {
-				index: 1,
-				stage: 1
-			});
-
+			context.stage = 1;
 			second.mockReturnValue(300);
 			resolve.call(context);
 
@@ -167,15 +155,15 @@ describe('./Button', () => {
 			expect(setTimeout).toHaveBeenCalledWith('resolve', 300);
 
 			expect(context).toMatchObject({
-				index: 2,
+				index: 1,
 				stage: 1,
 				timeout: 'delay'
 			});
 		});
 
-		it('should resolve a delay on the previous function', () => {
+		it('should resolve a delay with an iteration value', () => {
 			Object.assign(context, {
-				index: 2,
+				index: 1,
 				stage: 1
 			});
 
@@ -188,16 +176,13 @@ describe('./Button', () => {
 
 			expect(context).toMatchObject({
 				index: 0,
-				stage: 0
+				stage: 0,
+				timeout: 'timeout'
 			});
 		});
 
 		it('should not resolve a duplicate down event', () => {
-			Object.assign(context, {
-				index: 1,
-				stage: 1
-			});
-
+			context.stage = 1;
 			resolve.call(context, true);
 
 			expect(clearTimeout).not.toHaveBeenCalled();
@@ -206,17 +191,14 @@ describe('./Button', () => {
 			expect(setTimeout).not.toHaveBeenCalled();
 
 			expect(context).toMatchObject({
-				index: 1,
-				stage: 1
+				index: 0,
+				stage: 1,
+				timeout: 'timeout'
 			});
 		});
 
 		it('should not resolve a duplicate up event', () => {
-			Object.assign(context, {
-				index: 1,
-				stage: -1
-			});
-
+			context.stage = -1;
 			resolve.call(context, false);
 
 			expect(clearTimeout).not.toHaveBeenCalled();
@@ -225,8 +207,9 @@ describe('./Button', () => {
 			expect(setTimeout).not.toHaveBeenCalled();
 
 			expect(context).toMatchObject({
-				index: 1,
-				stage: -1
+				index: 0,
+				stage: -1,
+				timeout: 'timeout'
 			});
 		});
 	});

@@ -45,19 +45,20 @@ export class Button {
 		if (down === true && stage > 0 || down === false && stage < 0) {
 			return;
 		} else if (down !== undefined) {
-			index = index - (index ? 1 : 0);
 			stage = -stage + (down ? 1 : -1);
+			this.stage = stage;
+		} else {
+			index += 1;
+			this.index = index;
 		}
 		
 		clearTimeout(timeout);
 
 		const maxiumum = actions.length - 1;
 		const iteration = Math.max(0, index - maxiumum);
-		const delay = actions[Math.min(index, maxiumum)](stage, iteration);
+		const delay = actions[index - iteration](stage, iteration);
 
 		if (delay >= 0) {
-			this.index = index + 1;
-			this.stage = stage;
 			this.timeout = setTimeout(resolve, delay);
 		} else {
 			this.index = 0;
