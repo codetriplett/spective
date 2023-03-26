@@ -1,42 +1,36 @@
-const http = require('http');
-const fs = require('fs');
+(function () {
+const { TOP, BOTTOM, controls } = spective;
+const PLAYER_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAMAAADz0U65AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAGUExURQAAAAAAAKVnuc8AAAACdFJOU/8A5bcwSgAAAAlwSFlzAAAOwwAADsMBx2+oZAAAACZJREFUGFdjYGRkYAASjGAMYsE4QALIh4jAGGAWiA8WhKoBIkZGAAWMACXaroMbAAAAAElFTkSuQmCC';
+const PLATFORM_TEXTURE = '#000';
+const GRAVITY = -100;
+const BLOCKING_PARAM = { isBlocking: true };
 
-const port = 8080;
+function ondraw () {
+	const { px, py } = player;
+	scene.update({ px, py });
+}
 
-const mimeTypes = {
-	html: 'text/html',
-	css: 'text/css',
-	js: 'application/javascript',
-	json: 'application/json',
-	bmp: 'image/bmp',
-	gif: 'image/gif',
-	jpeg: 'image/jpeg',
-	jpg: 'image/jpeg',
-	png: 'image/png',
-	svg: 'image/svg+xml'
-};
+function oncollide (event) {
+	const { action, side, param } = event;
 
-function sendResponse(res, content, type, utf8, status) {
-	if (content === undefined) {
-		sendResponse(res, 'File Not Found', 'text/plain', true, 400);
-	} else {
-		res.writeHead(status || 200, {
-			'Content-Length': Buffer.byteLength(content),
-			'Content-Type': `${type}${utf8 ? '; charset=utf-8' : ''}`
-		});
-
-		res.end(content);
+	if (action === 'collide' && param.isBlocking) {
+		const { pys } = player;
+		return side === BOTTOM && pys < 0 || side === TOP && pys > 0 ? { pys: 0 } : {};
 	}
 }
 
-http.createServer(({ url }, res) => {
-	const path = url.replace(/^\/|(\.[a-z]+|\/)$/g, '') || 'prototype';
-	const extension = url.match(/(\.[a-z]+)?$/)[0].slice(1) || 'html';
-	const folder = /^dist\//.test(path) ? __dirname.replace(/\\[a-z]+$/, '') : __dirname;
-	const type = mimeTypes[extension] || 'text/plain';
-	const utf8 = !/^image\/(?!svg)/.test(type);
+const scene = spective({ id: 'scene', width: 160, height: 90, density: 4, ondraw });
+const mainLayer = scene.add({ parallax: 1 });
+const playerAsset = mainLayer.add({ texture: PLAYER_TEXTURE });
+const platformAsset = mainLayer.add({ texture: PLATFORM_TEXTURE, oy: 1 });
+const player = playerAsset.add({ id: 'player', pya: GRAVITY, oncollide });
+platformAsset.add( { px: -50, sx: 100, sy: 4, param: BLOCKING_PARAM });
 
-	fs.readFile(`${folder}/${path}.${extension}`, utf8 ? 'utf8' : '', (err, file) => {
-		sendResponse(res, file, type, utf8);
-	});
-}).listen(port, err => console.log(`server is listening on ${port}`));
+function onReleaseAD () {
+	player.update({ pxs: controls.has(leftControl) ? -30 : controls.has(rightControl) ? 30 : 0 });
+}
+
+spective({ key: ' ' }, () => player.update({ pys: 50 }));
+const leftControl = spective({ key: 'a' }, () => player.update({ pxs: -30 }), onReleaseAD);
+const rightControl = spective({ key: 'd' }, () => player.update({ pxs: 30 }), onReleaseAD);
+})();
