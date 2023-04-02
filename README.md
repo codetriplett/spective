@@ -1,5 +1,5 @@
 # Spective
-This library provides a simple way to create 2D graphics in your browser. Scenes are made up of a hierarchy of just a few types of nodes, and support physics with collision detection.
+This library provides a simple way to create 2D graphics in your browser. Scenes are made up of a hierarchy of just a few types of nodes, and support physics and collisions.
 
 ## Scene
 A scene will add a canvas to your page to display graphics and also serves as the camera node. It can be created in the following ways.
@@ -9,7 +9,7 @@ const scene = spective({ ...props });
 const scene = new Scene({ ...props });
 ```
 
-### Properties
+### Canvas Properties
 |Name|Default|Description|
 |----|-------|-----------|
 |density|2|Higher values will render more pixels to improve the sharpness of your scene.|
@@ -17,7 +17,7 @@ const scene = new Scene({ ...props });
 |height|360|The height of the canvas on your page.|
 |canvas||Allows you to set your own canvas element instead of having a new one created.|
 
-### Camera Props
+### Camera Properties
 Allows the same orientation props as Node instances, described further down.
 
 ## Layer
@@ -121,6 +121,14 @@ stew('', ['scene', {},
 		],
 	],
 ], spective.framework);
+```
+
+## Controls
+Controls listen for changes to various inputs you choose. Create an instance by passing the id of the key, followed by the hold and release callback functions. The id used used for the keys is the same as the 'key' prop on the object passed to 'keydown' and 'keyup' event listeners normally used by JavaScript. A set of all currently held keys can be found on the 'controls' prop of spective (note the lowercase 'c'). The entries in that set are the instances of Control you have initialized and not the key prop used to create them. The plan is to expand this to support touchscreens and other input devices.
+
+```js
+const spaceControl = new spective.Control({ key: ' ' }, () => console.log('Space Held'), () => console.log('Space Released'))
+spective.controls.has(spaceControl); // check if spaceControl is currently held
 ```
 
 ## Geometries (coming soon)
