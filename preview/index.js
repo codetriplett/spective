@@ -1,5 +1,5 @@
 (function () {
-const { TOP, BOTTOM, controls } = spective;
+const { TOP, BOTTOM, TOUCH_INPUT, controls } = spective;
 const PLAYER_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAMAAADz0U65AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAGUExURQAAAAAAAKVnuc8AAAACdFJOU/8A5bcwSgAAAAlwSFlzAAAOwwAADsMBx2+oZAAAACZJREFUGFdjYGRkYAASjGAMYsE4QALIh4jAGGAWiA8WhKoBIkZGAAWMACXaroMbAAAAAElFTkSuQmCC';
 const PLATFORM_TEXTURE = '#000';
 const GRAVITY = -100;
@@ -26,11 +26,25 @@ const platformAsset = mainLayer.add({ texture: PLATFORM_TEXTURE, oy: 1 });
 const player = playerAsset.add({ id: 'player', pya: GRAVITY, oncollide });
 platformAsset.add( { px: -50, sx: 100, sy: 4, param: BLOCKING_PARAM });
 
+function onHoldSpace () {
+	player.update({ pys: 50 });
+}
+
+function onHoldAD ({ input, control }) {
+	if (input === TOUCH_INPUT && controls.has(leftControl) && controls.has(rightControl)) {
+		onHoldSpace();
+		return;
+	}
+
+	const pxs = control === leftControl ? -30 : 30;
+	player.update({ pxs });
+}
+
 function onReleaseAD () {
 	player.update({ pxs: controls.has(leftControl) ? -30 : controls.has(rightControl) ? 30 : 0 });
 }
 
-spective({ key: ' ' }, () => player.update({ pys: 50 }));
-const leftControl = spective({ key: 'a' }, () => player.update({ pxs: -30 }), onReleaseAD);
-const rightControl = spective({ key: 'd' }, () => player.update({ pxs: 30 }), onReleaseAD);
+spective({ key: ' ', touch: [0.35, 0.65] }, onHoldSpace);
+const leftControl = spective({ key: 'a', touch: [0, 0.35] }, onHoldAD, onReleaseAD);
+const rightControl = spective({ key: 'd', touch: [0.65, 1] }, onHoldAD, onReleaseAD);
 })();

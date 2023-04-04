@@ -2,6 +2,9 @@ import Node from './node';
 import Layer from './layer';
 import createProgram from './program';
 
+export const COLLIDE_ACTION = 'COLLIDE_ACTION';
+export const SEPARATE_ACTION = 'SEPARATE_ACTION';
+
 function setAttribute (gl, location, buffer, dims, array) {
 	const { ARRAY_BUFFER, STATIC_DRAW, FLOAT } = gl;
 
@@ -52,6 +55,7 @@ function compareBoundaries (activeNodes, passiveNodes, frameCount, flipResolutio
 				overlap,
 				side,
 				param,
+				type: areTouching ? COLLIDE_ACTION : SEPARATE_ACTION,
 				action: areTouching ? 'collide' : 'separate',
 				self: activeNode,
 				node: passiveNode
