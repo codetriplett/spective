@@ -26,7 +26,7 @@ import Layer from './layer';
 import Geometry from './geometry';
 import Asset from './asset';
 import Node from './node';
-import Control, { controls } from './control';
+import Control from './control';
 
 export const document = {
 	createTextNode () {
@@ -105,7 +105,7 @@ export function updater (item, props, prevNames, defaultProps) {
 	item.update(props);
 };
 
-const defaultProps = {
+export const defaultProps = {
 	scene: Scene.defaultProps,
 	layer: Layer.defaultProps,
 	geometry: Geometry.defaultProps,
@@ -113,27 +113,13 @@ const defaultProps = {
 	node: Node.defaultProps,
 };
 
+export const framework = [document, updater, defaultProps];
 export const LEFT = 0;
 export const RIGHT = 1;
 export const BOTTOM = 2;
 export const TOP = 3;
 
-function spective (...params) {
+export default function spective (...params) {
 	const [props = {}] = params;
 	return 'key' in props ? new Control(...params) : new Scene(...params);
 }
-
-window.spective = Object.assign(spective, {
-	Scene,
-	Layer,
-	Geometry,
-	Asset,
-	Node,
-	Control,
-	controls,
-	framework: [document, updater, defaultProps],
-	LEFT: 0,
-	RIGHT: 1,
-	BOTTOM: 2,
-	TOP: 3,
-});
