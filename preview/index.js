@@ -1,4 +1,17 @@
 (function () {
+const div = document.createElement('div');
+const leftRegion = document.createElement('div');
+const centerRegion = document.createElement('div');
+const rightRegion = document.createElement('div');
+const regionStyles = { position: 'absolute', top: 0, height: '100%' };
+Object.assign(leftRegion.style, { ...regionStyles, left: 0, width: '35%' });
+Object.assign(centerRegion.style, { ...regionStyles, left: '35%', width: '30%' });
+Object.assign(rightRegion.style, { ...regionStyles, left: '65%', width: '35%' });
+div.appendChild(leftRegion);
+div.appendChild(centerRegion);
+div.appendChild(rightRegion);
+document.body.appendChild(div);
+
 const { TOP, BOTTOM, TOUCH_INPUT, controls } = spective;
 const PLAYER_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAMAAADz0U65AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAGUExURQAAAAAAAKVnuc8AAAACdFJOU/8A5bcwSgAAAAlwSFlzAAAOwwAADsMBx2+oZAAAACZJREFUGFdjYGRkYAASjGAMYsE4QALIh4jAGGAWiA8WhKoBIkZGAAWMACXaroMbAAAAAElFTkSuQmCC';
 const PLATFORM_TEXTURE = '#000';
@@ -19,7 +32,7 @@ function oncollide (event) {
 	}
 }
 
-const scene = spective({ id: 'scene', width: 160, height: 90, density: 4, ondraw });
+const scene = spective({ id: 'scene', div, width: 160, height: 90, density: 4, ondraw });
 const mainLayer = scene.add({ parallax: 1 });
 const playerAsset = mainLayer.add({ texture: PLAYER_TEXTURE });
 const platformAsset = mainLayer.add({ texture: PLATFORM_TEXTURE, oy: 1 });
@@ -30,8 +43,8 @@ function onHoldSpace () {
 	player.update({ pys: 50 });
 }
 
-function onHoldAD ({ input, control }) {
-	if (input === TOUCH_INPUT && controls.has(leftControl) && controls.has(rightControl)) {
+function onHoldAD ({ type, control }) {
+	if (type === TOUCH_INPUT && controls.has(leftControl) && controls.has(rightControl)) {
 		onHoldSpace();
 		return;
 	}
@@ -44,7 +57,7 @@ function onReleaseAD () {
 	player.update({ pxs: controls.has(leftControl) ? -30 : controls.has(rightControl) ? 30 : 0 });
 }
 
-spective({ key: ' ', touch: [0.35, 0.65] }, onHoldSpace);
-const leftControl = spective({ key: 'a', touch: [0, 0.35] }, onHoldAD, onReleaseAD);
-const rightControl = spective({ key: 'd', touch: [0.65, 1] }, onHoldAD, onReleaseAD);
+spective({ key: ' ', el: centerRegion }, onHoldSpace);
+const leftControl = spective({ key: 'a', el: leftRegion }, onHoldAD, onReleaseAD);
+const rightControl = spective({ key: 'd', el: rightRegion }, onHoldAD, onReleaseAD);
 })();
