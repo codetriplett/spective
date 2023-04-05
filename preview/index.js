@@ -57,7 +57,7 @@ function onReleaseAD () {
 	player.update({ pxs: controls.has(leftControl) ? -30 : controls.has(rightControl) ? 30 : 0 });
 }
 
-spective({ key: ' ', el: centerRegion }, onHoldSpace);
-const leftControl = spective({ key: 'a', el: leftRegion }, onHoldAD, onReleaseAD);
-const rightControl = spective({ key: 'd', el: rightRegion }, onHoldAD, onReleaseAD);
+spective({ key: ' ', touch: centerRegion }, onHoldSpace);
+const leftControl = spective({ key: 'a', touch: leftRegion }, onHoldAD, onReleaseAD);
+const rightControl = spective({ key: 'd', touch: rightRegion }, onHoldAD, onReleaseAD);
 })();

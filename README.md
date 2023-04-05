@@ -16,6 +16,7 @@ const scene = new Scene({ ...props });
 |width|640|The width of the canvas on your page.|
 |height|360|The height of the canvas on your page.|
 |canvas||Allows you to set your own canvas element instead of having a new one created.|
+|div||Allows you to set a div, meant to hold your UI, that will be positioned over the canvas that was created.|
 
 ### Camera Properties
 Allows the same orientation props as Node instances, described further down.
@@ -105,6 +106,7 @@ oncollide function will recieve an event object with the following props.
 |Name|Options|Description|
 |----|-------|-----------|
 |action|'collide', 'separate'|The type of even that has occured. 'separate' indicates that two previously collided objects no longer intersect.|
+|type|'COLLIDE_ACTION', 'SEPARATE_ACTION'|Constant form of action value. Should use spective.COLLIDE_ACTION and spective.SEPARATE_ACTION when making comparisions.
 |side|0, 1, 2, 3|The side of the node that called oncollide that has collided with the node sending the param. The LEFT, RIGHT, BOTTOM, TOP constants, read from the spective module, map to these values and should be used instead of comparing the number values directly.
 
 ## Declarative Layouts
@@ -124,12 +126,31 @@ stew('', ['scene', {},
 ```
 
 ## Controls
-Controls listen for changes to various inputs you choose. Create an instance by passing the id of the key, followed by the hold and release callback functions. The id used used for the keys is the same as the 'key' prop on the object passed to 'keydown' and 'keyup' event listeners normally used by JavaScript. A set of all currently held keys can be found on the 'controls' prop of spective (note the lowercase 'c'). The entries in that set are the instances of Control you have initialized and not the key prop used to create them. The plan is to expand this to support touchscreens and other input devices.
+Controls listen for changes to various inputs you choose. Create an instance by passing info on what to listen for to the Control class, followed by the hold and release callback functions. Controls can listen to multiple types of input in one instance and the state of the control can be found by checking if it currently exists in the 'controls' set read from the spective function.
 
 ```js
-const spaceControl = new spective.Control({ key: ' ' }, () => console.log('Space Held'), () => console.log('Space Released'))
+const spaceControl = new spective.Control({ key: ' ' }, onHold, onRelease) // triggered by space key
+const touchControl = new spective.Control({ touch: touchEl }, onHold, onRelease) // triggered by touch events on touchEl
+const comboControl = new spective.Control({ key: ' ', touch: touchEl }, onHold, onRelease) // triggered by either
 spective.controls.has(spaceControl); // check if spaceControl is currently held
 ```
+
+### Initialization Properties
+|Name|Default|Description|
+|----|-------|-----------|
+|key||Listen for keyboard events. The values match the ones used by the 'key' prop in JavaScript's 'keydown' and 'keyup' listeners.|
+|click||Listen for left clicks on HTML element.|
+|context||Listen for right clicks on HTML element.|
+|touch||Listen for touchscreen events on an HTML element.|
+
+### Callback Properties
+The hold and release callback functions will receive an event object with the following properties.
+
+|Name|Options|Description|
+|----|-------|-----------|
+|input|'key', 'click', 'context', 'touch'|The input type that triggered the callback.|
+|type|'KEY_INPUT', 'CLICK_INPUT', 'CONTEXT_INPUT', 'TOUCH_INPUT'|Constant form of input value. Should use spective.KEY_INPUT, spective.CLICK_INPUT, spective.CONTEXT_INPUT, and spective.TOUCH_INPUT when making comparisions.|
+|control||The Control instance that triggered the callback.|
 
 ## Geometries (coming soon)
 Technically 3D objects are allowed and exist in the hierarchy between layers and assets. Assets simply defualt to using a square. Currently, the ability to set custom UV coordinates is still be worked out. It should also be able to parse OBJ files once finished.

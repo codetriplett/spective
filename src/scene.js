@@ -104,7 +104,7 @@ export default class Scene extends Node {
 		// initialize context if not yet done
 		if (!('gl' in this)) {
 			let { density = 2, canvas, div, width, height } = this;
-	
+
 			if (!canvas) {
 				const { width = 640, height = 360 } = props;
 				this.canvas = canvas = document.createElement('canvas');
@@ -114,7 +114,7 @@ export default class Scene extends Node {
 					width: Math.round(width * density),
 					height: Math.round(height * density)
 				});
-				
+
 				const styles = {
 					position: 'absolute',
 					left: '50vw',
@@ -123,7 +123,7 @@ export default class Scene extends Node {
 					height: '100vh',
 					transform: 'translateX(-50%)',
 				};
-	
+
 				Object.assign(canvas.style, styles);
 				if (div) Object.assign(div.style, { ...styles, zIndex: 1 });
 			}
